@@ -1,0 +1,530 @@
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+.filter-card {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.chart-container {
+  position: relative;
+  height: 400px;
+  margin-bottom: 30px;
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.export-buttons {
+  margin-bottom: 20px;
+}
+
+.rates-table {
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.pagination-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 20px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-left: 4px solid #007bff;
+}
+
+.rate-row:hover {
+  background-color: #f5f5f5;
+}
+
+.price-cell {
+  font-family: monospace;
+  font-weight: bold;
+}
+
+.buy-price { color: #28a745; }
+.sell-price { color: #dc3545; }
+.mid-price { color: #6c757d; }
+
+.filter-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  align-items: end;
+}
+
+.stats-cards {
+  margin-bottom: 20px;
+}
+
+.stats-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 10px;
+  padding: 20px;
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .filter-form {
+    grid-template-columns: 1fr;
+  }
+  
+  .chart-container {
+    height: 300px;
+  }
+}
+</style>
+
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h2>Eski Kurlar (Fiyat Geçmişi)</h2>
+          <p class="text-muted mb-0">Fiyat geçmişi verilerini görüntüleyin, filtreleyin ve analiz edin</p>
+        </div>
+        <div>
+          <button class="btn btn-outline-primary" onclick="location.reload()">
+            <i class="bi bi-arrow-clockwise"></i> Yenile
+          </button>
+        </div>
+      </div>
+
+      {{#if error}}
+        <div class="alert alert-danger">
+          <i class="fas fa-exclamation-triangle"></i> {{error}}
+        </div>
+      {{/if}}
+
+      <!-- İstatistik Kartları -->
+      {{#if rates.length}}
+        <div class="row stats-cards">
+          <div class="col-md-3">
+            <div class="stats-card">
+              <h4>{{pagination.totalCount}}</h4>
+              <p class="mb-0">Toplam Kayıt</p>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card text-center">
+              <div class="card-body">
+                <h5 class="card-title">{{rates.length}}</h5>
+                <p class="card-text text-muted">Bu Sayfada</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card text-center">
+              <div class="card-body">
+                <h5 class="card-title">{{pagination.totalPages}}</h5>
+                <p class="card-text text-muted">Toplam Sayfa</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card text-center">
+              <div class="card-body">
+                <h5 class="card-title">
+                  {{#if rates.[0].timestamp}}
+                    {{formatDate rates.[0].timestamp}}
+                  {{else}}
+                    -
+                  {{/if}}
+                </h5>
+                <p class="card-text text-muted">Son Kayıt</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      {{/if}}
+
+      <!-- Filtreleme Formu -->
+      <div class="filter-card">
+        <h5><i class="bi bi-funnel"></i> Filtreler</h5>
+        <form method="GET" action="/admin/rates" class="filter-form">
+          <div class="form-group">
+            <label for="source">Kaynak</label>
+            <select name="source" id="source" class="form-control">
+              <option value="">Tüm Kaynaklar</option>
+              {{#each sources}}
+                <option value="{{name}}" {{#if (eq ../filters.source name)}}selected{{/if}}>
+                  {{displayName}}
+                </option>
+              {{/each}}
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="symbol">Sembol</label>
+            <select name="symbol" id="symbol" class="form-control">
+              <option value="">Tüm Semboller</option>
+              {{#each symbols}}
+                <option value="{{symbol}}" {{#if (eq ../filters.symbol symbol)}}selected{{/if}}>
+                  {{symbol}} - {{name}}
+                </option>
+              {{/each}}
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="startDate">Başlangıç Tarihi</label>
+            <input type="date" name="startDate" id="startDate" class="form-control" value="{{filters.startDate}}">
+          </div>
+
+          <div class="form-group">
+            <label for="endDate">Bitiş Tarihi</label>
+            <input type="date" name="endDate" id="endDate" class="form-control" value="{{filters.endDate}}">
+          </div>
+
+          <div class="form-group">
+            <label for="limit">Sayfa Başına</label>
+            <select name="limit" id="limit" class="form-control">
+              <option value="50" {{#if (eq filters.limit 50)}}selected{{/if}}>50</option>
+              <option value="100" {{#if (eq filters.limit 100)}}selected{{/if}}>100</option>
+              <option value="200" {{#if (eq filters.limit 200)}}selected{{/if}}>200</option>
+              <option value="500" {{#if (eq filters.limit 500)}}selected{{/if}}>500</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-search"></i> Filtrele
+            </button>
+            <a href="/admin/rates" class="btn btn-secondary ml-2">
+              <i class="bi bi-x-circle"></i> Temizle
+            </a>
+          </div>
+        </form>
+      </div>
+
+      <!-- Export Butonları -->
+      {{#if rates.length}}
+        <div class="export-buttons">
+          <div class="btn-group">
+            <button type="button" class="btn btn-success" onclick="exportData('csv')">
+              <i class="bi bi-file-earmark-spreadsheet"></i> CSV İndir
+            </button>
+            <button type="button" class="btn btn-info" onclick="exportData('json')">
+              <i class="bi bi-file-earmark-code"></i> JSON İndir
+            </button>
+          </div>
+          
+          <div class="float-right">
+            <small class="text-muted">
+              Toplam {{pagination.totalCount}} kayıt bulundu
+              {{#if (and filters.symbol filters.source)}}
+                <span class="ml-2">
+                  <button type="button" class="btn btn-sm btn-outline-primary" onclick="showChart()">
+                    <i class="bi bi-graph-up"></i> Grafik Göster
+                  </button>
+                </span>
+              {{/if}}
+            </small>
+          </div>
+        </div>
+      {{/if}}
+
+      <!-- Grafik Alanı -->
+      {{#if (and filters.symbol filters.source)}}
+        <div class="chart-container" id="chartContainer" style="display: none;">
+          <h5>{{filters.symbol}} - Fiyat Grafiği (Son 24 Saat)</h5>
+          <canvas id="priceChart"></canvas>
+        </div>
+      {{/if}}
+
+      <!-- Veriler Tablosu -->
+      {{#if rates.length}}
+        <div class="rates-table">
+          <table class="table table-striped table-hover mb-0">
+            <thead class="table-dark">
+              <tr>
+                <th><i class="bi bi-calendar"></i> Tarih</th>
+                <th><i class="bi bi-currency-exchange"></i> Sembol</th>
+                <th><i class="bi bi-building"></i> Kaynak</th>
+                <th class="text-end"><i class="bi bi-arrow-down-circle text-success"></i> Alış</th>
+                <th class="text-end"><i class="bi bi-arrow-up-circle text-danger"></i> Satış</th>
+                <th class="text-end"><i class="bi bi-dash-circle text-muted"></i> Orta</th>
+              </tr>
+            </thead>
+            <tbody>
+              {{#each rates}}
+                <tr class="rate-row">
+                  <td>
+                    <small>{{formatDateTime timestamp 'dd.MM.yyyy HH:mm:ss'}}</small>
+                  </td>
+                  <td>
+                    <strong class="text-primary">{{symbol}}</strong>
+                  </td>
+                  <td>
+                    <span class="badge bg-secondary">{{sourceInfo.displayName}}</span>
+                  </td>
+                  <td class="text-end price-cell buy-price">
+                    {{formatNumber buyPrice 4}}
+                  </td>
+                  <td class="text-end price-cell sell-price">
+                    {{formatNumber sellPrice 4}}
+                  </td>
+                  <td class="text-end price-cell mid-price">
+                    {{formatNumber midPrice 4}}
+                  </td>
+                </tr>
+              {{/each}}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        {{#if (gt pagination.totalPages 1)}}
+          <div class="pagination-wrapper">
+            <div>
+              <span class="badge bg-primary">Sayfa {{pagination.currentPage}} / {{pagination.totalPages}}</span>
+              <small class="text-muted ml-2">
+                ({{pagination.totalCount}} kayıt)
+              </small>
+            </div>
+            
+            <nav aria-label="Sayfa navigasyonu">
+              <ul class="pagination mb-0">
+                {{#if pagination.hasPrev}}
+                  <li class="page-item">
+                    <a class="page-link" href="?{{buildQuery filters 1}}" aria-label="İlk sayfa">
+                      <i class="bi bi-chevron-double-left"></i>
+                    </a>
+                  </li>
+                  <li class="page-item">
+                    <a class="page-link" href="?{{buildQuery filters (sub pagination.currentPage 1)}}" aria-label="Önceki sayfa">
+                      <i class="bi bi-chevron-left"></i>
+                    </a>
+                  </li>
+                {{/if}}
+                
+                <li class="page-item active">
+                  <span class="page-link">{{pagination.currentPage}}</span>
+                </li>
+                
+                {{#if pagination.hasNext}}
+                  <li class="page-item">
+                    <a class="page-link" href="?{{buildQuery filters (add pagination.currentPage 1)}}" aria-label="Sonraki sayfa">
+                      <i class="bi bi-chevron-right"></i>
+                    </a>
+                  </li>
+                  <li class="page-item">
+                    <a class="page-link" href="?{{buildQuery filters pagination.totalPages}}" aria-label="Son sayfa">
+                      <i class="bi bi-chevron-double-right"></i>
+                    </a>
+                  </li>
+                {{/if}}
+              </ul>
+            </nav>
+          </div>
+        {{/if}}
+      {{else}}
+        <div class="card">
+          <div class="card-body text-center py-5">
+            <i class="bi bi-graph-up fs-1 text-muted mb-3"></i>
+            <h4>
+              {{#if (or filters.source filters.symbol filters.startDate filters.endDate)}}
+                Seçilen filtreler için veri bulunamadı
+              {{else}}
+                Henüz fiyat geçmişi verisi bulunmuyor
+              {{/if}}
+            </h4>
+            <p class="text-muted">
+              {{#if (or filters.source filters.symbol filters.startDate filters.endDate)}}
+                Lütfen farklı filtre kriterleri deneyin.
+              {{else}}
+                Fiyat arşivleme servisi henüz veri arşivlemedi veya veri kaynaklarından fiyat bilgileri henüz alınmadı.
+              {{/if}}
+            </p>
+            <button class="btn btn-primary" onclick="location.reload()">
+              <i class="bi bi-arrow-clockwise"></i> Sayfayı Yenile
+            </button>
+          </div>
+        </div>
+      {{/if}}
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+<script>
+// Chart verisi
+const chartData = {{{chartData}}};
+let priceChart = null;
+
+// Export fonksiyonu
+function exportData(type) {
+  const params = new URLSearchParams(window.location.search);
+  params.set('export', type);
+  window.location.href = '/admin/rates?' + params.toString();
+}
+
+// Grafik göster/gizle
+function showChart() {
+  const container = document.getElementById('chartContainer');
+  if (container && container.style.display === 'none') {
+    container.style.display = 'block';
+    initChart();
+  } else if (container) {
+    container.style.display = 'none';
+  }
+}
+
+// Grafik başlatma
+function initChart() {
+  if (priceChart) {
+    priceChart.destroy();
+  }
+  
+  if (!chartData || chartData.length === 0) {
+    const chartContainer = document.getElementById('chartContainer');
+    if (chartContainer) {
+      chartContainer.innerHTML = '<div class="text-center p-4"><p class="text-muted">Grafik için yeterli veri bulunmuyor.</p></div>';
+    }
+    return;
+  }
+  
+  const ctx = document.getElementById('priceChart');
+  if (!ctx) return;
+  
+  priceChart = new Chart(ctx.getContext('2d'), {
+    type: 'line',
+    data: {
+      labels: chartData.map(item => new Date(item.timestamp).toLocaleTimeString('tr-TR', {
+        hour: '2-digit',
+        minute: '2-digit'
+      })),
+      datasets: [
+        {
+          label: 'Alış',
+          data: chartData.map(item => item.buyPrice),
+          borderColor: '#28a745',
+          backgroundColor: 'rgba(40, 167, 69, 0.1)',
+          tension: 0.1,
+          fill: false
+        },
+        {
+          label: 'Satış',
+          data: chartData.map(item => item.sellPrice),
+          borderColor: '#dc3545',
+          backgroundColor: 'rgba(220, 53, 69, 0.1)',
+          tension: 0.1,
+          fill: false
+        },
+        {
+          label: 'Orta',
+          data: chartData.map(item => item.midPrice),
+          borderColor: '#6c757d',
+          backgroundColor: 'rgba(108, 117, 125, 0.1)',
+          tension: 0.1,
+          fill: false
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'top',
+        },
+        title: {
+          display: true,
+          text: '{{filters.symbol}} - Fiyat Trendi (Son 24 Saat)'
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: false,
+          ticks: {
+            callback: function(value) {
+              return value.toFixed(4);
+            }
+          }
+        },
+        x: {
+          ticks: {
+            maxTicksLimit: 10
+          }
+        }
+      },
+      interaction: {
+        intersect: false,
+        mode: 'index'
+      }
+    }
+  });
+}
+
+// Form otomatik submit
+const sourceSelect = document.getElementById('source');
+const symbolSelect = document.getElementById('symbol');
+
+if (sourceSelect) {
+  sourceSelect.addEventListener('change', function() {
+    if (this.value && symbolSelect && symbolSelect.value) {
+      // Auto-submit for chart data
+    }
+  });
+}
+
+if (symbolSelect) {
+  symbolSelect.addEventListener('change', function() {
+    if (this.value && sourceSelect && sourceSelect.value) {
+      // Auto-submit for chart data
+    }
+  });
+}
+
+// Tarih inputları için bugünün tarihini maximum olarak ayarla
+const today = new Date().toISOString().split('T')[0];
+const startDateInput = document.getElementById('startDate');
+const endDateInput = document.getElementById('endDate');
+
+if (startDateInput) {
+  startDateInput.setAttribute('max', today);
+}
+if (endDateInput) {
+  endDateInput.setAttribute('max', today);
+}
+
+// Auto refresh bildirim (opsiyonel)
+let refreshTimer;
+function scheduleRefresh() {
+  clearTimeout(refreshTimer);
+  refreshTimer = setTimeout(() => {
+    const notice = document.createElement('div');
+    notice.className = 'alert alert-info alert-dismissible fade show position-fixed';
+    notice.style.cssText = 'top: 20px; right: 20px; z-index: 1050; min-width: 300px;';
+    notice.innerHTML = `
+      <i class="bi bi-info-circle"></i>
+      Veriler güncellenmiş olabilir.
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      <div class="mt-2">
+        <button class="btn btn-sm btn-primary" onclick="location.reload()">
+          <i class="bi bi-arrow-clockwise"></i> Yenile
+        </button>
+      </div>
+    `;
+    document.body.appendChild(notice);
+    
+    // 10 saniye sonra otomatik kapat
+    setTimeout(() => {
+      if (notice.parentNode) {
+        notice.remove();
+      }
+    }, 10000);
+  }, 300000); // 5 dakika
+}
+
+// Sayfa yüklendiğinde refresh timer'ı başlat
+scheduleRefresh();
+</script>

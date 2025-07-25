@@ -1,0 +1,551 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Güncel Fiyatlar</h2>
+    <div class="d-flex gap-2">
+        <button type="button" class="btn btn-outline-primary" onclick="refreshPrices()">
+            <i class="bi bi-arrow-clockwise"></i>
+            Yenile
+        </button>
+        <button type="button" class="btn btn-outline-success" onclick="forceUpdate()">
+            <i class="bi bi-cloud-download"></i>
+            Zorla Güncelle
+        </button>
+    </div>
+</div>
+
+{{#if error}}
+<div class="alert alert-danger" role="alert">
+    <i class="bi bi-exclamation-triangle"></i>
+    {{error}}
+</div>
+{{/if}}
+
+{{#if stats}}
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title text-primary">{{stats.totalPrices}}</h5>
+                <p class="card-text">Toplam Fiyat</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title text-success">{{stats.activePrices}}</h5>
+                <p class="card-text">Aktif Fiyat</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title text-info">{{stats.symbolCount}}</h5>
+                <p class="card-text">Sembol Sayısı</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title text-warning">{{stats.sourceCount}}</h5>
+                <p class="card-text">Kaynak Sayısı</p>
+            </div>
+        </div>
+    </div>
+</div>
+{{/if}}
+
+{{#if prices.length}}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="mb-0">Kaynaklara Göre Fiyat Listesi</h5>
+    <div class="d-flex gap-2">
+        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleViewMode()" id="viewModeBtn">
+            <i class="bi bi-table"></i>
+            Tablo Görünümü
+        </button>
+        {{#if stats.lastUpdated}}
+        <small class="text-muted align-self-center">Son güncelleme: {{formatDate stats.lastUpdated}}</small>
+        {{/if}}
+    </div>
+</div>
+
+<!-- Card View (Default) -->
+<div id="cardView">
+    <div class="row" id="priceCards">
+        <!-- Cards will be populated by JavaScript -->
+    </div>
+</div>
+
+<!-- Table View (Hidden by default) -->
+<div id="tableView" style="display: none;">
+    <div class="card">
+        <div class="card-header">
+            <h6 class="mb-0">Detaylı Tablo Görünümü</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover table-sm">
+                    <thead>
+                        <tr>
+                            <th>Kaynak</th>
+                            <th>Sembol</th>
+                            <th>Alış</th>
+                            <th>Satış</th>
+                            <th>Değişim %</th>
+                            <th>Günlük Min/Max</th>
+                            <th>Son Güncelleme</th>
+                            <th>İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{#each prices}}
+                        <tr>
+                            <td>
+                                <div class="d-flex flex-column">
+                                    <strong class="small">{{this.source.displayName}}</strong>
+                                    <small class="text-muted">{{this.sourceData.originalCode}}</small>
+                                </div>
+                            </td>
+                            <td>
+                                <strong>{{this.symbol}}</strong>
+                                <small class="d-block text-muted">{{this.sourceData.name}}</small>
+                            </td>
+                            <td>
+                                <span class="fw-bold text-success">{{formatNumber this.buyPrice}}</span>
+                                {{#if this.previousBuyPrice}}
+                                <br><small class="text-muted">Önceki: {{formatNumber this.previousBuyPrice}}</small>
+                                {{/if}}
+                            </td>
+                            <td>
+                                <span class="fw-bold text-danger">{{formatNumber this.sellPrice}}</span>
+                                {{#if this.previousSellPrice}}
+                                <br><small class="text-muted">Önceki: {{formatNumber this.previousSellPrice}}</small>
+                                {{/if}}
+                            </td>
+                            <td>
+                                {{#if this.changePercent.buy}}
+                                <span class="{{#if (gt this.changePercent.buy 0)}}text-success{{else}}text-danger{{/if}}">
+                                    <i class="bi {{#if (gt this.changePercent.buy 0)}}bi-arrow-up{{else}}bi-arrow-down{{/if}}"></i>
+                                    {{#if (gt this.changePercent.buy 0)}}+{{/if}}{{formatDecimal this.changePercent.buy 2}}%
+                                </span>
+                                {{else}}
+                                <span class="text-muted">-</span>
+                                {{/if}}
+                            </td>
+                            <td>
+                                {{#if this.dailyStats}}
+                                <small>
+                                    Min: {{formatNumber this.dailyStats.lowBuyPrice}}<br>
+                                    Max: {{formatNumber this.dailyStats.highBuyPrice}}
+                                </small>
+                                {{else}}
+                                <span class="text-muted">-</span>
+                                {{/if}}
+                            </td>
+                            <td>
+                                <small>{{formatDate this.updatedAt}}</small>
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <button type="button" class="btn btn-outline-info" 
+                                            onclick="showHistory('{{this.symbol}}', '{{this.sourceId}}')">
+                                        <i class="bi bi-graph-up"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary" 
+                                            onclick="showDetails('{{this._id}}')">
+                                        <i class="bi bi-info-circle"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {{/each}}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{else}}
+<div class="card">
+    <div class="card-body">
+        <div class="text-center py-4">
+            <i class="bi bi-currency-exchange" style="font-size: 3rem; color: #dee2e6;"></i>
+            <p class="text-muted mt-2">Henüz fiyat verisi bulunmuyor</p>
+            <button type="button" class="btn btn-primary" onclick="forceUpdate()">
+                <i class="bi bi-cloud-download"></i>
+                İlk Veri Güncellemesini Başlat
+            </button>
+        </div>
+    </div>
+</div>
+{{/if}}
+
+<!-- Price History Modal -->
+<div class="modal fade" id="historyModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Fiyat Geçmişi</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="historyContent">
+                    <div class="text-center">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Yükleniyor...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Price Details Modal -->
+<div class="modal fade" id="detailsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Fiyat Detayları</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="detailsContent">
+                    <div class="text-center">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Yükleniyor...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Global variables
+let currentViewMode = 'cards'; // 'cards' or 'table'
+const pricesData = {{{json prices}}};
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', function() {
+    if (pricesData && pricesData.length > 0) {
+        renderCardView();
+    }
+});
+
+function toggleViewMode() {
+    const cardView = document.getElementById('cardView');
+    const tableView = document.getElementById('tableView');
+    const btn = document.getElementById('viewModeBtn');
+    
+    if (currentViewMode === 'cards') {
+        // Switch to table view
+        cardView.style.display = 'none';
+        tableView.style.display = 'block';
+        btn.innerHTML = '<i class="bi bi-grid-3x3"></i> Kart Görünümü';
+        currentViewMode = 'table';
+    } else {
+        // Switch to card view
+        cardView.style.display = 'block';
+        tableView.style.display = 'none';
+        btn.innerHTML = '<i class="bi bi-table"></i> Tablo Görünümü';
+        currentViewMode = 'cards';
+    }
+}
+
+function renderCardView() {
+    const container = document.getElementById('priceCards');
+    if (!container || !pricesData) return;
+    
+    // Group prices by source site (not source code)
+    const groupedPrices = {};
+    pricesData.forEach(price => {
+        const sourceKey = price.source?.name || 'unknown';
+        const sourceDisplayName = price.source?.displayName || sourceKey;
+        
+        if (!groupedPrices[sourceKey]) {
+            groupedPrices[sourceKey] = {
+                sourceName: sourceKey,
+                sourceDisplayName: sourceDisplayName,
+                sourceUrl: price.source?.url,
+                sourceType: price.source?.type,
+                sourceCategory: price.source?.category,
+                prices: []
+            };
+        }
+        groupedPrices[sourceKey].prices.push(price);
+    });
+    
+    let html = '';
+    Object.values(groupedPrices).forEach(group => {
+        html += createSourceCard(group);
+    });
+    
+    container.innerHTML = html;
+}
+
+function createSourceCard(group) {
+    const cardColor = getSourceCardColor(group.sourceName, group.sourceCategory);
+    const sourceIcon = getSourceIcon(group.sourceCategory, group.sourceType);
+    
+    let html = `
+    <div class="col-lg-6 col-xl-4 mb-4">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-header ${cardColor} text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-0">
+                            <i class="bi ${sourceIcon}"></i>
+                            ${group.sourceDisplayName}
+                        </h6>
+                        ${group.sourceUrl ? `<small class="opacity-75">${getDomainFromUrl(group.sourceUrl)}</small>` : ''}
+                    </div>
+                    <span class="badge bg-light text-dark">${group.prices.length} fiyat</span>
+                </div>
+            </div>
+            <div class="card-body p-0">
+    `;
+    
+    group.prices.forEach((price, index) => {
+        const borderClass = index < group.prices.length - 1 ? 'border-bottom' : '';
+        const changeColor = getChangeColor(price.changePercent?.buy);
+        const changeIcon = getChangeIcon(price.changePercent?.buy);
+        
+        html += `
+        <div class="p-3 ${borderClass}">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div>
+                    <h6 class="mb-1 fw-bold">${price.symbol}</h6>
+                    <small class="text-muted">${price.sourceData?.name || ''}</small>
+                </div>
+                <div class="text-end">
+                    <div class="d-flex gap-2 mb-1">
+                        <button type="button" class="btn btn-sm btn-outline-info" 
+                                onclick="showHistory('${price.symbol}', '${price.sourceId}')" title="Geçmiş">
+                            <i class="bi bi-graph-up"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" 
+                                onclick="showDetails('${price._id}')" title="Detay">
+                            <i class="bi bi-info-circle"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row g-3">
+                <div class="col-6">
+                    <div class="text-center p-2 bg-success bg-opacity-10 rounded">
+                        <small class="text-muted d-block">ALIŞ</small>
+                        <div class="fw-bold text-success">${formatNumber(price.buyPrice)}</div>
+                        ${price.previousBuyPrice ? `<small class="text-muted">Önceki: ${formatNumber(price.previousBuyPrice)}</small>` : ''}
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="text-center p-2 bg-danger bg-opacity-10 rounded">
+                        <small class="text-muted d-block">SATIŞ</small>
+                        <div class="fw-bold text-danger">${formatNumber(price.sellPrice)}</div>
+                        ${price.previousSellPrice ? `<small class="text-muted">Önceki: ${formatNumber(price.previousSellPrice)}</small>` : ''}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-3 row g-2">
+                <div class="col-6">
+                    <small class="text-muted d-block">Değişim</small>
+                    <span class="${changeColor}">
+                        <i class="bi ${changeIcon}"></i>
+                        ${price.changePercent?.buy ? formatDecimal(price.changePercent.buy, 2) + '%' : '-'}
+                    </span>
+                </div>
+                <div class="col-6">
+                    <small class="text-muted d-block">Son Güncelleme</small>
+                    <span class="small">${formatTime(price.updatedAt)}</span>
+                </div>
+            </div>
+            
+            ${price.dailyStats ? `
+            <div class="mt-2 row g-2">
+                <div class="col-6">
+                    <small class="text-muted d-block">Günlük Min</small>
+                    <span class="small">${formatNumber(price.dailyStats.lowBuyPrice)}</span>
+                </div>
+                <div class="col-6">
+                    <small class="text-muted d-block">Günlük Max</small>
+                    <span class="small">${formatNumber(price.dailyStats.highBuyPrice)}</span>
+                </div>
+            </div>
+            ` : ''}
+        </div>
+        `;
+    });
+    
+    html += `
+            </div>
+        </div>
+    </div>
+    `;
+    
+    return html;
+}
+
+function getSourceCardColor(sourceName, sourceCategory) {
+    // Kaynak kategorisine göre renk belirleme
+    const categoryColors = {
+        'gold_dealer': 'bg-warning',     // Altın satıcıları - sarı
+        'government': 'bg-info',         // Resmi kurumlar - mavi
+        'exchange': 'bg-success',        // Borsalar - yeşil
+        'bank': 'bg-primary',            // Bankalar - mavi
+        'other': 'bg-secondary'          // Diğer - gri
+    };
+    
+    // Belirli kaynak adlarına göre özel renkler
+    const sourceColors = {
+        'altinkaynak': 'bg-warning',
+        'tcmb': 'bg-info',
+        'haremgold': 'bg-warning',
+        'hakangold': 'bg-warning'
+    };
+    
+    return sourceColors[sourceName] || categoryColors[sourceCategory] || 'bg-secondary';
+}
+
+function getSourceIcon(sourceCategory, sourceType) {
+    const categoryIcons = {
+        'gold_dealer': 'bi-gem',
+        'government': 'bi-bank2',
+        'exchange': 'bi-graph-up',
+        'bank': 'bi-bank',
+        'other': 'bi-globe'
+    };
+    
+    const typeIcons = {
+        'api': 'bi-cloud',
+        'webscraping': 'bi-spider',
+        'manual': 'bi-pencil'
+    };
+    
+    return categoryIcons[sourceCategory] || typeIcons[sourceType] || 'bi-database';
+}
+
+function getDomainFromUrl(url) {
+    try {
+        const domain = new URL(url).hostname;
+        return domain.replace('www.', '');
+    } catch {
+        return url;
+    }
+}
+
+function getChangeColor(changePercent) {
+    if (!changePercent || changePercent === 0) return 'text-muted';
+    return changePercent > 0 ? 'text-success' : 'text-danger';
+}
+
+function getChangeIcon(changePercent) {
+    if (!changePercent || changePercent === 0) return 'bi-dash';
+    return changePercent > 0 ? 'bi-arrow-up' : 'bi-arrow-down';
+}
+
+function formatNumber(num) {
+    if (typeof num !== 'number') return num || '-';
+    return num.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+}
+
+function formatDecimal(num, decimals = 2) {
+    if (typeof num !== 'number') return num || '-';
+    return num.toFixed(decimals);
+}
+
+function formatTime(dateString) {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    return date.toLocaleString('tr-TR', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        day: '2-digit',
+        month: '2-digit'
+    });
+}
+
+function refreshPrices() {
+    window.location.reload();
+}
+
+function forceUpdate() {
+    const btn = event.target.closest('button');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Güncelleniyor...';
+    
+    fetch('/admin/api/altinkaynak/force-update', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            alert('Güncelleme başarısız: ' + data.error);
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-cloud-download"></i> Zorla Güncelle';
+        }
+    })
+    .catch(error => {
+        alert('Hata: ' + error.message);
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-cloud-download"></i> Zorla Güncelle';
+    });
+}
+
+function showHistory(symbol, sourceId) {
+    const modal = new bootstrap.Modal(document.getElementById('historyModal'));
+    document.querySelector('#historyModal .modal-title').textContent = `${symbol} - Fiyat Geçmişi`;
+    
+    fetch(`/admin/prices/${symbol}/${sourceId}/history?days=7`)
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            let content = '<h6>Son 7 Günlük Fiyat Geçmişi</h6>';
+            if (data.history.length > 0) {
+                content += '<div class="table-responsive"><table class="table table-sm">';
+                content += '<thead><tr><th>Tarih</th><th>Açılış</th><th>Kapanış</th><th>En Yüksek</th><th>En Düşük</th></tr></thead><tbody>';
+                data.history.forEach(item => {
+                    content += `<tr>
+                        <td>${item._id}</td>
+                        <td>A: ${item.openingBuy || '-'}<br>S: ${item.openingSell || '-'}</td>
+                        <td>A: ${item.closingBuy || '-'}<br>S: ${item.closingSell || '-'}</td>
+                        <td>A: ${item.highBuy || '-'}<br>S: ${item.highSell || '-'}</td>
+                        <td>A: ${item.lowBuy || '-'}<br>S: ${item.lowSell || '-'}</td>
+                    </tr>`;
+                });
+                content += '</tbody></table></div>';
+            } else {
+                content += '<p class="text-muted">Geçmiş veri bulunamadı.</p>';
+            }
+            document.getElementById('historyContent').innerHTML = content;
+        } else {
+            document.getElementById('historyContent').innerHTML = '<div class="alert alert-danger">Geçmiş veriler yüklenemedi.</div>';
+        }
+    })
+    .catch(error => {
+        document.getElementById('historyContent').innerHTML = '<div class="alert alert-danger">Hata: ' + error.message + '</div>';
+    });
+    
+    modal.show();
+}
+
+function showDetails(priceId) {
+    // Bu fonksiyon gelecekte detaylı fiyat bilgilerini göstermek için kullanılabilir
+    alert('Detay özelliği henüz implementasyonda');
+}
+
+// Auto-refresh every 30 seconds
+setInterval(refreshPrices, 30000);
+</script>

@@ -1,0 +1,359 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Birimler</h2>
+    <div class="d-flex gap-2">
+        <a href="/admin/mappings" class="btn btn-outline-info">
+            <i class="bi bi-arrow-left-right"></i>
+            Fiyat Eşleştirmeleri
+        </a>
+        <a href="/admin/currencies/new" class="btn btn-primary">
+            <i class="bi bi-plus"></i>
+            Yeni Birim
+        </a>
+    </div>
+</div>
+
+{{#if error}}
+<div class="alert alert-danger" role="alert">
+    <i class="bi bi-exclamation-triangle"></i>
+    {{error}}
+</div>
+{{/if}}
+
+{{#if query.success}}
+<div class="alert alert-success" role="alert">
+    <i class="bi bi-check-circle"></i>
+    {{query.success}}
+</div>
+{{/if}}
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title text-primary">{{currencies.length}}</h5>
+                <p class="card-text">Toplam Birim</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title text-success">{{countActive currencies}}</h5>
+                <p class="card-text">Aktif Birim</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title text-info">{{countMappedCurrencies currencies}}</h5>
+                <p class="card-text">Kaynaklı</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title text-warning">{{countByType currencies 1 'priority'}}</h5>
+                <p class="card-text">Yüksek Öncelik</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Birim Listesi</h5>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleGrouping()">
+                <i class="bi bi-collection"></i>
+                Gruplama
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        {{#if currencies.length}}
+        <div class="table-responsive">
+            <table class="table table-hover" id="currenciesTable">
+                <thead>
+                    <tr>
+                        <th>
+                            <div class="d-flex align-items-center gap-1">
+                                <span>Sıra</span>
+                                <div class="btn-group btn-group-sm">
+                                    <button type="button" class="btn btn-link p-0" onclick="sortTable('order', 'asc')" title="Artan sıralama">
+                                        <i class="bi bi-chevron-up"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-link p-0" onclick="sortTable('order', 'desc')" title="Azalan sıralama">
+                                        <i class="bi bi-chevron-down"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </th>
+                        <th>Durum</th>
+                        <th>Symbol</th>
+                        <th>Ad</th>
+                        <th>Tip</th>
+                        <th>Öncelik</th>
+                        <th>Kaynaklar</th>
+                        <th>Eşleştirmeler</th>
+                        <th>Oluşturulma</th>
+                        <th>İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#each currencies}}
+                    <tr class="{{#unless this.isActive}}table-secondary{{/unless}}" data-order="{{this.order}}">
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <input type="number" class="form-control form-control-sm order-input" 
+                                       style="width: 80px;" value="{{this.order}}" 
+                                       data-currency-id="{{this._id}}" 
+                                       onchange="updateOrder(this)">
+                                <div class="btn-group btn-group-sm">
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" 
+                                            onclick="moveOrder('{{this._id}}', 'up')" title="Yukarı taşı">
+                                        <i class="bi bi-arrow-up"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" 
+                                            onclick="moveOrder('{{this._id}}', 'down')" title="Aşağı taşı">
+                                        <i class="bi bi-arrow-down"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                {{#if this.isActive}}
+                                <span class="badge bg-success">Aktif</span>
+                                {{else}}
+                                <span class="badge bg-secondary">Pasif</span>
+                                {{/if}}
+                                {{#if this.hasSource}}
+                                <span class="text-success" title="Kaynak mevcut"><i class="bi bi-check-circle"></i></span>
+                                {{else}}
+                                <span class="text-warning" title="Kaynak yok"><i class="bi bi-exclamation-circle"></i></span>
+                                {{/if}}
+                            </div>
+                        </td>
+                        <td>
+                            <strong>{{this.symbol}}</strong>
+                            <small class="d-block text-muted">{{this.code}}</small>
+                        </td>
+                        <td>
+                            {{this.name}}
+                            {{#if this.description}}
+                            <small class="d-block text-muted">{{this.description}}</small>
+                            {{/if}}
+                        </td>
+                        <td>
+                            <span class="badge {{#if (eq this.type 'forex')}}bg-primary{{else}}bg-warning{{/if}}">
+                                {{this.type}}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge {{#if (eq this.priority 1)}}bg-success{{else}}bg-secondary{{/if}}">
+                                {{this.priority}}
+                            </span>
+                        </td>
+                        <td>
+                            {{#if this.activeSources.length}}
+                            <div class="mb-1">
+                                <small class="text-success d-block"><strong>Aktif Eşleştirmeler:</strong></small>
+                                {{#each this.activeSources}}
+                                <span class="badge bg-success me-1" title="Bu kaynaktan veri geliyor">{{this}}</span>
+                                {{/each}}
+                            </div>
+                            {{/if}}
+                            
+                            {{#if this.configuredSources.length}}
+                            <div class="mb-1">
+                                <small class="text-primary d-block"><strong>Tanımlı Kaynaklar:</strong></small>
+                                {{#each this.configuredSources}}
+                                {{#unless (includes ../this.activeSources this)}}
+                                <span class="badge bg-secondary me-1" title="Tanımlı ama eşleştirme yok">{{this}}</span>
+                                {{/unless}}
+                                {{/each}}
+                            </div>
+                            {{/if}}
+                            
+                            {{#unless this.activeSources.length}}
+                            {{#unless this.configuredSources.length}}
+                            <span class="text-muted">Kaynak yok</span>
+                            {{/unless}}
+                            {{/unless}}
+                        </td>
+                        <td>
+                            {{#if this.sourceMapping}}
+                            <small class="text-primary">
+                                <strong>Currency Mapping:</strong>
+                                {{#each this.sourceMapping}}
+                                <div>{{@key}}: <code>{{this}}</code></div>
+                                {{/each}}
+                            </small>
+                            {{/if}}
+                            
+                            {{#if this.priceMappings}}
+                            <small class="text-success {{#if this.sourceMapping}}mt-2 d-block{{/if}}">
+                                <strong>Price Mappings:</strong>
+                                {{#each this.priceMappings}}
+                                <div>{{@key}}: <code>{{this}}</code></div>
+                                {{/each}}
+                            </small>
+                            {{/if}}
+                            
+                            {{#unless this.sourceMapping}}
+                            {{#unless this.priceMappings}}
+                            <span class="text-muted">Eşleştirme yok</span>
+                            {{/unless}}
+                            {{/unless}}
+                        </td>
+                        <td>
+                            <small>{{formatDate this.createdAt}}</small>
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="/admin/currencies/{{this._id}}/edit" class="btn btn-outline-primary" title="Düzenle">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <button type="button" class="btn btn-outline-danger" onclick="confirmDelete('{{this._id}}', '{{this.symbol}}')" title="Sil">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {{/each}}
+                </tbody>
+            </table>
+        </div>
+        {{else}}
+        <div class="text-center py-4">
+            <i class="bi bi-currency-exchange" style="font-size: 3rem; color: #dee2e6;"></i>
+            <p class="text-muted mt-2">Henüz birim tanımlanmamış</p>
+            <a href="/admin/currencies/new" class="btn btn-primary">
+                <i class="bi bi-plus"></i>
+                İlk Birimi Ekle
+            </a>
+        </div>
+        {{/if}}
+    </div>
+</div>
+
+
+<script>
+
+function confirmDelete(currencyId, symbol) {
+    if (confirm(`${symbol} birimini silmek istediğinizden emin misiniz?`)) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/admin/currencies/${currencyId}/delete`;
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+function toggleGrouping() {
+    // Bu özellik gelecekte eklenebilir
+    alert('Gruplama özelliği henüz implementasyonda');
+}
+
+// Sıralama fonksiyonları
+function sortTable(field, direction) {
+    const tbody = document.querySelector('#currenciesTable tbody');
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+    
+    rows.sort((a, b) => {
+        let aVal, bVal;
+        
+        if (field === 'order') {
+            aVal = parseInt(a.dataset.order) || 0;
+            bVal = parseInt(b.dataset.order) || 0;
+        }
+        
+        if (direction === 'asc') {
+            return aVal - bVal;
+        } else {
+            return bVal - aVal;
+        }
+    });
+    
+    // Sıralanmış satırları tabloya ekle
+    rows.forEach(row => tbody.appendChild(row));
+}
+
+// Order güncelleme
+function updateOrder(input) {
+    const currencyId = input.dataset.currencyId;
+    const newOrder = parseInt(input.value);
+    
+    if (!newOrder || newOrder < 1) {
+        alert('Sıra değeri 1 veya daha büyük olmalıdır');
+        return;
+    }
+    
+    fetch(`/admin/api/currencies/${currencyId}/order`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order: newOrder })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Satırın data-order attribute'unu güncelle
+            input.closest('tr').dataset.order = newOrder;
+            
+            // Başarı mesajı (isteğe bağlı)
+            const originalBg = input.style.backgroundColor;
+            input.style.backgroundColor = '#d4edda';
+            setTimeout(() => {
+                input.style.backgroundColor = originalBg;
+            }, 1000);
+        } else {
+            alert('Sıra güncellenemedi: ' + data.error);
+            // Eski değeri geri yükle
+            input.value = input.closest('tr').dataset.order;
+        }
+    })
+    .catch(error => {
+        alert('Hata: ' + error.message);
+        // Eski değeri geri yükle
+        input.value = input.closest('tr').dataset.order;
+    });
+}
+
+// Sıra taşıma
+function moveOrder(currencyId, direction) {
+    const row = document.querySelector(`tr input[data-currency-id="${currencyId}"]`).closest('tr');
+    const currentOrder = parseInt(row.dataset.order) || 0;
+    const newOrder = direction === 'up' ? currentOrder - 15 : currentOrder + 15;
+    
+    if (newOrder < 1) {
+        alert('Sıra değeri 1\'den küçük olamaz');
+        return;
+    }
+    
+    fetch(`/admin/api/currencies/${currencyId}/order`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order: newOrder })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Input değerini güncelle
+            const input = row.querySelector('.order-input');
+            input.value = newOrder;
+            row.dataset.order = newOrder;
+            
+            // Otomatik sıralama
+            sortTable('order', 'asc');
+        } else {
+            alert('Sıra güncellenemedi: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Hata: ' + error.message);
+    });
+}
+
+</script>

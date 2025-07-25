@@ -1,0 +1,1799 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gold Server API & Socket Documentation</title>
+    
+    <!-- Socket.IO for WebSocket testing -->
+    <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
+    
+    <!-- Prism.js for syntax highlighting -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f8f9fa;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 0;
+            text-align: center;
+            margin-bottom: 30px;
+            border-radius: 10px;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .header .download-btn {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 20px;
+            transition: background 0.3s;
+        }
+        
+        .header .download-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        
+        .nav-tabs {
+            display: flex;
+            background: white;
+            border-radius: 10px 10px 0 0;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 0;
+        }
+        
+        .nav-tab {
+            flex: 1;
+            padding: 15px 20px;
+            background: #e9ecef;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-tab.active {
+            background: white;
+            color: #667eea;
+        }
+        
+        .nav-tab:hover {
+            background: #dee2e6;
+        }
+        
+        .content-area {
+            background: white;
+            border-radius: 0 0 10px 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 30px;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .section {
+            margin-bottom: 40px;
+        }
+        
+        .section h2 {
+            color: #667eea;
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        
+        .section h3 {
+            color: #495057;
+            font-size: 1.4em;
+            margin: 25px 0 15px 0;
+        }
+        
+        .section h4 {
+            color: #6c757d;
+            font-size: 1.2em;
+            margin: 20px 0 10px 0;
+        }
+        
+        /* Test Panel Styles */
+        .test-panel {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .test-controls {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .test-input {
+            padding: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        
+        .test-btn {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.3s;
+        }
+        
+        .test-btn:hover {
+            background: #5a67d8;
+        }
+        
+        .test-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        
+        .test-result {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 15px;
+            font-family: monospace;
+            font-size: 13px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        
+        .test-result.success {
+            border-color: #28a745;
+            background: #f8fff9;
+        }
+        
+        .test-result.error {
+            border-color: #dc3545;
+            background: #fff8f8;
+        }
+        
+        /* WebSocket Test Styles */
+        .ws-status {
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            font-weight: bold;
+            text-align: center;
+        }
+        
+        .ws-status.connected {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .ws-status.disconnected {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .ws-status.connecting {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .channel-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .channel-btn {
+            padding: 8px 15px;
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+        
+        .channel-btn:hover {
+            background: #5a6268;
+        }
+        
+        .channel-btn.subscribed {
+            background: #28a745;
+        }
+        
+        .ws-messages {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .ws-message {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            border-left: 4px solid #667eea;
+            background: #f8f9fa;
+        }
+        
+        .ws-message.price_update {
+            border-left-color: #28a745;
+        }
+        
+        .ws-message.anomaly_alert {
+            border-left-color: #dc3545;
+        }
+        
+        .ws-message.system {
+            border-left-color: #ffc107;
+        }
+        
+        .ws-message-header {
+            font-weight: bold;
+            margin-bottom: 5px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .ws-message-time {
+            font-size: 12px;
+            color: #6c757d;
+        }
+        
+        .ws-message-data {
+            font-family: monospace;
+            font-size: 12px;
+            background: white;
+            padding: 8px;
+            border-radius: 3px;
+            margin-top: 5px;
+            overflow-x: auto;
+        }
+        
+        .code-block {
+            margin: 15px 0;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        
+        /* Override Prism styles for better integration */
+        pre[class*="language-"] {
+            margin: 0;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        code[class*="language-"] {
+            font-family: 'Fira Code', 'Courier New', monospace;
+        }
+        
+        .endpoint {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        
+        .method {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-weight: bold;
+            font-size: 12px;
+            margin-right: 10px;
+        }
+        
+        .method.get { background: #d4edda; color: #155724; }
+        .method.post { background: #cce5ff; color: #004085; }
+        
+        .param-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        
+        .param-table th,
+        .param-table td {
+            border: 1px solid #dee2e6;
+            padding: 12px;
+            text-align: left;
+        }
+        
+        .param-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+        }
+        
+        .status-code {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: bold;
+            font-size: 11px;
+            margin-right: 5px;
+        }
+        
+        .status-200 { background: #d4edda; color: #155724; }
+        .status-401 { background: #f8d7da; color: #721c24; }
+        .status-403 { background: #fff3cd; color: #856404; }
+        .status-404 { background: #d1ecf1; color: #0c5460; }
+        
+        .example-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 20px;
+            margin: 15px 0;
+        }
+        
+        .warning-box {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 20px;
+            margin: 15px 0;
+        }
+        
+        .info-box {
+            background: #e8f5e8;
+            border-left: 4px solid #4caf50;
+            padding: 20px;
+            margin: 15px 0;
+        }
+        
+        .channel-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .channel-card {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        
+        .channel-card h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 40px 20px;
+            color: #6c757d;
+            border-top: 1px solid #dee2e6;
+            margin-top: 40px;
+        }
+
+        /* Token input styles */
+        .token-section {
+            background: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .token-input-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .token-input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #90caf9;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        
+        .token-btn {
+            padding: 10px 20px;
+            background: #1976d2;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .token-btn:hover {
+            background: #1565c0;
+        }
+
+        /* Grid layout for test sections */
+        .test-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        @media (max-width: 768px) {
+            .test-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .test-controls {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🥇 Gold Server API & Test Merkezi</h1>
+            <p>Gerçek zamanlı altın ve döviz fiyat verilerine erişim - Canlı test özellikleri ile</p>
+            <a href="/downloads/Gold_Server_API.postman_collection.json" class="download-btn" download>
+                📁 Postman Collection İndir
+            </a>
+        </div>
+
+        <!-- Global Token Section -->
+        <div class="token-section">
+            <h3>🔑 API Token Ayarları</h3>
+            <p>Tüm API ve WebSocket testleri için token girin:</p>
+            <div class="token-input-group">
+                <input type="text" id="globalToken" class="token-input" placeholder="sk_xxxxxxxxxxxxxxxx..." />
+                <button class="token-btn" onclick="saveGlobalToken()">Token Kaydet</button>
+                <button class="token-btn" onclick="clearGlobalToken()" style="background: #dc3545;">Temizle</button>
+            </div>
+            <div id="tokenStatus" style="margin-top: 10px; font-size: 14px;"></div>
+        </div>
+
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="showTab('overview', event)">Genel Bakış</button>
+            <button class="nav-tab" onclick="showTab('api-test', event)">API Test</button>
+            <button class="nav-tab" onclick="showTab('websocket-test', event)">WebSocket Test</button>
+            <button class="nav-tab" onclick="showTab('api-docs', event)">API Dokümantasyon</button>
+            <button class="nav-tab" onclick="showTab('examples', event)">Kod Örnekleri</button>
+        </div>
+
+        <div class="content-area">
+            <!-- OVERVIEW TAB -->
+            <div id="overview" class="tab-content active">
+                <div class="section">
+                    <h2>📖 Genel Bilgiler</h2>
+                    <p>Gold Server API, gerçek zamanlı altın ve döviz fiyat verilerine programatik erişim sağlar. Bu dokümantasyon sayfası hem bilgi hem de canlı test özellikleri sunar.</p>
+                    
+                    <h3>🎯 Özellikler</h3>
+                    <div class="info-box">
+                        <strong>Bu sayfada yapabilecekleriniz:</strong>
+                        <ul style="margin-top: 10px;">
+                            <li>✅ <strong>Canlı API Testleri:</strong> Tüm endpoint'leri gerçek verilerle test edin</li>
+                            <li>✅ <strong>WebSocket Test:</strong> Gerçek zamanlı veri akışını canlı izleyin</li>
+                            <li>✅ <strong>Token Doğrulama:</strong> API token'ınızı anında doğrulayın</li>
+                            <li>✅ <strong>Postman Entegrasyonu:</strong> Hazır collection ile hızlı başlangıç</li>
+                            <li>✅ <strong>Kod Örnekleri:</strong> Python, JavaScript, cURL örnekleri</li>
+                        </ul>
+                    </div>
+
+                    <h3>📦 Postman Collection</h3>
+                    <div class="example-box">
+                        <p><strong>Hızlı Başlangıç:</strong> API'yi test etmek için hazır Postman collection'ımızı indirin:</p>
+                        <ul style="margin-top: 10px;">
+                            <li>📂 <strong>8 Kategori:</strong> System, Current Prices, Symbols, Price History, Sources, WebSocket, Error Examples</li>
+                            <li>🔧 <strong>20+ Hazır İstek:</strong> Tüm endpoint'ler test edilebilir durumda</li>
+                            <li>🔐 <strong>Bearer Token:</strong> Otomatik authentication</li>
+                            <li>⚙️ <strong>Değişken Sistem:</strong> base_url ve api_token değişkenleri</li>
+                            <li>❌ <strong>Hata Örnekleri:</strong> 401, 404 gibi hata durumları</li>
+                        </ul>
+                    </div>
+
+                    <h3>📊 Mevcut Veri Kaynakları</h3>
+                    <div class="channel-list">
+                        {{#each sources}}
+                        <div class="channel-card">
+                            <h4>{{displayName}}</h4>
+                            <p>{{description}}</p>
+                            <small>
+                                {{#if isActive}}
+                                    <span style="color: #28a745;">✅ Aktif</span>
+                                {{else}}
+                                    <span style="color: #dc3545;">❌ Pasif</span>
+                                {{/if}} Kod: {{name}}
+                            </small>
+                        </div>
+                        {{/each}}
+                        {{#unless sources}}
+                        <div class="channel-card">
+                            <h4>Veri Yükleniyor...</h4>
+                            <p>Kaynak bilgileri yükleniyor, lütfen bekleyin.</p>
+                        </div>
+                        {{/unless}}
+                    </div>
+
+                    <h3>⚡ Sistem Bilgileri</h3>
+                    <div class="test-grid">
+                        <div class="test-panel">
+                            <h4>API Durumu</h4>
+                            <button class="test-btn" onclick="checkApiStatus()">API Durumunu Kontrol Et</button>
+                            <div id="apiStatusResult" class="test-result" style="display:none;"></div>
+                        </div>
+                        <div class="test-panel">
+                            <h4>Token Doğrulama</h4>
+                            <button class="test-btn" onclick="validateToken()">Token'ı Doğrula</button>
+                            <div id="tokenValidationResult" class="test-result" style="display:none;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- API TEST TAB -->
+            <div id="api-test" class="tab-content">
+                <div class="section">
+                    <h2>🧪 Canlı API Testleri</h2>
+                    <p>Aşağıdaki testlerle API endpoint'lerini gerçek verilerle deneyebilirsiniz.</p>
+
+                    <h3>📈 Güncel Fiyat Testleri</h3>
+                    <div class="test-grid">
+                        <div class="test-panel">
+                            <h4>Tüm Güncel Fiyatlar</h4>
+                            <p>Tüm kaynaklardan mevcut tüm fiyatları getirir</p>
+                            <button class="test-btn" onclick="testAllCurrentPrices()">Test Et</button>
+                            <div id="allPricesResult" class="test-result" style="display:none;"></div>
+                        </div>
+                        
+                                                 <div class="test-panel">
+                             <h4>Kaynak Bazlı Fiyatlar</h4>
+                             <p>Belirli bir kaynaktan fiyatları getirir</p>
+                             <select id="sourceSelect" class="test-input" style="margin-bottom: 10px;">
+                                 {{#each sourceNames}}
+                                 <option value="{{this}}">{{this}}</option>
+                                 {{/each}}
+                                 {{#unless sourceNames}}
+                                 <option value="altinkaynak">AltınKaynak</option>
+                                 <option value="haremgold">HaremGold</option>
+                                 <option value="tcmb">TCMB</option>
+                                 {{/unless}}
+                             </select>
+                             <button class="test-btn" onclick="testSourcePrices()">Test Et</button>
+                             <div id="sourcePricesResult" class="test-result" style="display:none;"></div>
+                         </div>
+                    </div>
+
+                    <div class="test-grid">
+                                                 <div class="test-panel">
+                             <h4>Kaynak + Sembol Fiyatları</h4>
+                             <p>Belirli kaynaktan belirli sembol fiyatını getirir</p>
+                             <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                                 <select id="sourceCurrencySource" class="test-input" style="flex: 1;" onchange="updateSourceSymbolOptions()">
+                                     <option value="">Kaynak seçin</option>
+                                     {{#each sourceCurrencies}}
+                                     <option value="{{source}}" data-symbols="{{#each symbols}}{{this}}{{#unless @last}},{{/unless}}{{/each}}">{{source}} ({{symbol_count}} sembol)</option>
+                                     {{/each}}
+                                     {{#unless sourceCurrencies}}
+                                     <option value="altinkaynak">AltınKaynak</option>
+                                     <option value="tcmb">TCMB</option>
+                                     {{/unless}}
+                                 </select>
+                                 <select id="sourceSymbolSelect" class="test-input" style="flex: 1;">
+                                     <option value="">Önce kaynak seçin</option>
+                                 </select>
+                             </div>
+                             <button class="test-btn" onclick="testSourceSymbolPrice()">Test Et</button>
+                             <div id="sourceCurrencyResult" class="test-result" style="display:none;"></div>
+                         </div>
+                        
+                                                 <div class="test-panel">
+                             <h4>Sembol Fiyatları</h4>
+                             <p>Belirli sembole ait güncel fiyat</p>
+                             <select id="symbolSelect" class="test-input" style="margin-bottom: 10px;">
+                                 {{#each symbols}}
+                                 <option value="{{this}}">{{this}}</option>
+                                 {{/each}}
+                                 {{#unless symbols}}
+                                 <option value="USD/TRY">USD/TRY</option>
+                                 <option value="EUR/TRY">EUR/TRY</option>
+                                 <option value="HAS/TRY">HAS/TRY</option>
+                                 {{/unless}}
+                             </select>
+                             <button class="test-btn" onclick="testSymbolPrice()">Test Et</button>
+                             <div id="symbolPriceResult" class="test-result" style="display:none;"></div>
+                         </div>
+                    </div>
+
+                    <h3>📊 Sembol ve Kaynak Testleri</h3>
+                    <div class="test-grid">
+                        <div class="test-panel">
+                            <h4>Tüm Semboller</h4>
+                            <p>Aktif tüm sembolleri listeler</p>
+                            <button class="test-btn" onclick="testAllSymbols()">Test Et</button>
+                            <div id="allSymbolsResult" class="test-result" style="display:none;"></div>
+                        </div>
+                        
+                                                 <div class="test-panel">
+                             <h4>Kaynak Sembolleri</h4>
+                             <p>Belirli kaynağın sembollerini listeler</p>
+                             <select id="symbolSourceSelect" class="test-input" style="margin-bottom: 10px;">
+                                 {{#each sourceNames}}
+                                 <option value="{{this}}">{{this}}</option>
+                                 {{/each}}
+                                 {{#unless sourceNames}}
+                                 <option value="altinkaynak">AltınKaynak</option>
+                                 <option value="haremgold">HaremGold</option>
+                                 <option value="tcmb">TCMB</option>
+                                 {{/unless}}
+                             </select>
+                             <button class="test-btn" onclick="testSourceSymbols()">Test Et</button>
+                             <div id="sourceSymbolsResult" class="test-result" style="display:none;"></div>
+                         </div>
+                    </div>
+
+                    <h3>📈 Fiyat Geçmişi Testleri</h3>
+                    <div class="test-panel">
+                        <h4>Sembol Bazlı Fiyat Geçmişi (Yeni Endpoint)</h4>
+                        <p>Akıllı gruplama ve süre sınırları ile fiyat geçmişi</p>
+                                                 <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 10px;">
+                             <select id="historySymbol" class="test-input">
+                                 {{#each symbols}}
+                                 <option value="{{this}}">{{this}}</option>
+                                 {{/each}}
+                                 {{#unless symbols}}
+                                 <option value="USD/TRY">USD/TRY</option>
+                                 <option value="EUR/TRY">EUR/TRY</option>
+                                 <option value="HAS/TRY">HAS/TRY</option>
+                                 {{/unless}}
+                             </select>
+                             <select id="historyGroupBy" class="test-input">
+                                 <option value="hour">Saatlik</option>
+                                 <option value="day">Günlük</option>
+                                 <option value="none">Ham Veri</option>
+                             </select>
+                             <input type="number" id="historyDays" class="test-input" placeholder="Gün sayısı" value="7" min="1" max="365">
+                             <select id="historySource" class="test-input">
+                                 <option value="">Tüm Kaynaklar</option>
+                                 {{#each sourceNames}}
+                                 <option value="{{this}}">{{this}}</option>
+                                 {{/each}}
+                                 {{#unless sourceNames}}
+                                 <option value="altinkaynak">AltınKaynak</option>
+                                 <option value="tcmb">TCMB</option>
+                                 {{/unless}}
+                             </select>
+                         </div>
+                        <button class="test-btn" onclick="testPriceHistory()">Test Et</button>
+                        <div id="priceHistoryResult" class="test-result" style="display:none;"></div>
+                    </div>
+
+                    <h3>🔧 Sistem Testleri</h3>
+                    <div class="test-grid">
+                        <div class="test-panel">
+                            <h4>Veri Kaynakları</h4>
+                            <p>Mevcut tüm veri kaynaklarını listeler</p>
+                            <button class="test-btn" onclick="testSources()">Test Et</button>
+                            <div id="sourcesResult" class="test-result" style="display:none;"></div>
+                        </div>
+                        
+                        <div class="test-panel">
+                            <h4>WebSocket Bilgileri</h4>
+                            <p>WebSocket bağlantı bilgileri ve kanalları</p>
+                            <button class="test-btn" onclick="testWebSocketInfo()">Test Et</button>
+                            <div id="websocketInfoResult" class="test-result" style="display:none;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- WEBSOCKET TEST TAB -->
+            <div id="websocket-test" class="tab-content">
+                <div class="section">
+                    <h2>⚡ Canlı WebSocket Testi</h2>
+                    <p>Gerçek zamanlı veri akışını test edin ve izleyin.</p>
+
+                    <div class="test-panel">
+                        <h3>🔗 WebSocket Bağlantısı</h3>
+                        <div class="test-controls">
+                            <div></div> <!-- Empty div for grid -->
+                            <div style="display: flex; gap: 10px;">
+                                <button id="wsConnectBtn" class="test-btn" onclick="connectWebSocket()">Bağlan</button>
+                                <button id="wsDisconnectBtn" class="test-btn" onclick="disconnectWebSocket()" style="background: #dc3545; display: none;">Bağlantıyı Kes</button>
+                            </div>
+                        </div>
+                        <div id="wsStatus" class="ws-status disconnected">WebSocket: Bağlantı Bekleniyor</div>
+                    </div>
+
+                    <div class="test-panel" id="wsChannelPanel" style="display: none;">
+                        <h3>📡 Kanal Abonelikleri</h3>
+                        <p>Abone olmak istediğiniz kanalları seçin:</p>
+                                                 <div class="channel-buttons">
+                             {{#each websocketChannels}}
+                             {{#if (eq this 'price')}}
+                             <button class="channel-btn" data-channel="{{this}}" onclick="toggleChannel('{{this}}')">🏷️ Fiyat Güncellemeleri</button>
+                             {{else if (eq this 'alerts')}}
+                             <button class="channel-btn" data-channel="{{this}}" onclick="toggleChannel('{{this}}')">⚠️ Anomali Uyarıları</button>
+                             {{else if (eq this 'system')}}
+                             <button class="channel-btn" data-channel="{{this}}" onclick="toggleChannel('{{this}}')">🔧 Sistem Mesajları</button>
+                             {{else if (eq this 'altinkaynak')}}
+                             <button class="channel-btn" data-channel="{{this}}" onclick="toggleChannel('{{this}}')">🥇 AltınKaynak</button>
+                             {{else if (eq this 'haremgold')}}
+                             <button class="channel-btn" data-channel="{{this}}" onclick="toggleChannel('{{this}}')">💰 HaremGold</button>
+                             {{else if (eq this 'hakangold')}}
+                             <button class="channel-btn" data-channel="{{this}}" onclick="toggleChannel('{{this}}')">🏆 HakanGold</button>
+                             {{else if (eq this 'tcmb')}}
+                             <button class="channel-btn" data-channel="{{this}}" onclick="toggleChannel('{{this}}')">🏛️ TCMB</button>
+                             {{else if (eq this 'haremgoldweb')}}
+                             <button class="channel-btn" data-channel="{{this}}" onclick="toggleChannel('{{this}}')">🌐 HaremGoldWeb</button>
+                             {{else}}
+                             <button class="channel-btn" data-channel="{{this}}" onclick="toggleChannel('{{this}}')">📡 {{this}}</button>
+                             {{/if}}
+                             {{/each}}
+                             {{#unless websocketChannels}}
+                             <button class="channel-btn" data-channel="price" onclick="toggleChannel('price')">🏷️ Fiyat Güncellemeleri</button>
+                             <button class="channel-btn" data-channel="alerts" onclick="toggleChannel('alerts')">⚠️ Anomali Uyarıları</button>
+                             <button class="channel-btn" data-channel="system" onclick="toggleChannel('system')">🔧 Sistem Mesajları</button>
+                             <button class="channel-btn" data-channel="altinkaynak" onclick="toggleChannel('altinkaynak')">🥇 AltınKaynak</button>
+                             <button class="channel-btn" data-channel="haremgoldweb" onclick="toggleChannel('haremgoldweb')">🌐 HaremGoldWeb</button>
+                             {{/unless}}
+                         </div>
+                    </div>
+
+                    <div class="test-panel" id="wsMessagesPanel" style="display: none;">
+                        <h3>📨 Canlı Mesajlar</h3>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                            <span>Son mesajlar (en yeni üstte):</span>
+                            <button class="test-btn" onclick="clearWebSocketMessages()" style="padding: 5px 10px; font-size: 12px;">Temizle</button>
+                        </div>
+                        <div id="wsMessages" class="ws-messages">
+                            <p style="color: #6c757d; text-align: center; padding: 20px;">Henüz mesaj yok. Kanallara abone olun ve mesajları bekleyin.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- API DOCS TAB -->
+            <div id="api-docs" class="tab-content">
+                <div class="section">
+                    <h2>📚 API Dokümantasyonu</h2>
+                    
+                    <h3>🔐 Authentication</h3>
+                    <div class="code-block">
+                        <pre><code class="language-bash"># Header ile
+Authorization: Bearer YOUR_TOKEN_HERE
+
+# Query parameter ile  
+GET /api/prices/current?token=YOUR_TOKEN_HERE</code></pre>
+                    </div>
+
+                    <h3>🌐 Temel Endpoint'ler</h3>
+                    
+                    <div class="endpoint">
+                        <span class="method get">GET</span> <strong>/api/info</strong>
+                        <p>API hakkında genel bilgi ve mevcut endpoint listesi (Token gerektirmez)</p>
+                    </div>
+
+                    <div class="endpoint">
+                        <span class="method get">GET</span> <strong>/api/ping</strong>
+                        <p>Sunucu sağlık kontrolü (Token gerektirmez)</p>
+                    </div>
+
+                    <div class="endpoint">
+                        <span class="method get">GET</span> <strong>/api/token/validate</strong>
+                        <p>Token geçerliliğini ve bilgilerini kontrol eder</p>
+                    </div>
+
+                    <h3>💰 Güncel Fiyat Endpoint'leri</h3>
+                    
+                    <div class="endpoint">
+                        <span class="method get">GET</span> <strong>/api/prices/current</strong>
+                        <p>Tüm kaynaklardan tüm güncel fiyat verilerini getirir</p>
+                        <div class="info-box">
+                            <strong>Yeni:</strong> Bu endpoint artık tüm kaynaklardan tüm fiyatları getirir. Herhangi bir filtre parametresi gerektirmez.
+                        </div>
+                    </div>
+
+                    <div class="endpoint">
+                        <span class="method get">GET</span> <strong>/api/prices/current/{source}</strong>
+                        <p>Belirli bir kaynaktan güncel fiyatları getirir</p>
+                        <div class="example-box">
+                            <strong>Örnekler:</strong><br>
+                            <code>GET /api/prices/current/altinkaynak</code><br>
+                            <code>GET /api/prices/current/haremgold</code><br>
+                            <code>GET /api/prices/current/tcmb</code>
+                        </div>
+                    </div>
+
+                    <div class="endpoint">
+                        <span class="method get">GET</span> <strong>/api/prices/current/{source}/{currency}</strong>
+                        <p>Belirli kaynak ve para biriminden güncel fiyatı getirir</p>
+                        <div class="example-box">
+                            <strong>Örnekler:</strong><br>
+                            <code>GET /api/prices/current/altinkaynak/TRY</code><br>
+                            <code>GET /api/prices/current/tcmb/USD</code>
+                        </div>
+                    </div>
+
+                    <div class="endpoint">
+                        <span class="method get">GET</span> <strong>/api/prices/current/{symbol}</strong>
+                        <p>Belirli sembol için güncel fiyat (URL encode gerekli: / → %2F)</p>
+                        <div class="example-box">
+                            <strong>Örnekler:</strong><br>
+                            <code>GET /api/prices/current/USD%2FTRY</code><br>
+                            <code>GET /api/prices/current/HAS%2FTRY</code>
+                        </div>
+                    </div>
+
+                    <h3>🏷️ Sembol Endpoint'leri</h3>
+
+                    <div class="endpoint">
+                        <span class="method get">GET</span> <strong>/api/prices/symbols</strong>
+                        <p>Aktif sembol listesini getirir</p>
+                        
+                        <h4>Query Parametreleri</h4>
+                        <table class="param-table">
+                            <tr><th>Parametre</th><th>Tip</th><th>Açıklama</th></tr>
+                            <tr><td>source</td><td>string</td><td>Kaynak filtresi (opsiyonel)</td></tr>
+                        </table>
+                    </div>
+
+                    <h3>📈 Fiyat Geçmişi Endpoint'leri</h3>
+
+                    <div class="endpoint">
+                        <span class="method get">GET</span> <strong>/api/prices/history/{symbol}</strong>
+                        <p>Sembol bazlı fiyat geçmişi - Akıllı gruplama ve süre sınırları</p>
+                        
+                        <div class="info-box">
+                            <strong>Yeni Özellikler:</strong>
+                            <ul>
+                                <li>✅ <strong>Akıllı Gruplama:</strong> Saatlik, günlük ortalamalar veya ham veri</li>
+                                <li>✅ <strong>Esnek Süre Sınırları:</strong> Günlük gruplama için 1 yıl, saatlik için 30 gün</li>
+                                <li>✅ <strong>Source İsteğe Bağlı:</strong> Kaynak filtrelemesi opsiyonel</li>
+                            </ul>
+                        </div>
+                        
+                        <h4>Path Parametreleri</h4>
+                        <table class="param-table">
+                            <tr><th>Parametre</th><th>Tip</th><th>Zorunlu</th><th>Açıklama</th></tr>
+                            <tr><td>symbol</td><td>string</td><td>✓</td><td>Fiyat sembolü (USD/TRY, HAS/TRY, EUR/TRY vb.) - URL encode gerekli</td></tr>
+                        </table>
+
+                        <h4>Query Parametreleri</h4>
+                        <table class="param-table">
+                            <tr><th>Parametre</th><th>Tip</th><th>Varsayılan</th><th>Açıklama</th></tr>
+                            <tr><td>groupBy</td><td>string</td><td>hour</td><td>Gruplama tipi: <code>hour</code>, <code>day</code>, <code>none</code></td></tr>
+                            <tr><td>startDate</td><td>date</td><td>auto</td><td>Başlangıç tarihi (YYYY-MM-DD)</td></tr>
+                            <tr><td>endDate</td><td>date</td><td>auto</td><td>Bitiş tarihi (YYYY-MM-DD)</td></tr>
+                            <tr><td>source</td><td>string</td><td>-</td><td>Kaynak filtresi (opsiyonel)</td></tr>
+                            <tr><td>limit</td><td>number</td><td>100</td><td>Kayıt sayısı limiti</td></tr>
+                        </table>
+
+                        <h4>📊 Gruplama Sınırları</h4>
+                        <table class="param-table">
+                            <tr><th>Gruplama</th><th>Açıklama</th><th>Max Süre</th><th>Varsayılan</th></tr>
+                            <tr><td><code>hour</code></td><td>Saatlik ortalamalar</td><td>30 gün</td><td>Son 24 saat</td></tr>
+                            <tr><td><code>day</code></td><td>Günlük ortalamalar</td><td>1 yıl (365 gün)</td><td>Son 7 gün</td></tr>
+                            <tr><td><code>none</code></td><td>Ham veri noktaları</td><td>30 gün</td><td>Son 24 saat</td></tr>
+                        </table>
+                        
+                        <div class="example-box">
+                            <strong>Örnekler:</strong><br>
+                            <code>GET /api/prices/history/USD%2FTRY</code> (Son 24 saatin saatlik ortalaması)<br>
+                            <code>GET /api/prices/history/HAS%2FTRY?groupBy=day&startDate=2025-01-01&endDate=2025-07-24</code><br>
+                            <code>GET /api/prices/history/EUR%2FTRY?groupBy=none&source=tcmb&limit=50</code>
+                        </div>
+                    </div>
+
+                    <h3>🔧 Sistem Endpoint'leri</h3>
+
+                    <div class="endpoint">
+                        <span class="method get">GET</span> <strong>/api/sources</strong>
+                        <p>Mevcut veri kaynaklarının listesi</p>
+                    </div>
+
+                    <div class="endpoint">
+                        <span class="method get">GET</span> <strong>/api/websocket/info</strong>
+                        <p>WebSocket bağlantı bilgileri ve mevcut kanallar</p>
+                    </div>
+
+                    <h3>📊 HTTP Status Kodları</h3>
+                    <div class="code-block">
+                        <pre><code class="language-plaintext"><span class="status-code status-200">200</span> Başarılı işlem
+<span class="status-code status-401">401</span> Token gerekli veya geçersiz
+<span class="status-code status-403">403</span> Yetersiz yetki
+<span class="status-code status-404">404</span> Bulunamadı
+<span class="status-code">429</span> Rate limit aşıldı
+<span class="status-code">500</span> Sunucu hatası</code></pre>
+                    </div>
+
+                    <h3>⚡ WebSocket Dokümantasyonu</h3>
+                    
+                    <h4>Bağlantı</h4>
+                    <div class="code-block">
+                        <pre><code class="language-plaintext">ws://your-domain.com?token=YOUR_TOKEN_HERE</code></pre>
+                    </div>
+
+                                         <h4>📡 Mevcut Kanallar</h4>
+                     <div class="channel-list">
+                         <div class="channel-card">
+                             <h4>price</h4>
+                             <p>Tüm fiyat güncellemeleri</p>
+                         </div>
+                         <div class="channel-card">
+                             <h4>alerts</h4>
+                             <p>Fiyat anomalileri ve uyarılar</p>
+                         </div>
+                         <div class="channel-card">
+                             <h4>system</h4>
+                             <p>Sistem komutları ve duyurular</p>
+                         </div>
+                         {{#each sources}}
+                         {{#if isActive}}
+                         <div class="channel-card">
+                             <h4>{{name}}</h4>
+                             <p>{{description}}</p>
+                         </div>
+                         {{/if}}
+                         {{/each}}
+                     </div>
+
+                    <h4>📤 Client Events</h4>
+                    <div class="code-block">
+                        <pre><code class="language-javascript">// Kanala abone ol
+socket.emit('subscribe', 'price');
+
+// Kanaldan ayrıl
+socket.emit('unsubscribe', 'price');</code></pre>
+                    </div>
+
+                    <h4>📥 Server Events</h4>
+                    <div class="code-block">
+                        <pre><code class="language-javascript">// Fiyat güncellemesi
+socket.on('price_update', (data) => {
+    console.log('Fiyat güncellendi:', data);
+});
+
+// Anomali uyarısı  
+socket.on('anomaly_alert', (data) => {
+    console.log('Anomali tespit edildi:', data);
+});
+
+// Sistem mesajları
+socket.on('system_command', (data) => {
+    console.log('Sistem komutu:', data);
+});</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- EXAMPLES TAB -->
+            <div id="examples" class="tab-content">
+                <div class="section">
+                    <h2>💻 Kod Örnekleri</h2>
+
+                    <h3>JavaScript - REST API</h3>
+                    <div class="code-block">
+                        <pre><code class="language-javascript">// Base API sınıfı
+class GoldServerAPI {
+    constructor(baseUrl, token) {
+        this.baseUrl = baseUrl;
+        this.headers = {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        };
+    }
+
+    async request(endpoint) {
+        const response = await fetch(`${this.baseUrl}${endpoint}`, {
+            headers: this.headers
+        });
+        
+        if (!response.ok) {
+            throw new Error(`API Error: ${response.status} - ${response.statusText}`);
+        }
+        
+        return response.json();
+    }
+
+    // Tüm güncel fiyatları getir
+    async getAllCurrentPrices() {
+        return this.request('/api/prices/current');
+    }
+
+    // Kaynak bazlı fiyatları getir
+    async getSourcePrices(source) {
+        return this.request(`/api/prices/current/${source}`);
+    }
+
+    // Kaynak + para birimi fiyatları
+    async getSourceCurrencyPrices(source, currency) {
+        return this.request(`/api/prices/current/${source}/${currency}`);
+    }
+
+    // Sembol fiyatı
+    async getSymbolPrice(symbol) {
+        const encodedSymbol = encodeURIComponent(symbol);
+        return this.request(`/api/prices/current/${encodedSymbol}`);
+    }
+
+    // Fiyat geçmişi (yeni endpoint)
+    async getPriceHistory(symbol, options = {}) {
+        const encodedSymbol = encodeURIComponent(symbol);
+        const params = new URLSearchParams();
+        
+        if (options.groupBy) params.append('groupBy', options.groupBy);
+        if (options.startDate) params.append('startDate', options.startDate);
+        if (options.endDate) params.append('endDate', options.endDate);
+        if (options.source) params.append('source', options.source);
+        if (options.limit) params.append('limit', options.limit);
+        
+        const queryString = params.toString();
+        return this.request(`/api/prices/history/${encodedSymbol}${queryString ? '?' + queryString : ''}`);
+    }
+
+    // Semboller
+    async getSymbols(source = null) {
+        const endpoint = source ? `/api/prices/symbols?source=${source}` : '/api/prices/symbols';
+        return this.request(endpoint);
+    }
+
+    // Kaynaklar
+    async getSources() {
+        return this.request('/api/sources');
+    }
+}
+
+// Kullanım örnekleri
+const api = new GoldServerAPI('http://localhost:6701', 'YOUR_TOKEN_HERE');
+
+// Örnekler
+async function examples() {
+    try {
+        // Tüm güncel fiyatlar
+        const allPrices = await api.getAllCurrentPrices();
+        console.log('Tüm fiyatlar:', allPrices.data);
+
+        // AltınKaynak TRY fiyatları
+        const altinkaynakTry = await api.getSourceCurrencyPrices('altinkaynak', 'TRY');
+        console.log('AltınKaynak TRY:', altinkaynakTry.data);
+
+        // USD/TRY günlük geçmiş (son 30 gün)
+        const usdHistory = await api.getPriceHistory('USD/TRY', {
+            groupBy: 'day',
+            startDate: '2025-06-24',
+            endDate: '2025-07-24'
+        });
+        console.log('USD/TRY geçmişi:', usdHistory.data);
+
+    } catch (error) {
+        console.error('API Hatası:', error.message);
+    }
+}
+
+examples();</code></pre>
+                    </div>
+
+                    <h3>JavaScript - WebSocket</h3>
+                    <div class="code-block">
+                        <pre><code class="language-javascript">// WebSocket sınıfı
+class GoldServerSocket {
+    constructor(url, token) {
+        this.socket = io(url, {
+            query: { token: token }
+        });
+        
+        this.setupEventHandlers();
+    }
+    
+    setupEventHandlers() {
+        // Bağlantı kuruldu
+        this.socket.on('welcome', (data) => {
+            console.log('✅ Bağlantı kuruldu:', data.message);
+            console.log('📡 Mevcut kanallar:', data.channels);
+            
+            // Otomatik olarak price kanalına abone ol
+            this.subscribe('price');
+        });
+        
+        // Fiyat güncellemesi
+        this.socket.on('price_update', (data) => {
+            const price = data.data;
+            console.log(`💰 ${price.symbol}: ${price.buyPrice}/${price.sellPrice} (${price.source})`);
+            
+            // UI güncelleme
+            this.updatePriceDisplay(price);
+        });
+        
+        // Anomali uyarısı
+        this.socket.on('anomaly_alert', (data) => {
+            const alert = data.data;
+            console.warn(`⚠️ ANOMALİ: ${alert.symbol} - ${alert.anomaly?.reason || 'Bilinmeyen'}`);
+            
+            // Uyarı göster
+            this.showAlert(alert);
+        });
+        
+        // Abonelik başarılı
+        this.socket.on('subscription_success', (data) => {
+            console.log(`✅ ${data.channel} kanalına abone olundu`);
+        });
+        
+        // Abonelik hatası
+        this.socket.on('subscription_error', (data) => {
+            console.error(`❌ ${data.channel} abonelik hatası: ${data.error}`);
+        });
+        
+        // Bağlantı hatası
+        this.socket.on('connect_error', (error) => {
+            console.error('❌ Bağlantı hatası:', error.message);
+        });
+    }
+    
+    subscribe(channel) {
+        this.socket.emit('subscribe',channel );
+    }
+    
+    unsubscribe(channel) {
+        this.socket.emit('unsubscribe', channel);
+    }
+    
+    updatePriceDisplay(price) {
+        // DOM güncelleme işlemleri
+        const element = document.getElementById(`price-${price.symbol.replace('/', '-')}`);
+        if (element) {
+            element.innerHTML = `
+                <div class="price-card">
+                    <h4>${price.symbol}</h4>
+                    <p>Alış: ${price.buyPrice} ${price.currency}</p>
+                    <p>Satış: ${price.sellPrice} ${price.currency}</p>
+                    <small>Kaynak: ${price.source}</small>
+                </div>
+            `;
+        }
+    }
+    
+    showAlert(alert) {
+        // Uyarı gösterme işlemleri
+        console.warn('Anomali:', alert);
+    }
+}
+
+// Kullanım
+const goldSocket = new GoldServerSocket('ws://localhost:6701', 'YOUR_TOKEN_HERE');
+
+// 2 saniye sonra ek kanallara abone ol
+setTimeout(() => {
+    goldSocket.subscribe('altinkaynak');
+    goldSocket.subscribe('alerts');
+    goldSocket.subscribe('system');
+}, 2000);</code></pre>
+                    </div>
+
+                    <h3>Python - REST API</h3>
+                    <div class="code-block">
+                        <pre><code class="language-python">import requests
+import json
+from datetime import datetime, timedelta
+from urllib.parse import quote
+
+class GoldServerAPI:
+    def __init__(self, base_url, token):
+        self.base_url = base_url
+        self.headers = {
+            'Authorization': f'Bearer {token}',
+            'Content-Type': 'application/json'
+        }
+    
+    def _request(self, endpoint):
+        """Temel istek metodu"""
+        url = f"{self.base_url}{endpoint}"
+        response = requests.get(url, headers=self.headers)
+        
+        if response.status_code == 200:
+            return response.json()
+        else:
+            raise Exception(f"API Error: {response.status_code} - {response.text}")
+    
+    def get_all_current_prices(self):
+        """Tüm kaynaklardan güncel fiyatları getirir"""
+        return self._request('/api/prices/current')
+    
+    def get_source_prices(self, source):
+        """Belirli kaynaktan fiyatları getirir"""
+        return self._request(f'/api/prices/current/{source}')
+    
+    def get_source_currency_prices(self, source, currency):
+        """Belirli kaynak ve para biriminden fiyatları getirir"""
+        return self._request(f'/api/prices/current/{source}/{currency}')
+    
+    def get_symbol_price(self, symbol):
+        """Belirli sembol için güncel fiyat"""
+        encoded_symbol = quote(symbol, safe='')
+        return self._request(f'/api/prices/current/{encoded_symbol}')
+    
+    def get_symbol_history(self, symbol, group_by='hour', days=7, source=None, limit=100):
+        """Symbol-based fiyat geçmişi (YENİ - gruplama destekli)"""
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=days)
+        
+        # URL encode symbol
+        encoded_symbol = quote(symbol, safe='')
+        
+        params = {
+            'groupBy': group_by,
+            'startDate': start_date.strftime('%Y-%m-%d'),
+            'endDate': end_date.strftime('%Y-%m-%d'),
+            'limit': limit
+        }
+        
+        if source:
+            params['source'] = source
+        
+        # Parametreleri URL'e ekle
+        param_str = '&'.join([f"{k}={v}" for k, v in params.items()])
+        endpoint = f'/api/prices/history/{encoded_symbol}?{param_str}'
+        
+        return self._request(endpoint)
+    
+    def get_symbols(self, source=None):
+        """Sembolleri getirir"""
+        endpoint = '/api/prices/symbols'
+        if source:
+            endpoint += f'?source={source}'
+        return self._request(endpoint)
+    
+    def get_sources(self):
+        """Mevcut kaynakları getirir"""
+        return self._request('/api/sources')
+    
+    def validate_token(self):
+        """Token geçerliliğini kontrol eder"""
+        return self._request('/api/token/validate')
+
+# Kullanım örnekleri
+def main():
+    api = GoldServerAPI('http://localhost:6701', 'YOUR_TOKEN_HERE')
+    
+    try:
+        # Token doğrulama
+        token_info = api.validate_token()
+        print(f"\n📊 Token geçerli: {token_info['data']['user']}")
+        
+        # Tüm güncel fiyatlar
+        all_prices = api.get_all_current_prices()
+        print(f"\n📊 Toplam {all_prices['count']} fiyat verisi bulundu")
+        
+        # İlk 3 fiyatı göster
+        for price in all_prices['data'][:3]:
+            print(f"  {price['symbol']}: {price['buyPrice']}/{price['sellPrice']} ({price['source']})")
+        
+        # AltınKaynak TRY fiyatları
+        altinkaynak_try = api.get_source_currency_prices('altinkaynak', 'TRY')
+        print(f"\n🥇 AltınKaynak TRY fiyatları: {altinkaynak_try['count']} kayıt")
+        
+        # USD/TRY günlük geçmiş (son 30 gün)
+        usd_daily = api.get_symbol_history('USD/TRY', group_by='day', days=30)
+        print(f"\n💵 USD/TRY günlük geçmiş: {usd_daily['count']} kayıt")
+        
+        # HAS/TRY saatlik geçmiş (son 7 gün, sadece AltınKaynak)
+        has_hourly = api.get_symbol_history('HAS/TRY', group_by='hour', days=7, source='altinkaynak')
+        print(f"\n🏆 HAS/TRY saatlik geçmiş: {has_hourly['count']} kayıt")
+        
+        # Semboller
+        symbols = api.get_symbols()
+        print(f"\n🏷️ Toplam {len(symbols['data'])} sembol:")
+        print("  " + ", ".join(symbols['data'][:10]))  # İlk 10 sembol
+        
+        # TCMB sembolleri
+        tcmb_symbols = api.get_symbols('tcmb')
+        print(f"\n🏛️ TCMB sembolleri: {tcmb_symbols['data']}")
+        
+    except Exception as e:
+        print(f"❌ Hata: {e}")
+
+if __name__ == '__main__':
+    main()</code></pre>
+                    </div>
+
+                    <h3>cURL Örnekleri</h3>
+                    <div class="code-block">
+                        <pre><code class="language-bash"># Sistem durumu kontrolü (token gerektirmez)
+curl "http://localhost:6701/api/ping"
+
+# Token doğrulama
+curl -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+     "http://localhost:6701/api/token/validate"
+
+# Tüm güncel fiyatları çek
+curl -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+     "http://localhost:6701/api/prices/current"
+
+# AltınKaynak'tan fiyatları çek
+curl -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+     "http://localhost:6701/api/prices/current/altinkaynak"
+
+# TCMB'den USD kurlarını çek
+curl -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+     "http://localhost:6701/api/prices/current/tcmb/USD"
+
+# USD/TRY sembolü için güncel fiyat
+curl -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+     "http://localhost:6701/api/prices/current/USD%2FTRY"
+
+# Sembol listesi
+curl -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+     "http://localhost:6701/api/prices/symbols"
+
+# AltınKaynak sembolleri
+curl -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+     "http://localhost:6701/api/prices/symbols?source=altinkaynak"
+
+# USD/TRY günlük ortalamalar (son 30 gün)
+curl -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+     "http://localhost:6701/api/prices/history/USD%2FTRY?groupBy=day&startDate=2025-06-24&endDate=2025-07-24"
+
+# HAS/TRY saatlik ortalamalar (son 7 gün)
+curl -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+     "http://localhost:6701/api/prices/history/HAS%2FTRY?groupBy=hour&startDate=2025-07-17&source=altinkaynak"
+
+# EUR/TRY ham veriler (varsayılan: son 24 saat)
+curl -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+     "http://localhost:6701/api/prices/history/EUR%2FTRY?groupBy=none&limit=100"
+
+# Kaynakları listele
+curl -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+     "http://localhost:6701/api/sources"
+
+# WebSocket bilgileri
+curl -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+     "http://localhost:6701/api/websocket/info"</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>&copy; 2024 Gold Server API - Gerçek zamanlı altın ve döviz fiyat verileri</p>
+            <p>Bu dokümantasyon interaktif test özellikleri ile birlikte güncellenmiştir. <a href="/downloads/Gold_Server_API.postman_collection.json" download>Postman Collection</a>'ı indirerek daha detaylı testler yapabilirsiniz.</p>
+        </div>
+    </div>
+
+    <script>
+                 // Global variables
+         let globalToken = '';
+         let websocket = null;
+         let subscribedChannels = new Set();
+         
+         // Source-symbol mappings (passed from server)
+         const sourceSymbolMappings = {
+             {{#each sourceCurrencies}}
+             '{{source}}': [{{#each symbols}}'{{this}}'{{#unless @last}},{{/unless}}{{/each}}],
+             {{/each}}
+         };
+
+        // Token management
+        function saveGlobalToken() {
+            const token = document.getElementById('globalToken').value.trim();
+            if (token) {
+                globalToken = token;
+                localStorage.setItem('goldserver_token', token);
+                updateTokenStatus('Token kaydedildi ✅', 'success');
+                
+                // Test token validation
+                validateToken();
+            } else {
+                updateTokenStatus('Lütfen geçerli bir token girin', 'error');
+            }
+        }
+
+        function clearGlobalToken() {
+            globalToken = '';
+            document.getElementById('globalToken').value = '';
+            localStorage.removeItem('goldserver_token');
+            updateTokenStatus('Token temizlendi', 'info');
+        }
+
+        function updateTokenStatus(message, type) {
+            const statusEl = document.getElementById('tokenStatus');
+            statusEl.textContent = message;
+            statusEl.style.color = type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#6c757d';
+        }
+
+        // Load saved token on page load
+        window.addEventListener('load', () => {
+            const savedToken = localStorage.getItem('goldserver_token');
+            if (savedToken) {
+                globalToken = savedToken;
+                document.getElementById('globalToken').value = savedToken;
+                updateTokenStatus('Kaydedilmiş token yüklendi', 'success');
+            }
+        });
+
+        // Tab management
+        function showTab(tabId, event) {
+            // Hide all tab contents
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabContents.forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Remove active class from all tabs
+            const tabButtons = document.querySelectorAll('.nav-tab');
+            tabButtons.forEach(button => {
+                button.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabId).classList.add('active');
+            
+            // Add active class to clicked button if event exists
+            if (event && event.target) {
+                event.target.classList.add('active');
+            } else {
+                // If no event, find button by tabId and make it active
+                const activeButton = document.querySelector(`[onclick*="showTab('${tabId}'"]:not(script)`);
+                if (activeButton) {
+                    activeButton.classList.add('active');
+                }
+            }
+        }
+
+        // API request helper
+        async function makeApiRequest(endpoint, resultElementId) {
+            if (!globalToken) {
+                showResult(resultElementId, 'Hata: Önce token girin', 'error');
+                return;
+            }
+
+            const resultEl = document.getElementById(resultElementId);
+            resultEl.style.display = 'block';
+            resultEl.textContent = 'Yükleniyor...';
+            resultEl.className = 'test-result';
+
+            try {
+                const response = await fetch(endpoint, {
+                    headers: {
+                        'Authorization': `Bearer ${globalToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult(resultElementId, JSON.stringify(data, null, 2), 'success');
+                } else {
+                    showResult(resultElementId, `HTTP ${response.status}: ${JSON.stringify(data, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                showResult(resultElementId, `Network Error: ${error.message}`, 'error');
+            }
+        }
+
+                 function showResult(elementId, content, type) {
+             const resultEl = document.getElementById(elementId);
+             resultEl.style.display = 'block';
+             resultEl.textContent = content;
+             resultEl.className = `test-result ${type}`;
+         }
+         
+         // Update symbol options based on selected source
+         function updateSourceSymbolOptions() {
+             const sourceSelect = document.getElementById('sourceCurrencySource');
+             const symbolSelect = document.getElementById('sourceSymbolSelect');
+             const selectedSource = sourceSelect.value;
+             
+             // Clear current options
+             symbolSelect.innerHTML = '';
+             
+             if (!selectedSource) {
+                 symbolSelect.innerHTML = '<option value="">Önce kaynak seçin</option>';
+                 return;
+             }
+             
+             // Get symbols for selected source
+             const symbols = sourceSymbolMappings[selectedSource] || [];
+             
+             if (symbols.length === 0) {
+                 symbolSelect.innerHTML = '<option value="">Bu kaynak için sembol bulunamadı</option>';
+                 return;
+             }
+             
+             // Add symbol options
+             symbols.forEach(symbol => {
+                 const option = document.createElement('option');
+                 option.value = symbol;
+                 option.textContent = symbol;
+                 symbolSelect.appendChild(option);
+             });
+         }
+
+        // API test functions
+        async function checkApiStatus() {
+            try {
+                const response = await fetch('/api/ping');
+                const data = await response.json();
+                showResult('apiStatusResult', JSON.stringify(data, null, 2), 'success');
+            } catch (error) {
+                showResult('apiStatusResult', `Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function validateToken() {
+            await makeApiRequest('/api/token/validate', 'tokenValidationResult');
+        }
+
+        async function testAllCurrentPrices() {
+            await makeApiRequest('/api/prices/current', 'allPricesResult');
+        }
+
+        async function testSourcePrices() {
+            const source = document.getElementById('sourceSelect').value;
+            await makeApiRequest(`/api/prices/current/${source}`, 'sourcePricesResult');
+        }
+
+                 async function testSourceSymbolPrice() {
+             const source = document.getElementById('sourceCurrencySource').value;
+             const symbol = document.getElementById('sourceSymbolSelect').value;
+             
+             if (!source) {
+                 showResult('sourceCurrencyResult', 'Hata: Kaynak seçin', 'error');
+                 return;
+             }
+             
+             if (!symbol) {
+                 showResult('sourceCurrencyResult', 'Hata: Sembol seçin', 'error');
+                 return;
+             }
+             
+             const encodedSymbol = encodeURIComponent(symbol);
+             await makeApiRequest(`/api/prices/current/${encodedSymbol}?source=${source}`, 'sourceCurrencyResult');
+         }
+
+        async function testSymbolPrice() {
+            const symbol = document.getElementById('symbolSelect').value;
+            const encodedSymbol = encodeURIComponent(symbol);
+            await makeApiRequest(`/api/prices/current/${encodedSymbol}`, 'symbolPriceResult');
+        }
+
+        async function testAllSymbols() {
+            await makeApiRequest('/api/prices/symbols', 'allSymbolsResult');
+        }
+
+        async function testSourceSymbols() {
+            const source = document.getElementById('symbolSourceSelect').value;
+            await makeApiRequest(`/api/prices/symbols?source=${source}`, 'sourceSymbolsResult');
+        }
+
+        async function testPriceHistory() {
+            const symbol = document.getElementById('historySymbol').value;
+            const groupBy = document.getElementById('historyGroupBy').value;
+            const days = document.getElementById('historyDays').value;
+            const source = document.getElementById('historySource').value;
+            
+            const encodedSymbol = encodeURIComponent(symbol);
+            const endDate = new Date();
+            const startDate = new Date(endDate);
+            startDate.setDate(startDate.getDate() - parseInt(days));
+            
+            let endpoint = `/api/prices/history/${encodedSymbol}?groupBy=${groupBy}&startDate=${startDate.toISOString().split('T')[0]}&endDate=${endDate.toISOString().split('T')[0]}`;
+            
+            if (source) {
+                endpoint += `&source=${source}`;
+            }
+            
+            await makeApiRequest(endpoint, 'priceHistoryResult');
+        }
+
+        async function testSources() {
+            await makeApiRequest('/api/sources', 'sourcesResult');
+        }
+
+        async function testWebSocketInfo() {
+            await makeApiRequest('/api/websocket/info', 'websocketInfoResult');
+        }
+
+        // WebSocket functions
+        function connectWebSocket() {
+            if (!globalToken) {
+                updateWebSocketStatus('❌ Token gerekli', 'disconnected');
+                return;
+            }
+
+            if (websocket) {
+                websocket.disconnect();
+            }
+
+            updateWebSocketStatus('🔄 Bağlanıyor...', 'connecting');
+
+            websocket = io(window.location.origin, {
+                query: { token: globalToken }
+            });
+
+            websocket.on('connect', () => {
+                updateWebSocketStatus(`✅ Bağlandı - ID: ${websocket.id}`, 'connected');
+                document.getElementById('wsConnectBtn').style.display = 'none';
+                document.getElementById('wsDisconnectBtn').style.display = 'inline-block';
+                document.getElementById('wsChannelPanel').style.display = 'block';
+                document.getElementById('wsMessagesPanel').style.display = 'block';
+                
+                addWebSocketMessage('system', 'Sistem', 'WebSocket bağlantısı kuruldu', { id: websocket.id });
+            });
+
+            websocket.on('disconnect', () => {
+                updateWebSocketStatus('❌ Bağlantı kesildi', 'disconnected');
+                document.getElementById('wsConnectBtn').style.display = 'inline-block';
+                document.getElementById('wsDisconnectBtn').style.display = 'none';
+                document.getElementById('wsChannelPanel').style.display = 'none';
+                
+                // Clear subscribed channels
+                subscribedChannels.clear();
+                document.querySelectorAll('.channel-btn').forEach(btn => {
+                    btn.classList.remove('subscribed');
+                });
+                
+                addWebSocketMessage('system', 'Sistem', 'WebSocket bağlantısı kesildi', {});
+            });
+
+            websocket.on('connect_error', (error) => {
+                updateWebSocketStatus(`❌ Bağlantı hatası: ${error.message}`, 'disconnected');
+                addWebSocketMessage('system', 'Hata', 'Bağlantı hatası', { error: error.message });
+            });
+
+            websocket.on('welcome', (data) => {
+                addWebSocketMessage('system', 'Hoş Geldiniz', 'Sunucuya başarıyla bağlandınız', data);
+            });
+
+            websocket.on('price_update', (data) => {
+                const price = data.data;
+                const source = data.source || price.source || 'Bilinmeyen';
+                const title = `${price.symbol}: ${price.buyPrice}/${price.sellPrice} (${source})`;
+                addWebSocketMessage('price_update', 'Fiyat Güncelleme', title, data);
+            });
+
+            websocket.on('anomaly_alert', (data) => {
+                const alert = data.data;
+                const title = `ANOMALİ: ${alert.symbol} - ${alert.anomaly?.reason || 'Bilinmeyen'}`;
+                addWebSocketMessage('anomaly_alert', 'Anomali Uyarısı', title, data);
+            });
+
+            websocket.on('system_command', (data) => {
+                addWebSocketMessage('system', 'Sistem Komutu', `${data.type}: ${data.message}`, data);
+            });
+
+            websocket.on('subscription_success', (data) => {
+                addWebSocketMessage('system', 'Abonelik Başarılı', `${data.channel} kanalına abone olundu`, data);
+            });
+
+            websocket.on('subscription_error', (data) => {
+                addWebSocketMessage('system', 'Abonelik Hatası', `${data.channel}: ${data.error}`, data);
+            });
+        }
+
+        function disconnectWebSocket() {
+            if (websocket) {
+                websocket.disconnect();
+                websocket = null;
+            }
+        }
+
+        function updateWebSocketStatus(message, status) {
+            const statusEl = document.getElementById('wsStatus');
+            statusEl.textContent = message;
+            statusEl.className = `ws-status ${status}`;
+        }
+
+        function toggleChannel(channel) {
+            if (!websocket || !websocket.connected) {
+                addWebSocketMessage('system', 'Hata', 'WebSocket bağlantısı gerekli', {});
+                return;
+            }
+
+            const btn = document.querySelector(`[data-channel="${channel}"]`);
+            
+            if (subscribedChannels.has(channel)) {
+                websocket.emit('unsubscribe', { channel: channel });
+                subscribedChannels.delete(channel);
+                btn.classList.remove('subscribed');
+                addWebSocketMessage('system', 'Abonelik İptal', `${channel} kanalından ayrıldınız`, {});
+            } else {
+                websocket.emit('subscribe', { channel: channel });
+                subscribedChannels.add(channel);
+                btn.classList.add('subscribed');
+                addWebSocketMessage('system', 'Abonelik', `${channel} kanalına abone olundu`, {});
+            }
+        }
+
+        function addWebSocketMessage(type, category, title, data) {
+            const messagesEl = document.getElementById('wsMessages');
+            
+            // Clear placeholder if exists
+            if (messagesEl.children.length === 1 && messagesEl.children[0].tagName === 'P') {
+                messagesEl.innerHTML = '';
+            }
+            
+            const messageEl = document.createElement('div');
+            messageEl.className = `ws-message ${type}`;
+            
+            const time = new Date().toLocaleTimeString('tr-TR');
+            
+            messageEl.innerHTML = `
+                <div class="ws-message-header">
+                    <span>${category} - ${title}</span>
+                    <span class="ws-message-time">${time}</span>
+                </div>
+                <div class="ws-message-data">${JSON.stringify(data, null, 2)}</div>
+            `;
+            
+            messagesEl.insertBefore(messageEl, messagesEl.firstChild);
+            
+            // Keep only last 20 messages
+            while (messagesEl.children.length > 20) {
+                messagesEl.removeChild(messagesEl.lastChild);
+            }
+        }
+
+        function clearWebSocketMessages() {
+            const messagesEl = document.getElementById('wsMessages');
+            messagesEl.innerHTML = '<p style="color: #6c757d; text-align: center; padding: 20px;">Mesajlar temizlendi. Yeni mesajları bekleyin.</p>';
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            // Default to overview tab
+            showTab('overview');
+        });
+    </script>
+    
+    <!-- Prism.js for syntax highlighting -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,159 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Veri Kaynakları</h2>
+    {{#if (or (eq user.role 'admin') (eq user.role 'manager'))}}
+    <a href="/admin/sources/new" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i>
+        Yeni Kaynak Ekle
+    </a>
+    {{/if}}
+</div>
+
+{{#if sources.length}}
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Kaynak Adı</th>
+                        <th>Tip</th>
+                        <th>Kategori</th>
+                        <th>URL</th>
+                        <th>Güncelleme</th>
+                        <th>Durum</th>
+                        <th>İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#each sources}}
+                    <tr>
+                        <td>
+                            <strong>{{this.displayName}}</strong>
+                            <br>
+                            <small class="text-muted">{{this.name}}</small>
+                        </td>
+                        <td>
+                            {{#if (eq this.type 'api')}}
+                            <span class="badge bg-primary">API</span>
+                            {{else if (eq this.type 'webscraping')}}
+                            <span class="badge bg-info">Web Scraping</span>
+                            {{else}}
+                            <span class="badge bg-secondary">{{this.type}}</span>
+                            {{/if}}
+                        </td>
+                        <td>
+                            {{#if (eq this.category 'gold_dealer')}}
+                            <span class="badge bg-warning">Altın Satıcısı</span>
+                            {{else if (eq this.category 'government')}}
+                            <span class="badge bg-success">Resmi</span>
+                            {{else if (eq this.category 'exchange')}}
+                            <span class="badge bg-info">Borsa</span>
+                            {{else}}
+                            <span class="badge bg-secondary">{{this.category}}</span>
+                            {{/if}}
+                        </td>
+                        <td>
+                            <a href="{{this.url}}" target="_blank" class="text-decoration-none">
+                                {{this.url}}
+                                <i class="bi bi-box-arrow-up-right"></i>
+                            </a>
+                        </td>
+                        <td>
+                            <small class="text-muted">
+                                Her {{this.updateInterval}} saniye
+                                <br>
+                                Öncelik: {{this.priority}}
+                            </small>
+                        </td>
+                        <td>
+                            {{#if this.isActive}}
+                            <span class="badge bg-success">Aktif</span>
+                            {{else}}
+                            <span class="badge bg-danger">Pasif</span>
+                            {{/if}}
+                        </td>
+                        <td>
+                            {{#if (or (eq ../user.role 'admin') (eq ../user.role 'manager'))}}
+                            <div class="btn-group btn-group-sm">
+                                <button type="button" class="btn btn-outline-primary" 
+                                        onclick="toggleStatus('/admin/api/sources/{{this._id}}/toggle', this)">
+                                    {{#if this.isActive}}
+                                    <i class="bi bi-pause"></i>
+                                    {{else}}
+                                    <i class="bi bi-play"></i>
+                                    {{/if}}
+                                </button>
+                                <a href="/admin/sources/{{this._id}}/edit" class="btn btn-outline-secondary">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                {{#if (eq ../user.role 'admin')}}
+                                <button type="button" class="btn btn-outline-danger" 
+                                        onclick="confirmDelete('/admin/sources/{{this._id}}')">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                                {{/if}}
+                            </div>
+                            {{/if}}
+                        </td>
+                    </tr>
+                    {{/each}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title">{{sources.length}}</h5>
+                <p class="card-text text-muted">Toplam Kaynak</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title">{{countActive sources}}</h5>
+                <p class="card-text text-muted">Aktif Kaynak</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title">{{countApiSources sources}}</h5>
+                <p class="card-text text-muted">API Kaynağı</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{else}}
+<div class="card">
+    <div class="card-body text-center py-5">
+        <i class="bi bi-database fs-1 text-muted mb-3"></i>
+        <h4>Henüz Veri Kaynağı Yok</h4>
+        <p class="text-muted">İlk veri kaynağınızı ekleyerek başlayın</p>
+        {{#if (or (eq user.role 'admin') (eq user.role 'manager'))}}
+        <a href="/admin/sources/new" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i>
+            İlk Kaynağı Ekle
+        </a>
+        {{/if}}
+    </div>
+</div>
+{{/if}}
+
+<script>
+function confirmDelete(url) {
+    if (confirm('Bu veri kaynağını silmek istediğinizden emin misiniz?')) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = url + '/delete';
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>

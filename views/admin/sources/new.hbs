@@ -1,0 +1,257 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Yeni Veri Kaynağı Ekle</h2>
+    <a href="/admin/sources" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i>
+        Geri Dön
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST" action="/admin/sources">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Kaynak Adı (Sistem) *</label>
+                        <input type="text" class="form-control" id="name" name="name" 
+                               value="{{formData.name}}" placeholder="harem_altin" required>
+                        <div class="form-text">Sistem içinde kullanılacak benzersiz ad (küçük harf, alt çizgi)</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="displayName" class="form-label">Görünür Ad *</label>
+                        <input type="text" class="form-control" id="displayName" name="displayName" 
+                               value="{{formData.displayName}}" placeholder="Harem Altın" required>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="type" class="form-label">Kaynak Tipi *</label>
+                        <select class="form-select" id="type" name="type" required>
+                            <option value="">Tip seçin</option>
+                            <option value="api" {{#if (eq formData.type 'api')}}selected{{/if}}>API</option>
+                            <option value="webscraping" {{#if (eq formData.type 'webscraping')}}selected{{/if}}>Web Scraping</option>
+                            <option value="manual" {{#if (eq formData.type 'manual')}}selected{{/if}}>Manuel</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="category" class="form-label">Kategori *</label>
+                        <select class="form-select" id="category" name="category" required>
+                            <option value="">Kategori seçin</option>
+                            <option value="gold_dealer" {{#if (eq formData.category 'gold_dealer')}}selected{{/if}}>Altın Satıcısı</option>
+                            <option value="government" {{#if (eq formData.category 'government')}}selected{{/if}}>Resmi Kurum</option>
+                            <option value="exchange" {{#if (eq formData.category 'exchange')}}selected{{/if}}>Borsa</option>
+                            <option value="bank" {{#if (eq formData.category 'bank')}}selected{{/if}}>Banka</option>
+                            <option value="other" {{#if (eq formData.category 'other')}}selected{{/if}}>Diğer</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="mb-3">
+                        <label for="url" class="form-label">Web Sitesi URL'si *</label>
+                        <input type="url" class="form-control" id="url" name="url" 
+                               value="{{formData.url}}" placeholder="https://example.com" required>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label for="priority" class="form-label">Öncelik *</label>
+                        <select class="form-select" id="priority" name="priority" required>
+                            <option value="1" {{#if (eq formData.priority '1')}}selected{{/if}}>1 (En Yüksek)</option>
+                            <option value="2" {{#if (eq formData.priority '2')}}selected{{/if}}>2 (Yüksek)</option>
+                            <option value="3" {{#if (eq formData.priority '3')}}selected{{/if}}>3 (Normal)</option>
+                            <option value="4" {{#if (eq formData.priority '4')}}selected{{/if}}>4 (Düşük)</option>
+                            <option value="5" {{#if (eq formData.priority '5')}}selected{{/if}}>5 (En Düşük)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- API Ayarları -->
+            <div id="apiSettings" style="display: none;">
+                <hr>
+                <h5>API Ayarları</h5>
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="mb-3">
+                            <label for="apiUrl" class="form-label">API URL'si</label>
+                            <input type="url" class="form-control" id="apiUrl" name="apiUrl" 
+                                   value="{{formData.apiUrl}}" placeholder="https://api.example.com/prices">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="dataFormat" class="form-label">Veri Formatı</label>
+                            <select class="form-select" id="dataFormat" name="dataFormat">
+                                <option value="json" {{#if (eq formData.dataFormat 'json')}}selected{{/if}}>JSON</option>
+                                <option value="xml" {{#if (eq formData.dataFormat 'xml')}}selected{{/if}}>XML</option>
+                                <option value="csv" {{#if (eq formData.dataFormat 'csv')}}selected{{/if}}>CSV</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="apiKey" class="form-label">API Anahtarı</label>
+                            <input type="text" class="form-control" id="apiKey" name="apiKey" 
+                                   value="{{formData.apiKey}}" placeholder="İsteğe bağlı">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="requestMethod" class="form-label">HTTP Metodu</label>
+                            <select class="form-select" id="requestMethod" name="requestMethod">
+                                <option value="GET" {{#if (eq formData.requestMethod 'GET')}}selected{{/if}}>GET</option>
+                                <option value="POST" {{#if (eq formData.requestMethod 'POST')}}selected{{/if}}>POST</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Web Scraping Ayarları -->
+            <div id="scrapingSettings" style="display: none;">
+                <hr>
+                <h5>Web Scraping Ayarları</h5>
+                <div class="mb-3">
+                    <label for="goldSelector" class="form-label">Altın Fiyatı CSS Seçici</label>
+                    <input type="text" class="form-control" id="goldSelector" name="scrapingConfig.goldSelector" 
+                           value="{{formData.scrapingConfig.goldSelector}}" placeholder=".gold-price">
+                </div>
+                
+                <div class="mb-3">
+                    <label for="usdSelector" class="form-label">USD Kuru CSS Seçici</label>
+                    <input type="text" class="form-control" id="usdSelector" name="scrapingConfig.usdSelector" 
+                           value="{{formData.scrapingConfig.usdSelector}}" placeholder=".usd-rate">
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="useProxy" name="scrapingConfig.useProxy" 
+                                   {{#if formData.scrapingConfig.useProxy}}checked{{/if}}>
+                            <label class="form-check-label" for="useProxy">
+                                Proxy kullan
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="useUserAgent" name="scrapingConfig.useUserAgent" 
+                                   {{#if formData.scrapingConfig.useUserAgent}}checked{{/if}}>
+                            <label class="form-check-label" for="useUserAgent">
+                                User-Agent kullan
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <hr>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="updateInterval" class="form-label">Güncelleme Aralığı (saniye) *</label>
+                        <input type="number" class="form-control" id="updateInterval" name="updateInterval" 
+                               value="{{formData.updateInterval}}" min="60" max="3600" value="300" required>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="currency" class="form-label">Para Birimi *</label>
+                        <select class="form-select" id="currency" name="currency" required>
+                            <option value="TRY" {{#if (eq formData.currency 'TRY')}}selected{{/if}}>TRY</option>
+                            <option value="USD" {{#if (eq formData.currency 'USD')}}selected{{/if}}>USD</option>
+                            <option value="EUR" {{#if (eq formData.currency 'EUR')}}selected{{/if}}>EUR</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="description" class="form-label">Açıklama</label>
+                <textarea class="form-control" id="description" name="description" rows="3" 
+                          placeholder="Bu veri kaynağı hakkında kısa açıklama">{{formData.description}}</textarea>
+                <div class="form-text">Bu açıklama API dokümantasyonunda gösterilir</div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="isActive" class="form-label">Durum</label>
+                <select class="form-select" id="isActive" name="isActive" required>
+                    <option value="true" {{#if (eq formData.isActive "true")}}selected{{else}}selected{{/if}}>Aktif</option>
+                    <option value="false" {{#if (eq formData.isActive "false")}}selected{{/if}}>Pasif</option>
+                </select>
+                <div class="form-text">Aktif kaynaklar veri toplamaya dahil edilir</div>
+            </div>
+            
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check"></i>
+                    Kaynak Oluştur
+                </button>
+                <a href="/admin/sources" class="btn btn-secondary">
+                    <i class="bi bi-x"></i>
+                    İptal
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Tip değişikliğinde ayarları göster/gizle
+document.getElementById('type').addEventListener('change', function() {
+    const type = this.value;
+    const apiSettings = document.getElementById('apiSettings');
+    const scrapingSettings = document.getElementById('scrapingSettings');
+    
+    apiSettings.style.display = 'none';
+    scrapingSettings.style.display = 'none';
+    
+    if (type === 'api') {
+        apiSettings.style.display = 'block';
+    } else if (type === 'webscraping') {
+        scrapingSettings.style.display = 'block';
+    }
+});
+
+// Sayfa yüklendiğinde mevcut tip'e göre ayarları göster
+document.addEventListener('DOMContentLoaded', function() {
+    const typeSelect = document.getElementById('type');
+    if (typeSelect.value) {
+        typeSelect.dispatchEvent(new Event('change'));
+    }
+});
+
+// Kaynak adını otomatik oluştur
+document.getElementById('displayName').addEventListener('input', function() {
+    const displayName = this.value;
+    const nameField = document.getElementById('name');
+    
+    if (!nameField.dataset.manuallyEdited) {
+        const autoName = displayName
+            .toLowerCase()
+            .replace(/\s+/g, '_')
+            .replace(/[^a-z0-9_]/g, '')
+            .substring(0, 50);
+        nameField.value = autoName;
+    }
+});
+
+// Kaynak adı manuel olarak düzenlendiyse otomatik güncellemeyi durdur
+document.getElementById('name').addEventListener('input', function() {
+    this.dataset.manuallyEdited = 'true';
+});
+</script>

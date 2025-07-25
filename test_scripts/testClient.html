@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dahili Socket Test Client</title>
+    <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f0f0f0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .server-info {
+            background-color: #9C27B0;
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .connection-status {
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .connected {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .disconnected {
+            background-color: #f44336;
+            color: white;
+        }
+        .channel-controls {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .channel-controls button {
+            margin: 5px;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            background-color: #2196F3;
+            color: white;
+        }
+        .channel-controls button:hover {
+            background-color: #1976D2;
+        }
+        .channel-controls button.subscribed {
+            background-color: #4CAF50;
+        }
+        .messages {
+            background-color: white;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .message {
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: #f9f9f9;
+            border-left: 3px solid #2196F3;
+            border-radius: 3px;
+        }
+        .message-header {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .message-time {
+            color: #666;
+            font-size: 0.9em;
+        }
+        .message-data {
+            margin-top: 5px;
+            font-family: monospace;
+            font-size: 0.9em;
+            white-space: pre-wrap;
+        }
+        .clear-button {
+            margin-top: 10px;
+            padding: 8px 15px;
+            background-color: #ff5722;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .clear-button:hover {
+            background-color: #e64a19;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Dahili Socket Test Client</h1>
+        
+        <div class="server-info">
+            <h2>Dahili Socket Sunucu - Port 6702</h2>
+            <p>Veri Yayını Sistemi (Token Olmadan)</p>
+        </div>
+        
+        <div id="status" class="connection-status disconnected">
+            Bağlantı Bekleniyor...
+        </div>
+
+        <div class="channel-controls">
+            <h3>Kanal Abonelikleri</h3>
+            <button onclick="toggleChannel('market')" id="market-btn">Market Kanalı</button>
+            <button onclick="toggleChannel('prices')" id="prices-btn">Fiyatlar Kanalı</button>
+            <button onclick="toggleChannel('trades')" id="trades-btn">İşlemler Kanalı</button>
+            <button onclick="toggleChannel('statistics')" id="statistics-btn">İstatistikler Kanalı</button>
+        </div>
+
+        <h2>Gelen Mesajlar</h2>
+        <div id="messages" class="messages"></div>
+        <button class="clear-button" onclick="clearMessages()">Mesajları Temizle</button>
+    </div>
+
+    <script>
+        // Socket.io bağlantısı (token olmadan - ana sunucu)
+        const socket = io('http://localhost:6701');
+        const subscribedChannels = new Set();
+
+        // Bağlantı durumu
+        socket.on('connect', () => {
+            document.getElementById('status').className = 'connection-status connected';
+            document.getElementById('status').textContent = 'Bağlandı - ID: ' + socket.id;
+            addMessage('Sistem', 'Socket sunucusuna bağlandı', { id: socket.id });
+        });
+
+        socket.on('disconnect', () => {
+            document.getElementById('status').className = 'connection-status disconnected';
+            document.getElementById('status').textContent = 'Bağlantı Kesildi';
+            addMessage('Sistem', 'Socket sunucu bağlantısı kesildi', {});
+        });
+
+        socket.on('connect_error', (error) => {
+            document.getElementById('status').className = 'connection-status disconnected';
+            document.getElementById('status').textContent = 'Bağlantı Hatası: ' + error.message;
+            addMessage('Hata', 'Bağlantı hatası', { 
+                message: error.message,
+                type: error.type 
+            });
+        });
+
+        // Genel event dinleyicileri
+        socket.on('system-status', (data) => {
+            addMessage('Sistem Durumu', 'Periyodik güncelleme', data.data);
+        });
+
+        socket.on('announcement', (data) => {
+            addMessage('Duyuru', data.title, data);
+        });
+
+        socket.on('system-alert', (data) => {
+            addMessage('Sistem Uyarısı', `[${data.level.toUpperCase()}] ${data.message}`, data);
+        });
+
+        socket.on('notification', (data) => {
+            addMessage('Bildirim', 'Kişisel bildirim', data);
+        });
+
+        // Kanal bazlı event dinleyicileri
+        socket.on('market-update', (data) => {
+            addMessage('Market Güncelleme', 'Piyasa verisi', data);
+        });
+
+        socket.on('market-bulk-update', (data) => {
+            addMessage('Toplu Market Güncelleme', `${data.data.count} adet veri`, data);
+        });
+
+        socket.on('price-update', (data) => {
+            addMessage('Fiyat Güncelleme', `${data.data.symbol}: ${data.data.price}`, data.data);
+        });
+
+        socket.on('new-trade', (data) => {
+            addMessage('Yeni İşlem', 'İşlem gerçekleşti', data);
+        });
+
+        socket.on('stats-update', (data) => {
+            addMessage('İstatistik Güncelleme', 'Yeni istatistikler', data);
+        });
+
+        socket.on('chart-update', (data) => {
+            addMessage('Grafik Güncelleme', `${data.data.symbol} grafiği`, data.data);
+        });
+
+        socket.on('orderbook-update', (data) => {
+            addMessage('Order Book', `${data.data.symbol} emirleri`, data.data);
+        });
+
+        // Kanal yönetimi
+        function toggleChannel(channel) {
+            const btn = document.getElementById(`${channel}-btn`);
+            
+            if (subscribedChannels.has(channel)) {
+                socket.emit('unsubscribe', channel);
+                subscribedChannels.delete(channel);
+                btn.classList.remove('subscribed');
+                addMessage('Kanal', `${channel} kanalından ayrıldınız`, {});
+            } else {
+                socket.emit('subscribe', channel);
+                subscribedChannels.add(channel);
+                btn.classList.add('subscribed');
+                addMessage('Kanal', `${channel} kanalına abone oldunuz`, {});
+            }
+        }
+
+        // Mesaj ekleme
+        function addMessage(type, title, data) {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message';
+            
+            const time = new Date().toLocaleTimeString('tr-TR');
+            
+            messageDiv.innerHTML = `
+                <div class="message-header">
+                    ${type} - ${title}
+                    <span class="message-time">${time}</span>
+                </div>
+                <div class="message-data">${JSON.stringify(data, null, 2)}</div>
+            `;
+            
+            messagesDiv.insertBefore(messageDiv, messagesDiv.firstChild);
+            
+            // En fazla 50 mesaj tut
+            while (messagesDiv.children.length > 50) {
+                messagesDiv.removeChild(messagesDiv.lastChild);
+            }
+        }
+
+        // Mesajları temizle
+        function clearMessages() {
+            document.getElementById('messages').innerHTML = '';
+        }
+    </script>
+</body>
+</html>

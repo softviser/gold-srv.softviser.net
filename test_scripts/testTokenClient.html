@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Token ile Socket Bağlantı Testi</title>
+    <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f0f0f0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .token-input {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .token-input input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .token-input button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .token-input button:hover {
+            background-color: #1976D2;
+        }
+        .connection-status {
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .connected {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .disconnected {
+            background-color: #f44336;
+            color: white;
+        }
+        .error {
+            background-color: #ff9800;
+            color: #ffcc00;
+        }
+        .channel-controls {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: none;
+        }
+        .channel-controls button {
+            margin: 5px;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            background-color: #2196F3;
+            color: white;
+        }
+        .channel-controls button:hover {
+            background-color: #1976D2;
+        }
+        .channel-controls button.subscribed {
+            background-color: #4CAF50;
+        }
+        .messages {
+            background-color: white;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .message {
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: #f9f9f9;
+            border-radius: 3px;
+            border-left-width: 3px;
+            border-left-style: solid;
+        }
+        .message.info {
+            border-left-color: #2196F3;
+        }
+        .message.success {
+            border-left-color: #4CAF50;
+        }
+        .message.error {
+            border-left-color: #f44336;
+        }
+        .message.warning {
+            border-left-color: #ff9800;
+        }
+        .message-header {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .message-time {
+            color: #666;
+            font-size: 0.9em;
+            float: right;
+        }
+        .message-data {
+            margin-top: 5px;
+            font-family: monospace;
+            font-size: 0.9em;
+            white-space: pre-wrap;
+        }
+        .token-info {
+            background-color: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .token-info h3 {
+            margin-top: 0;
+            color: #1976D2;
+        }
+        .token-info pre {
+            background-color: white;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+        }
+        
+        /* Price update specific styles */
+        .message.success .message-header {
+            color: #2e7d32;
+        }
+        .message.error .message-header {
+            color: #c62828;
+        }
+        .price-info {
+            display: inline-block;
+            font-family: monospace;
+            font-weight: bold;
+            margin: 0 5px;
+        }
+        .trend-up {
+            color: #2e7d32;
+        }
+        .trend-down {
+            color: #c62828;
+        }
+        .trend-stable {
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Token ile Socket Bağlantı Testi</h1>
+        
+        <div class="token-input">
+            <h3>API Token</h3>
+            <input type="text" id="tokenInput" placeholder="sk_xxxxxxxxxxxxxxxx..." />
+            <button onclick="connectWithToken()">Token ile Bağlan</button>
+            <button onclick="disconnect()" style="background-color: #f44336; display: none;" id="disconnectBtn">Bağlantıyı Kes</button>
+        </div>
+
+        <div id="status" class="connection-status disconnected">
+            Bağlantı Bekleniyor...
+        </div>
+
+        <div id="tokenInfo" class="token-info">
+            <h3>Token Bilgileri</h3>
+            <pre id="tokenDetails"></pre>
+        </div>
+
+        <div id="channelControls" class="channel-controls">
+            <h3>Kanal Abonelikleri</h3>
+            <div id="channelButtons"></div>
+        </div>
+
+        <h2>Mesajlar</h2>
+        <div id="messages" class="messages"></div>
+    </div>
+
+    <script>
+        let socket = null;
+        let tokenInfo = null;
+        const subscribedChannels = new Set();
+
+        function connectWithToken() {
+            const token = document.getElementById('tokenInput').value.trim();
+            
+            if (!token) {
+                addMessage('Hata', 'Token giriniz', {}, 'error');
+                return;
+            }
+
+            // Mevcut bağlantıyı kapat
+            if (socket) {
+                socket.disconnect();
+            }
+
+            // Yeni bağlantı oluştur (ana sunucu - port 6701)
+            socket = io('http://localhost:6701', {
+                auth: {
+                    token: token
+                }
+            });
+
+            // Bağlantı eventleri
+            socket.on('connect', () => {
+                document.getElementById('status').className = 'connection-status connected';
+                document.getElementById('status').textContent = 'Bağlandı - ID: ' + socket.id;
+                document.getElementById('disconnectBtn').style.display = 'inline-block';
+                document.getElementById('channelControls').style.display = 'block';
+                
+                addMessage('Sistem', 'Socket sunucusuna bağlandı', { 
+                    id: socket.id,
+                    token: token.substring(0, 20) + '...'
+                }, 'success');
+            });
+
+            socket.on('disconnect', () => {
+                document.getElementById('status').className = 'connection-status disconnected';
+                document.getElementById('status').textContent = 'Bağlantı Kesildi';
+                document.getElementById('disconnectBtn').style.display = 'none';
+                document.getElementById('channelControls').style.display = 'none';
+                document.getElementById('tokenInfo').style.display = 'none';
+                
+                addMessage('Sistem', 'Socket sunucu bağlantısı kesildi', {}, 'warning');
+            });
+
+            socket.on('connect_error', (error) => {
+                document.getElementById('status').className = 'connection-status error';
+                document.getElementById('status').textContent = 'Bağlantı Hatası: ' + error.message;
+                
+                addMessage('Hata', 'Bağlantı hatası', { 
+                    message: error.message,
+                    type: error.type 
+                }, 'error');
+            });
+
+            socket.on('error', (data) => {
+                addMessage('Hata', 'Sunucu hatası', data, 'error');
+            });
+
+            // Veri eventleri
+            socket.on('system-status', (data) => {
+                addMessage('Sistem Durumu', 'Periyodik güncelleme', data.data, 'info');
+            });
+
+            socket.on('announcement', (data) => {
+                addMessage('Duyuru', data.title || data.message, data, 'warning');
+            });
+
+            // Fiyat güncelleme eventi - yeni format ile
+            socket.on('price_update', (data) => {
+                // Gelen mesajın tam formatını göster
+                const fullMessage = ["price_update", data];
+                
+                const priceData = data.data || data;
+                const change = priceData.change || {};
+                const trend = change.trend || 'stable';
+                const trendIcon = trend === 'up' ? '↑' : trend === 'down' ? '↓' : '→';
+                const trendColor = trend === 'up' ? 'success' : trend === 'down' ? 'error' : 'info';
+                
+                const title = `${priceData.symbol}: Buy ${priceData.buyPrice.toFixed(3)} / Sell ${priceData.sellPrice.toFixed(3)} ${trendIcon}`;
+                
+                // Tam mesaj formatını göster
+                addMessage('Price Update', title, fullMessage, trendColor);
+            });
+
+            // Kaynak bazlı fiyat güncellemesi
+            socket.on('source_price_update', (data) => {
+                const priceData = data.data || data;
+                const source = data.source || 'unknown';
+                
+                const title = `[${source.toUpperCase()}] ${priceData.symbol}: ${priceData.buyPrice.toFixed(3)} / ${priceData.sellPrice.toFixed(3)}`;
+                addMessage('Kaynak Fiyat', title, priceData, 'info');
+            });
+
+            // Anomali uyarısı
+            socket.on('anomaly_alert', (data) => {
+                const alertData = data.data || data;
+                const anomaly = alertData.anomaly || {};
+                
+                const title = `⚠️ ANOMALİ: ${alertData.symbol} - %${anomaly.changePercent?.toFixed(2) || 0} değişim`;
+                addMessage('Anomali Uyarısı', title, alertData, 'error');
+            });
+
+            socket.on('market-update', (data) => {
+                addMessage('Market', 'Piyasa güncellemesi', data, 'info');
+            });
+
+            socket.on('new-trade', (data) => {
+                addMessage('İşlem', 'Yeni işlem', data, 'success');
+            });
+
+            socket.on('stats-update', (data) => {
+                addMessage('İstatistik', 'Güncelleme', data, 'info');
+            });
+
+            // Sistem komutları
+            socket.on('system_command', (data) => {
+                addMessage('Sistem Komutu', `${data.type}: ${data.message}`, data.parameters, 'warning');
+            });
+
+            // Bağlantı uyarıları
+            socket.on('connection_warning', (data) => {
+                addMessage('Bağlantı Uyarısı', data.message, data, 'warning');
+            });
+
+            socket.on('connection_rejected', (data) => {
+                addMessage('Bağlantı Reddedildi', data.message, data, 'error');
+            });
+
+            // Test için kanal butonları oluştur
+            createChannelButtons();
+        }
+
+        function disconnect() {
+            if (socket) {
+                socket.disconnect();
+                socket = null;
+            }
+            subscribedChannels.clear();
+        }
+
+        function createChannelButtons() {
+            const channels = [
+                { id: 'price', name: 'Fiyat Güncellemeleri' },
+                { id: 'market', name: 'Market Verileri' },
+                { id: 'alerts', name: 'Anomali Uyarıları' },
+                { id: 'system', name: 'Sistem Mesajları' },
+                { id: 'altinkaynak', name: 'AltınKaynak' },
+                { id: 'hakangold', name: 'Hakan Altın' },
+                { id: 'haremgold', name: 'Harem Altın' }
+            ];
+            const container = document.getElementById('channelButtons');
+            container.innerHTML = '';
+
+            channels.forEach(channel => {
+                const button = document.createElement('button');
+                button.id = `${channel.id}-btn`;
+                button.textContent = channel.name;
+                button.onclick = () => toggleChannel(channel.id);
+                container.appendChild(button);
+            });
+        }
+
+        function toggleChannel(channel) {
+            if (!socket || !socket.connected) {
+                addMessage('Hata', 'Önce bağlantı kurmalısınız', {}, 'error');
+                return;
+            }
+
+            const btn = document.getElementById(`${channel}-btn`);
+            
+            if (subscribedChannels.has(channel)) {
+                socket.emit('unsubscribe', channel);
+                subscribedChannels.delete(channel);
+                btn.classList.remove('subscribed');
+                addMessage('Kanal', `${channel} kanalından ayrıldınız`, {}, 'info');
+            } else {
+                socket.emit('subscribe', channel);
+                subscribedChannels.add(channel);
+                btn.classList.add('subscribed');
+                addMessage('Kanal', `${channel} kanalına abone oldunuz`, {}, 'success');
+            }
+        }
+
+        function addMessage(type, title, data, messageType = 'info') {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${messageType}`;
+            
+            const time = new Date().toLocaleTimeString('tr-TR');
+            
+            messageDiv.innerHTML = `
+                <div class="message-header">
+                    ${type} - ${title}
+                    <span class="message-time">${time}</span>
+                </div>
+                ${Object.keys(data).length > 0 ? `<div class="message-data">${JSON.stringify(data, null, 2)}</div>` : ''}
+            `;
+            
+            messagesDiv.insertBefore(messageDiv, messagesDiv.firstChild);
+            
+            // En fazla 50 mesaj tut
+            while (messagesDiv.children.length > 50) {
+                messagesDiv.removeChild(messagesDiv.lastChild);
+            }
+        }
+
+        // Enter tuşu ile bağlan
+        document.getElementById('tokenInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                connectWithToken();
+            }
+        });
+    </script>
+</body>
+</html>

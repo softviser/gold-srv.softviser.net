@@ -1,0 +1,648 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Sistem Ayarları</h2>
+    <div class="d-flex gap-2">
+        <button class="btn btn-outline-secondary" onclick="resetToDefaults()">
+            <i class="bi bi-arrow-clockwise"></i>
+            Varsayılanlara Dön
+        </button>
+    </div>
+</div>
+
+{{#if error}}
+<div class="alert alert-danger" role="alert">
+    <i class="bi bi-exclamation-triangle"></i>
+    {{error}}
+</div>
+{{/if}}
+
+{{#if success}}
+<div class="alert alert-success" role="alert">
+    <i class="bi bi-check-circle"></i>
+    {{success}}
+</div>
+{{/if}}
+
+<!-- Nav tabs -->
+<ul class="nav nav-tabs" id="settingsTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="general-tab" data-bs-toggle="tab" data-bs-target="#general" type="button" role="tab">
+            <i class="bi bi-gear"></i>
+            Genel
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="data-tab" data-bs-toggle="tab" data-bs-target="#data" type="button" role="tab">
+            <i class="bi bi-database"></i>
+            Veri
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="socket-tab" data-bs-toggle="tab" data-bs-target="#socket" type="button" role="tab">
+            <i class="bi bi-broadcast"></i>
+            Socket
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="security-tab" data-bs-toggle="tab" data-bs-target="#security" type="button" role="tab">
+            <i class="bi bi-shield-lock"></i>
+            Güvenlik
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="logging-tab" data-bs-toggle="tab" data-bs-target="#logging" type="button" role="tab">
+            <i class="bi bi-journal-text"></i>
+            Loglama
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="devmode-tab" data-bs-toggle="tab" data-bs-target="#devmode" type="button" role="tab">
+            <i class="bi bi-code-slash"></i>
+            Geliştirici
+        </button>
+    </li>
+</ul>
+
+<!-- Tab content -->
+<div class="tab-content" id="settingsTabContent">
+    <!-- Genel Ayarlar -->
+    <div class="tab-pane fade show active" id="general" role="tabpanel">
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0">Genel Ayarlar</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="/admin/settings/general">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="siteName" class="form-label">Site Adı</label>
+                                <input type="text" class="form-control" id="siteName" name="siteName" 
+                                       value="{{settings.general.siteName}}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="adminEmail" class="form-label">Yönetici E-posta</label>
+                                <input type="email" class="form-control" id="adminEmail" name="adminEmail" 
+                                       value="{{settings.general.adminEmail}}" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="siteDescription" class="form-label">Site Açıklaması</label>
+                        <textarea class="form-control" id="siteDescription" name="siteDescription" rows="3">{{settings.general.siteDescription}}</textarea>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="timezone" class="form-label">Zaman Dilimi</label>
+                                <select class="form-select" id="timezone" name="timezone">
+                                    <option value="Europe/Istanbul" {{#if (eq settings.general.timezone 'Europe/Istanbul')}}selected{{/if}}>Europe/Istanbul</option>
+                                    <option value="UTC" {{#if (eq settings.general.timezone 'UTC')}}selected{{/if}}>UTC</option>
+                                    <option value="America/New_York" {{#if (eq settings.general.timezone 'America/New_York')}}selected{{/if}}>America/New_York</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="language" class="form-label">Dil</label>
+                                <select class="form-select" id="language" name="language">
+                                    <option value="tr" {{#if (eq settings.general.language 'tr')}}selected{{/if}}>Türkçe</option>
+                                    <option value="en" {{#if (eq settings.general.language 'en')}}selected{{/if}}>English</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="dateFormat" class="form-label">Tarih Formatı</label>
+                                <select class="form-select" id="dateFormat" name="dateFormat">
+                                    <option value="DD/MM/YYYY" {{#if (eq settings.general.dateFormat 'DD/MM/YYYY')}}selected{{/if}}>DD/MM/YYYY</option>
+                                    <option value="MM/DD/YYYY" {{#if (eq settings.general.dateFormat 'MM/DD/YYYY')}}selected{{/if}}>MM/DD/YYYY</option>
+                                    <option value="YYYY-MM-DD" {{#if (eq settings.general.dateFormat 'YYYY-MM-DD')}}selected{{/if}}>YYYY-MM-DD</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="timeFormat" class="form-label">Saat Formatı</label>
+                        <select class="form-select" id="timeFormat" name="timeFormat">
+                            <option value="HH:mm:ss" {{#if (eq settings.general.timeFormat 'HH:mm:ss')}}selected{{/if}}>24 Saat (HH:mm:ss)</option>
+                            <option value="hh:mm:ss A" {{#if (eq settings.general.timeFormat 'hh:mm:ss A')}}selected{{/if}}>12 Saat (hh:mm:ss AM/PM)</option>
+                        </select>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check"></i>
+                        Kaydet
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Veri Ayarları -->
+    <div class="tab-pane fade" id="data" role="tabpanel">
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0">Veri Ayarları</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="/admin/settings/data">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="defaultUpdateInterval" class="form-label">Varsayılan Güncelleme Aralığı (saniye)</label>
+                                <input type="number" class="form-control" id="defaultUpdateInterval" name="defaultUpdateInterval" 
+                                       value="{{settings.data.defaultUpdateInterval}}" min="10" max="3600">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="maxPriceChangePercent" class="form-label">Maksimum Fiyat Değişim Yüzdesi (%)</label>
+                                <input type="number" class="form-control" id="maxPriceChangePercent" name="maxPriceChangePercent" 
+                                       value="{{settings.data.maxPriceChangePercent}}" min="1" max="100" step="0.1" placeholder="5">
+                                <div class="form-text">Önerilen: Altın için 3-5%, Döviz için 2-3%, Kripto için 15-20%</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="realtimeUpdateInterval" class="form-label">Gerçek Zamanlı Güncelleme (saniye)</label>
+                                <input type="number" class="form-control" id="realtimeUpdateInterval" name="realtimeUpdateInterval" 
+                                       value="{{settings.data.realtimeUpdateInterval}}" min="5" max="300">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="frequentUpdateInterval" class="form-label">Sık Güncelleme (saniye)</label>
+                                <input type="number" class="form-control" id="frequentUpdateInterval" name="frequentUpdateInterval" 
+                                       value="{{settings.data.frequentUpdateInterval}}" min="60" max="1800">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="dailyUpdateInterval" class="form-label">Günlük Güncelleme (saniye)</label>
+                                <input type="number" class="form-control" id="dailyUpdateInterval" name="dailyUpdateInterval" 
+                                       value="{{settings.data.dailyUpdateInterval}}" min="1800" max="86400">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="priceHistoryRetentionDays" class="form-label">Fiyat Geçmişi Saklama Süresi (gün)</label>
+                                <input type="number" class="form-control" id="priceHistoryRetentionDays" name="priceHistoryRetentionDays" 
+                                       value="{{settings.data.priceHistoryRetentionDays}}" min="90" max="1825">
+                                <div class="form-text">price_history tablosundaki kayıtlar bu süre sonunda silinir (Önerilen: 730 gün / 2 yıl)</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="connectionLogDays" class="form-label">Bağlantı Logları Saklama Süresi (gün)</label>
+                                <input type="number" class="form-control" id="connectionLogDays" name="connectionLogDays" 
+                                       value="{{settings.data.connectionLogDays}}" min="1" max="1825">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="priceHistoryDays" class="form-label">API Fiyat Görüntüleme Süresi (gün)</label>
+                                <input type="number" class="form-control" id="priceHistoryDays" name="priceHistoryDays" 
+                                       value="{{settings.data.priceHistoryDays}}" min="7" max="365">
+                                <div class="form-text">API'de geçmiş fiyatlara ne kadar geriye dönük erişilebileceği</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="priceChangeValue" class="form-label">Fiyat Değişim Değeri</label>
+                                <input type="number" class="form-control" id="priceChangeValue" name="priceChangeValue" 
+                                       value="{{settings.data.priceChangeValue}}" min="0" step="0.01" placeholder="0.25">
+                                <div class="form-text">Bu değerden küçük değişimler yayınlanmayacak</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="priceChangeType" class="form-label">Fiyat Değişim Tipi</label>
+                                <select class="form-select" id="priceChangeType" name="priceChangeType">
+                                    <option value="amount" {{#if (eq settings.data.priceChangeType 'amount')}}selected{{/if}}>Tutar (TL)</option>
+                                    <option value="percent" {{#if (eq settings.data.priceChangeType 'percent')}}selected{{/if}}>Yüzde (%)</option>
+                                </select>
+                                <div class="form-text">Fiyat değişimi nasıl hesaplanacak</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="cleanupTime" class="form-label">Otomatik Temizleme Saati</label>
+                                <input type="time" class="form-control" id="cleanupTime" name="cleanupTime" 
+                                       value="{{settings.data.cleanupTime}}">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="autoCleanupHour" class="form-label">Temizlik Servisi Çalışma Saati</label>
+                                <input type="number" class="form-control" id="autoCleanupHour" name="autoCleanupHour" 
+                                       value="{{settings.data.autoCleanupHour}}" min="0" max="23">
+                                <div class="form-text">Cleanup Service bu saatte çalışır (0-23)</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="logRetentionDays" class="form-label">Log Saklama Süresi (gün)</label>
+                                <input type="number" class="form-control" id="logRetentionDays" name="logRetentionDays" 
+                                       value="{{settings.data.logRetentionDays}}" min="7" max="1825">
+                                <div class="form-text">Sistem logları için saklama süresi</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="autoCleanup" name="autoCleanup" 
+                               {{#if settings.data.autoCleanup}}checked{{/if}}>
+                        <label class="form-check-label" for="autoCleanup">
+                            Otomatik temizleme aktif
+                        </label>
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="anomalyDetection" name="anomalyDetection" 
+                               {{#if settings.data.anomalyDetection}}checked{{/if}}>
+                        <label class="form-check-label" for="anomalyDetection">
+                            Anormal fiyat tespiti aktif
+                        </label>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary" onclick="return validateMinimumPriceChange()">
+                        <i class="bi bi-check"></i>
+                        Kaydet
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Socket Ayarları -->
+    <div class="tab-pane fade" id="socket" role="tabpanel">
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0">Socket Ayarları</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="/admin/settings/socket">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="socketPort" class="form-label">WebSocket Portu</label>
+                                <input type="number" class="form-control" id="socketPort" name="socketPort" 
+                                       value="{{settings.socket.socketPort}}" min="1000" max="65535">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="maxConnections" class="form-label">Maksimum Bağlantı Sayısı</label>
+                                <input type="number" class="form-control" id="maxConnections" name="maxConnections" 
+                                       value="{{settings.socket.maxConnections}}" min="10" max="10000">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="heartbeatInterval" class="form-label">Heartbeat Aralığı (ms)</label>
+                                <input type="number" class="form-control" id="heartbeatInterval" name="heartbeatInterval" 
+                                       value="{{settings.socket.heartbeatInterval}}" min="5000" max="300000">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="reconnectAttempts" class="form-label">Yeniden Bağlanma Deneme Sayısı</label>
+                                <input type="number" class="form-control" id="reconnectAttempts" name="reconnectAttempts" 
+                                       value="{{settings.socket.reconnectAttempts}}" min="1" max="20">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="reconnectDelay" class="form-label">Yeniden Bağlanma Gecikmesi (ms)</label>
+                                <input type="number" class="form-control" id="reconnectDelay" name="reconnectDelay" 
+                                       value="{{settings.socket.reconnectDelay}}" min="1000" max="60000">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="maxReconnectDelay" class="form-label">Maksimum Yeniden Bağlanma Gecikmesi (ms)</label>
+                                <input type="number" class="form-control" id="maxReconnectDelay" name="maxReconnectDelay" 
+                                       value="{{settings.socket.maxReconnectDelay}}" min="5000" max="300000">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="messageTimeout" class="form-label">Mesaj Timeout Süresi (ms)</label>
+                                <input type="number" class="form-control" id="messageTimeout" name="messageTimeout" 
+                                       value="{{settings.socket.messageTimeout}}" min="5000" max="300000">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="enableCompression" name="enableCompression" 
+                               {{#if settings.socket.enableCompression}}checked{{/if}}>
+                        <label class="form-check-label" for="enableCompression">
+                            Sıkıştırma aktif
+                        </label>
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="enableCors" name="enableCors" 
+                               {{#if settings.socket.enableCors}}checked{{/if}}>
+                        <label class="form-check-label" for="enableCors">
+                            CORS aktif
+                        </label>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check"></i>
+                        Kaydet
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Güvenlik Ayarları -->
+    <div class="tab-pane fade" id="security" role="tabpanel">
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0">Güvenlik Ayarları</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="/admin/settings/security">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="sessionTimeout" class="form-label">Oturum Zaman Aşımı (saniye)</label>
+                                <input type="number" class="form-control" id="sessionTimeout" name="sessionTimeout" 
+                                       value="{{settings.security.sessionTimeout}}" min="300" max="86400">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="tokenExpiration" class="form-label">API Token Geçerlilik Süresi (saniye)</label>
+                                <input type="number" class="form-control" id="tokenExpiration" name="tokenExpiration" 
+                                       value="{{settings.security.tokenExpiration}}" min="3600" max="31536000">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="maxLoginAttempts" class="form-label">Maksimum Giriş Denemesi</label>
+                                <input type="number" class="form-control" id="maxLoginAttempts" name="maxLoginAttempts" 
+                                       value="{{settings.security.maxLoginAttempts}}" min="3" max="20">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="lockoutDuration" class="form-label">Hesap Kilitleme Süresi (saniye)</label>
+                                <input type="number" class="form-control" id="lockoutDuration" name="lockoutDuration" 
+                                       value="{{settings.security.lockoutDuration}}" min="60" max="3600">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="passwordMinLength" class="form-label">Minimum Şifre Uzunluğu</label>
+                                <input type="number" class="form-control" id="passwordMinLength" name="passwordMinLength" 
+                                       value="{{settings.security.passwordMinLength}}" min="6" max="32">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="requireStrongPassword" name="requireStrongPassword" 
+                               {{#if settings.security.requireStrongPassword}}checked{{/if}}>
+                        <label class="form-check-label" for="requireStrongPassword">
+                            Güçlü şifre zorunlu
+                        </label>
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="enableTwoFactor" name="enableTwoFactor" 
+                               {{#if settings.security.enableTwoFactor}}checked{{/if}}>
+                        <label class="form-check-label" for="enableTwoFactor">
+                            İki faktörlü doğrulama aktif
+                        </label>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check"></i>
+                        Kaydet
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Loglama Ayarları -->
+    <div class="tab-pane fade" id="logging" role="tabpanel">
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0">Loglama Ayarları</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="/admin/settings/logging">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="logLevel" class="form-label">Log Seviyesi</label>
+                                <select class="form-select" id="logLevel" name="logLevel">
+                                    <option value="debug" {{#if (eq settings.logging.logLevel 'debug')}}selected{{/if}}>Debug</option>
+                                    <option value="info" {{#if (eq settings.logging.logLevel 'info')}}selected{{/if}}>Info</option>
+                                    <option value="warn" {{#if (eq settings.logging.logLevel 'warn')}}selected{{/if}}>Warning</option>
+                                    <option value="error" {{#if (eq settings.logging.logLevel 'error')}}selected{{/if}}>Error</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="maxLogFileSize" class="form-label">Maksimum Log Dosya Boyutu</label>
+                                <select class="form-select" id="maxLogFileSize" name="maxLogFileSize">
+                                    <option value="10m" {{#if (eq settings.logging.maxLogFileSize '10m')}}selected{{/if}}>10 MB</option>
+                                    <option value="20m" {{#if (eq settings.logging.maxLogFileSize '20m')}}selected{{/if}}>20 MB</option>
+                                    <option value="50m" {{#if (eq settings.logging.maxLogFileSize '50m')}}selected{{/if}}>50 MB</option>
+                                    <option value="100m" {{#if (eq settings.logging.maxLogFileSize '100m')}}selected{{/if}}>100 MB</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="logRetentionDays" class="form-label">Log Saklama Süresi (gün)</label>
+                        <input type="number" class="form-control" id="logRetentionDays" name="logRetentionDays" 
+                               value="{{settings.logging.logRetentionDays}}" min="1" max="1825">
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="enableFileLogging" name="enableFileLogging" 
+                               {{#if settings.logging.enableFileLogging}}checked{{/if}}>
+                        <label class="form-check-label" for="enableFileLogging">
+                            Dosya loglaması aktif
+                        </label>
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="enableConsoleLogging" name="enableConsoleLogging" 
+                               {{#if settings.logging.enableConsoleLogging}}checked{{/if}}>
+                        <label class="form-check-label" for="enableConsoleLogging">
+                            Konsol loglaması aktif
+                        </label>
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="compressOldLogs" name="compressOldLogs" 
+                               {{#if settings.logging.compressOldLogs}}checked{{/if}}>
+                        <label class="form-check-label" for="compressOldLogs">
+                            Eski logları sıkıştır
+                        </label>
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="logPriceUpdates" name="logPriceUpdates" 
+                               {{#if settings.logging.logPriceUpdates}}checked{{/if}}>
+                        <label class="form-check-label" for="logPriceUpdates">
+                            Fiyat güncellemelerini logla
+                        </label>
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="logApiRequests" name="logApiRequests" 
+                               {{#if settings.logging.logApiRequests}}checked{{/if}}>
+                        <label class="form-check-label" for="logApiRequests">
+                            API isteklerini logla
+                        </label>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check"></i>
+                        Kaydet
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Geliştirici Ayarları -->
+    <div class="tab-pane fade" id="devmode" role="tabpanel">
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0">Geliştirici Ayarları</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="/admin/settings/devmode">
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="enabled" name="enabled" 
+                               {{#if settings.devmode.enabled}}checked{{/if}}>
+                        <label class="form-check-label" for="enabled">
+                            <strong>Geliştirici modu aktif</strong>
+                        </label>
+                        <div class="form-text">Geliştirici modunu aktif eder ve debug bilgilerini gösterir</div>
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="showConsoleDebug" name="showConsoleDebug" 
+                               {{#if settings.devmode.showConsoleDebug}}checked{{/if}}>
+                        <label class="form-check-label" for="showConsoleDebug">
+                            Konsol debug mesajları göster
+                        </label>
+                        <div class="form-text">Tüm servis debug mesajlarını konsola yazar</div>
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="showDatabaseOperations" name="showDatabaseOperations" 
+                               {{#if settings.devmode.showDatabaseOperations}}checked{{/if}}>
+                        <label class="form-check-label" for="showDatabaseOperations">
+                            Veritabanı işlemlerini logla
+                        </label>
+                        <div class="form-text">MongoDB CRUD işlemlerini konsola yazar</div>
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="showPriceChangeNotifications" name="showPriceChangeNotifications" 
+                               {{#if settings.devmode.showPriceChangeNotifications}}checked{{/if}}>
+                        <label class="form-check-label" for="showPriceChangeNotifications">
+                            Fiyat değişim bildirimlerini göster
+                        </label>
+                        <div class="form-text">Fiyat değiştiğinde konsola bildirim yazar</div>
+                    </div>
+                    
+                    <div class="alert alert-warning" role="alert">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>Uyarı:</strong> Geliştirici modu performansı etkileyebilir. Production ortamında kapatılması önerilir.
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check"></i>
+                        Kaydet
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function resetToDefaults() {
+    if (confirm('Tüm ayarları varsayılan değerlere sıfırlamak istediğinizden emin misiniz?')) {
+        fetch('/admin/api/settings/reset', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Sıfırlama işlemi başarısız: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Hata: ' + error.message);
+        });
+    }
+}
+
+function validateMinimumPriceChange() {
+    const priceChangeValue = document.getElementById('priceChangeValue').value;
+    const priceChangeType = document.getElementById('priceChangeType').value;
+    
+    if (!priceChangeValue || priceChangeValue == '0') {
+        alert('Fiyat Değişim Değeri boş olamaz ve 0\'dan büyük olmalıdır.');
+        return false;
+    }
+    
+    if (!priceChangeType) {
+        alert('Fiyat Değişim Tipi seçilmelidir.');
+        return false;
+    }
+    
+    return true;
+}
+</script>

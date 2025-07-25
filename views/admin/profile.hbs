@@ -1,0 +1,256 @@
+<div class="row">
+    <div class="col-12">
+        <h2 class="mb-4">Profil Ayarları</h2>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Profil Bilgileri -->
+    <div class="col-md-8 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-person"></i>
+                    Kişisel Bilgiler
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="/admin/profile">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="firstName" class="form-label">Ad</label>
+                                <input type="text" class="form-control" id="firstName" name="firstName" 
+                                       value="{{user.firstName}}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="lastName" class="form-label">Soyad</label>
+                                <input type="text" class="form-control" id="lastName" name="lastName" 
+                                       value="{{user.lastName}}" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="email" name="email" 
+                                       value="{{user.email}}" readonly>
+                                <div class="form-text">Email adresi değiştirilemez</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="phone" class="form-label">Telefon</label>
+                                <input type="tel" class="form-control" id="phone" name="phone" 
+                                       value="{{user.phone}}" placeholder="+90 555 000 0000">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <h6>Şifre Değiştir</h6>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="currentPassword" class="form-label">Mevcut Şifre</label>
+                                <input type="password" class="form-control" id="currentPassword" name="currentPassword">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="newPassword" class="form-label">Yeni Şifre</label>
+                                <input type="password" class="form-control" id="newPassword" name="newPassword">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="confirmPassword" class="form-label">Yeni Şifre Tekrar</label>
+                                <input type="password" class="form-control" id="confirmPassword" name="confirmPassword">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check"></i>
+                        Profili Güncelle
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Kullanıcı İstatistikleri -->
+    <div class="col-md-4 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-info-circle"></i>
+                    Hesap Bilgileri
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">Rol</label>
+                    <div>
+                        {{#if (eq user.role 'admin')}}
+                        <span class="badge bg-danger fs-6">Admin</span>
+                        {{else if (eq user.role 'manager')}}
+                        <span class="badge bg-warning fs-6">Manager</span>
+                        {{else}}
+                        <span class="badge bg-info fs-6">User</span>
+                        {{/if}}
+                    </div>
+                </div>
+                
+                {{#if user.department}}
+                <div class="mb-3">
+                    <label class="form-label">Departman</label>
+                    <div>{{user.department}}</div>
+                </div>
+                {{/if}}
+                
+                {{#if user.title}}
+                <div class="mb-3">
+                    <label class="form-label">Ünvan</label>
+                    <div>{{user.title}}</div>
+                </div>
+                {{/if}}
+                
+                <div class="mb-3">
+                    <label class="form-label">Hesap Durumu</label>
+                    <div>
+                        {{#if user.isActive}}
+                        <span class="badge bg-success">Aktif</span>
+                        {{else}}
+                        <span class="badge bg-danger">Pasif</span>
+                        {{/if}}
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Üyelik Tarihi</label>
+                    <div><small>{{formatDate user.createdAt}}</small></div>
+                </div>
+                
+                {{#if user.lastLogin}}
+                <div class="mb-3">
+                    <label class="form-label">Son Giriş</label>
+                    <div><small>{{formatDate user.lastLogin}}</small></div>
+                </div>
+                {{/if}}
+                
+                <div class="mb-3">
+                    <label class="form-label">Toplam Giriş</label>
+                    <div><span class="badge bg-info">{{user.loginCount}}</span></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tercihler -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-gear"></i>
+                    Tercihler
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="/admin/profile/preferences">
+                    <div class="mb-3">
+                        <label for="language" class="form-label">Dil</label>
+                        <select class="form-select" id="language" name="language">
+                            <option value="tr" {{#if (eq user.preferences.language 'tr')}}selected{{/if}}>Türkçe</option>
+                            <option value="en" {{#if (eq user.preferences.language 'en')}}selected{{/if}}>English</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="timezone" class="form-label">Zaman Dilimi</label>
+                        <select class="form-select" id="timezone" name="timezone">
+                            <option value="Europe/Istanbul" {{#if (eq user.preferences.timezone 'Europe/Istanbul')}}selected{{/if}}>Europe/Istanbul</option>
+                            <option value="UTC" {{#if (eq user.preferences.timezone 'UTC')}}selected{{/if}}>UTC</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="theme" class="form-label">Tema</label>
+                        <select class="form-select" id="theme" name="theme">
+                            <option value="light" {{#if (eq user.preferences.theme 'light')}}selected{{/if}}>Açık Tema</option>
+                            <option value="dark" {{#if (eq user.preferences.theme 'dark')}}selected{{/if}}>Koyu Tema</option>
+                        </select>
+                    </div>
+                    
+                    <hr>
+                    
+                    <h6>Bildirimler</h6>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="emailNotifications" name="notifications.email" 
+                               {{#if user.preferences.notifications.email}}checked{{/if}}>
+                        <label class="form-check-label" for="emailNotifications">
+                            Email bildirimleri
+                        </label>
+                    </div>
+                    
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="browserNotifications" name="notifications.browser" 
+                               {{#if user.preferences.notifications.browser}}checked{{/if}}>
+                        <label class="form-check-label" for="browserNotifications">
+                            Tarayıcı bildirimleri
+                        </label>
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="smsNotifications" name="notifications.sms" 
+                               {{#if user.preferences.notifications.sms}}checked{{/if}}>
+                        <label class="form-check-label" for="smsNotifications">
+                            SMS bildirimleri
+                        </label>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-check"></i>
+                        Tercihleri Kaydet
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Şifre onayı kontrolü
+document.getElementById('confirmPassword').addEventListener('blur', function() {
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = this.value;
+    
+    if (newPassword && confirmPassword && newPassword !== confirmPassword) {
+        this.setCustomValidity('Şifreler eşleşmiyor');
+        this.classList.add('is-invalid');
+    } else {
+        this.setCustomValidity('');
+        this.classList.remove('is-invalid');
+    }
+});
+
+// Şifre değiştirme alanları kontrolü
+const passwordFields = ['currentPassword', 'newPassword', 'confirmPassword'];
+passwordFields.forEach(fieldId => {
+    document.getElementById(fieldId).addEventListener('input', function() {
+        const hasAnyValue = passwordFields.some(id => document.getElementById(id).value);
+        
+        passwordFields.forEach(id => {
+            const field = document.getElementById(id);
+            if (hasAnyValue) {
+                field.setAttribute('required', 'required');
+            } else {
+                field.removeAttribute('required');
+            }
+        });
+    });
+});
+</script>

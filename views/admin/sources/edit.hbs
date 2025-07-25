@@ -1,0 +1,230 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Veri Kaynağı Düzenle</h2>
+    <a href="/admin/sources" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i>
+        Geri Dön
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST" action="/admin/sources/{{editSource._id}}">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Kaynak Adı (Sistem) *</label>
+                        <input type="text" class="form-control" id="name" name="name" 
+                               value="{{editSource.name}}" required>
+                        <div class="form-text">Sistem içinde kullanılacak benzersiz ad</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="displayName" class="form-label">Görünür Ad *</label>
+                        <input type="text" class="form-control" id="displayName" name="displayName" 
+                               value="{{editSource.displayName}}" required>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="type" class="form-label">Kaynak Tipi *</label>
+                        <select class="form-select" id="type" name="type" required>
+                            <option value="api" {{#if (eq editSource.type 'api')}}selected{{/if}}>API</option>
+                            <option value="webscraping" {{#if (eq editSource.type 'webscraping')}}selected{{/if}}>Web Scraping</option>
+                            <option value="manual" {{#if (eq editSource.type 'manual')}}selected{{/if}}>Manuel</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="category" class="form-label">Kategori *</label>
+                        <select class="form-select" id="category" name="category" required>
+                            <option value="gold_dealer" {{#if (eq editSource.category 'gold_dealer')}}selected{{/if}}>Altın Satıcısı</option>
+                            <option value="government" {{#if (eq editSource.category 'government')}}selected{{/if}}>Resmi Kurum</option>
+                            <option value="exchange" {{#if (eq editSource.category 'exchange')}}selected{{/if}}>Borsa</option>
+                            <option value="bank" {{#if (eq editSource.category 'bank')}}selected{{/if}}>Banka</option>
+                            <option value="other" {{#if (eq editSource.category 'other')}}selected{{/if}}>Diğer</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="mb-3">
+                        <label for="url" class="form-label">Web Sitesi URL'si *</label>
+                        <input type="url" class="form-control" id="url" name="url" 
+                               value="{{editSource.url}}" required>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label for="priority" class="form-label">Öncelik *</label>
+                        <select class="form-select" id="priority" name="priority" required>
+                            <option value="1" {{#if (eq editSource.priority 1)}}selected{{/if}}>1 (En Yüksek)</option>
+                            <option value="2" {{#if (eq editSource.priority 2)}}selected{{/if}}>2 (Yüksek)</option>
+                            <option value="3" {{#if (eq editSource.priority 3)}}selected{{/if}}>3 (Normal)</option>
+                            <option value="4" {{#if (eq editSource.priority 4)}}selected{{/if}}>4 (Düşük)</option>
+                            <option value="5" {{#if (eq editSource.priority 5)}}selected{{/if}}>5 (En Düşük)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- API Ayarları -->
+            <div id="apiSettings" style="display: {{#if (eq editSource.type 'api')}}block{{else}}none{{/if}};">
+                <hr>
+                <h5>API Ayarları</h5>
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="mb-3">
+                            <label for="apiUrl" class="form-label">API URL'si</label>
+                            <input type="url" class="form-control" id="apiUrl" name="apiUrl" 
+                                   value="{{editSource.apiUrl}}">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="dataFormat" class="form-label">Veri Formatı</label>
+                            <select class="form-select" id="dataFormat" name="dataFormat">
+                                <option value="json" {{#if (eq editSource.dataFormat 'json')}}selected{{/if}}>JSON</option>
+                                <option value="xml" {{#if (eq editSource.dataFormat 'xml')}}selected{{/if}}>XML</option>
+                                <option value="csv" {{#if (eq editSource.dataFormat 'csv')}}selected{{/if}}>CSV</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Web Scraping Ayarları -->
+            <div id="scrapingSettings" style="display: {{#if (eq editSource.type 'webscraping')}}block{{else}}none{{/if}};">
+                <hr>
+                <h5>Web Scraping Ayarları</h5>
+                <div class="mb-3">
+                    <label for="goldSelector" class="form-label">Altın Fiyatı CSS Seçici</label>
+                    <input type="text" class="form-control" id="goldSelector" name="scrapingConfig.goldSelector" 
+                           value="{{editSource.scrapingConfig.goldSelector}}">
+                </div>
+                
+                <div class="mb-3">
+                    <label for="usdSelector" class="form-label">USD Kuru CSS Seçici</label>
+                    <input type="text" class="form-control" id="usdSelector" name="scrapingConfig.usdSelector" 
+                           value="{{editSource.scrapingConfig.usdSelector}}">
+                </div>
+            </div>
+            
+            <hr>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="updateInterval" class="form-label">Güncelleme Aralığı (saniye) *</label>
+                        <input type="number" class="form-control" id="updateInterval" name="updateInterval" 
+                               value="{{editSource.updateInterval}}" min="60" max="3600" required>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="currency" class="form-label">Para Birimi *</label>
+                        <select class="form-select" id="currency" name="currency" required>
+                            <option value="TRY" {{#if (eq editSource.currency 'TRY')}}selected{{/if}}>TRY</option>
+                            <option value="USD" {{#if (eq editSource.currency 'USD')}}selected{{/if}}>USD</option>
+                            <option value="EUR" {{#if (eq editSource.currency 'EUR')}}selected{{/if}}>EUR</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="description" class="form-label">Açıklama</label>
+                <textarea class="form-control" id="description" name="description" rows="3" placeholder="Bu veri kaynağı hakkında kısa açıklama">{{editSource.description}}</textarea>
+                <div class="form-text">Bu açıklama API dokümantasyonunda gösterilir</div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="isActive" class="form-label">Durum</label>
+                <select class="form-select" id="isActive" name="isActive" required>
+                    <option value="true" {{#if editSource.isActive}}selected{{/if}}>Aktif</option>
+                    <option value="false" {{#unless editSource.isActive}}selected{{/unless}}>Pasif</option>
+                </select>
+                <div class="form-text">Aktif kaynaklar veri toplamaya dahil edilir</div>
+            </div>
+            
+            <hr>
+            
+            <h6>Kaynak Bilgileri</h6>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label">Oluşturulma Tarihi</label>
+                        <div class="form-control-plaintext">{{formatDate editSource.createdAt}}</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label">Son Güncelleme</label>
+                        <div class="form-control-plaintext">{{formatDate editSource.updatedAt}}</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label">Son Kontrol</label>
+                        <div class="form-control-plaintext">
+                            {{#if editSource.lastChecked}}
+                            {{formatDate editSource.lastChecked}}
+                            {{else}}
+                            Henüz kontrol edilmedi
+                            {{/if}}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check"></i>
+                    Kaynağı Güncelle
+                </button>
+                <a href="/admin/sources" class="btn btn-secondary">
+                    <i class="bi bi-x"></i>
+                    İptal
+                </a>
+                <button type="button" class="btn btn-outline-danger ms-auto" onclick="confirmDelete()">
+                    <i class="bi bi-trash"></i>
+                    Kaynağı Sil
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Tip değişikliğinde ayarları göster/gizle
+document.getElementById('type').addEventListener('change', function() {
+    const type = this.value;
+    const apiSettings = document.getElementById('apiSettings');
+    const scrapingSettings = document.getElementById('scrapingSettings');
+    
+    apiSettings.style.display = 'none';
+    scrapingSettings.style.display = 'none';
+    
+    if (type === 'api') {
+        apiSettings.style.display = 'block';
+    } else if (type === 'webscraping') {
+        scrapingSettings.style.display = 'block';
+    }
+});
+
+function confirmDelete() {
+    if (confirm('Bu veri kaynağını silmek istediğinizden emin misiniz?')) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/admin/sources/{{editSource._id}}/delete';
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>

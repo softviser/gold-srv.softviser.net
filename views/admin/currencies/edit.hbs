@@ -1,0 +1,228 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Currency Düzenle</h2>
+    <a href="/admin/currencies" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i>
+        Geri Dön
+    </a>
+</div>
+
+{{#if error}}
+<div class="alert alert-danger" role="alert">
+    <i class="bi bi-exclamation-triangle"></i>
+    {{error}}
+</div>
+{{/if}}
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST" action="/admin/currencies/{{editCurrency._id}}">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="symbol" class="form-label">Symbol *</label>
+                        <input type="text" class="form-control" id="symbol" name="symbol" 
+                               value="{{editCurrency.symbol}}" placeholder="USD/TRY" required>
+                        <div class="form-text">Örnek: USD/TRY, EUR/TRY, HAS/TRY</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="code" class="form-label">Kod *</label>
+                        <input type="text" class="form-control" id="code" name="code" 
+                               value="{{editCurrency.code}}" placeholder="USD" required>
+                        <div class="form-text">Kısa kod (genellikle symbol'ün ilk kısmı)</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Ad *</label>
+                        <input type="text" class="form-control" id="name" name="name" 
+                               value="{{editCurrency.name}}" placeholder="Amerikan Doları" required>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="type" class="form-label">Tip *</label>
+                        <select class="form-select" id="type" name="type" required>
+                            <option value="forex" {{#if (eq editCurrency.type 'forex')}}selected{{/if}}>Forex</option>
+                            <option value="gold" {{#if (eq editCurrency.type 'gold')}}selected{{/if}}>Gold</option>
+                            <option value="crypto" {{#if (eq editCurrency.type 'crypto')}}selected{{/if}}>Crypto</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label for="baseCurrency" class="form-label">Base Currency *</label>
+                        <input type="text" class="form-control" id="baseCurrency" name="baseCurrency" 
+                               value="{{editCurrency.baseCurrency}}" placeholder="USD" required>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label for="quoteCurrency" class="form-label">Quote Currency</label>
+                        <input type="text" class="form-control" id="quoteCurrency" name="quoteCurrency" 
+                               value="{{editCurrency.quoteCurrency}}" placeholder="TRY">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label for="priority" class="form-label">Öncelik *</label>
+                        <select class="form-select" id="priority" name="priority" required>
+                            <option value="1" {{#if (eq editCurrency.priority 1)}}selected{{/if}}>1 (En Yüksek)</option>
+                            <option value="2" {{#if (eq editCurrency.priority 2)}}selected{{/if}}>2 (Yüksek)</option>
+                            <option value="3" {{#if (eq editCurrency.priority 3)}}selected{{/if}}>3 (Normal)</option>
+                            <option value="4" {{#if (eq editCurrency.priority 4)}}selected{{/if}}>4 (Düşük)</option>
+                            <option value="5" {{#if (eq editCurrency.priority 5)}}selected{{/if}}>5 (En Düşük)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="description" class="form-label">Açıklama</label>
+                <textarea class="form-control" id="description" name="description" rows="2">{{editCurrency.description}}</textarea>
+            </div>
+            
+            <hr>
+            
+            <h5>Veri Kaynakları</h5>
+            <div class="mb-3">
+                <label class="form-label">Bu currency için hangi kaynaklardan veri alınsın?</label>
+                <div id="sourcesContainer">
+                    {{#each sources}}
+                    <div class="form-check">
+                        <input class="form-check-input source-checkbox" type="checkbox" 
+                               value="{{this.name}}" id="source_{{this.name}}" name="sources"
+                               {{#if (contains ../editCurrency.sources this.name)}}checked{{/if}}
+                               onchange="toggleSourceMapping('{{this.name}}')">
+                        <label class="form-check-label" for="source_{{this.name}}">
+                            {{this.displayName}} ({{this.name}})
+                        </label>
+                    </div>
+                    
+                    <div class="source-mapping ms-4 mb-3" id="mapping_{{this.name}}" 
+                         style="display: {{#if (contains ../editCurrency.sources this.name)}}block{{else}}none{{/if}};">
+                        <label for="sourceMapping_{{this.name}}" class="form-label">
+                            <small>{{this.displayName}} için source field:</small>
+                        </label>
+                        <input type="text" class="form-control form-control-sm" 
+                               id="sourceMapping_{{this.name}}" name="sourceMapping_{{this.name}}"
+                               value="{{#if ../editCurrency.sourceMapping}}{{lookup ../editCurrency.sourceMapping this.name}}{{/if}}"
+                               placeholder="Varsayılan: currency kodu kullanılır">
+                        <div class="form-text">
+                            <small>Özel mapping gerekiyorsa belirtin (örn: HH, USD, EUR)</small>
+                        </div>
+                    </div>
+                    {{/each}}
+                </div>
+            </div>
+            
+            <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" id="isActive" name="isActive" 
+                       {{#if editCurrency.isActive}}checked{{/if}}>
+                <label class="form-check-label" for="isActive">
+                    Currency aktif olsun
+                </label>
+            </div>
+            
+            <hr>
+            
+            <h6>Currency Bilgileri</h6>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label">Oluşturulma Tarihi</label>
+                        <div class="form-control-plaintext">{{formatDate editCurrency.createdAt}}</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label">Son Güncelleme</label>
+                        <div class="form-control-plaintext">{{formatDate editCurrency.updatedAt}}</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label">Kaynak Durumu</label>
+                        <div class="form-control-plaintext">
+                            {{#if editCurrency.hasSource}}
+                            <span class="text-success"><i class="bi bi-check-circle"></i> Kaynak mevcut</span>
+                            {{else}}
+                            <span class="text-warning"><i class="bi bi-exclamation-circle"></i> Kaynak yok</span>
+                            {{/if}}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check"></i>
+                    Currency Güncelle
+                </button>
+                <a href="/admin/currencies" class="btn btn-secondary">
+                    <i class="bi bi-x"></i>
+                    İptal
+                </a>
+                <button type="button" class="btn btn-outline-danger ms-auto" onclick="confirmDelete()">
+                    <i class="bi bi-trash"></i>
+                    Currency Sil
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function toggleSourceMapping(sourceName) {
+    const checkbox = document.getElementById(`source_${sourceName}`);
+    const mappingDiv = document.getElementById(`mapping_${sourceName}`);
+    
+    if (checkbox.checked) {
+        mappingDiv.style.display = 'block';
+    } else {
+        mappingDiv.style.display = 'none';
+        document.getElementById(`sourceMapping_${sourceName}`).value = '';
+    }
+}
+
+// Form submit'te sources array'ini doğru şekilde gönder
+document.querySelector('form').addEventListener('submit', function(e) {
+    const checkedSources = document.querySelectorAll('.source-checkbox:checked');
+    
+    // Önce mevcut hidden input'ları temizle
+    document.querySelectorAll('input[name="sources"]').forEach(input => {
+        if (input.type === 'hidden') {
+            input.remove();
+        }
+    });
+    
+    // Checked source'lar için hidden input'lar oluştur
+    checkedSources.forEach(checkbox => {
+        const hiddenInput = document.createElement('input');
+        hiddenInput.type = 'hidden';
+        hiddenInput.name = 'sources';
+        hiddenInput.value = checkbox.value;
+        this.appendChild(hiddenInput);
+        
+        // Checkbox'ı disable et ki duplicate gönderim olmasın
+        checkbox.disabled = true;
+    });
+});
+
+function confirmDelete() {
+    if (confirm('Bu currency\'yi silmek istediğinizden emin misiniz?')) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/admin/currencies/{{editCurrency._id}}/delete';
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>

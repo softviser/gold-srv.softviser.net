@@ -1,0 +1,177 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Yeni API Token Oluştur</h2>
+    <a href="/admin/tokens" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i>
+        Geri Dön
+    </a>
+</div>
+
+{{#if error}}
+<div class="alert alert-danger" role="alert">
+    <i class="bi bi-exclamation-triangle"></i>
+    {{error}}
+</div>
+{{/if}}
+
+<form method="POST" action="/admin/tokens" class="needs-validation" novalidate>
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Token Bilgileri</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="name" class="form-label">Token Adı <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="name" name="name" 
+                                       value="{{formData.name}}" required>
+                                <div class="invalid-feedback">
+                                    Token adı gereklidir
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="domain" class="form-label">Domain <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="domain" name="domain" 
+                                       value="{{formData.domain}}" placeholder="example.com veya *" required>
+                                <div class="form-text">
+                                    Belirli domain için domain adı, tüm domainler için * kullanın
+                                </div>
+                                <div class="invalid-feedback">
+                                    Domain gereklidir
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Açıklama</label>
+                        <textarea class="form-control" id="description" name="description" rows="3">{{formData.description}}</textarea>
+                        <div class="form-text">
+                            Token'ın kullanım amacını açıklayın
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="expiresAt" class="form-label">Son Kullanma Tarihi</label>
+                        <input type="datetime-local" class="form-control" id="expiresAt" name="expiresAt" 
+                               value="{{formData.expiresAt}}">
+                        <div class="form-text">
+                            Boş bırakılırsa token süresiz olur
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">İzinler</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">API İzinleri</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="perm_read" name="permissions" value="read" checked>
+                            <label class="form-check-label" for="perm_read">
+                                <strong>Okuma</strong>
+                                <small class="d-block text-muted">Veri okuma izni</small>
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="perm_write" name="permissions" value="write">
+                            <label class="form-check-label" for="perm_write">
+                                <strong>Yazma</strong>
+                                <small class="d-block text-muted">Veri yazma/güncelleme izni</small>
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="perm_subscribe" name="permissions" value="subscribe">
+                            <label class="form-check-label" for="perm_subscribe">
+                                <strong>Abonelik</strong>
+                                <small class="d-block text-muted">WebSocket abone olma izni</small>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="allowedChannels" class="form-label">İzinli Kanallar</label>
+                        <input type="text" class="form-control" id="allowedChannels" name="allowedChannels" 
+                               value="{{#if formData.allowedChannels}}{{formData.allowedChannels}}{{else}}*{{/if}}" placeholder="prices,market">
+                        <div class="form-text">
+                            Virgülle ayırarak belirtin. * tüm kanallar için
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="mb-0">Rate Limiting</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="rateLimit_requests" class="form-label">İstek Limiti</label>
+                        <input type="number" class="form-control" id="rateLimit_requests" name="rateLimit_requests" 
+                               value="{{#if formData.rateLimit_requests}}{{formData.rateLimit_requests}}{{else}}1000{{/if}}" min="1">
+                    </div>
+                    <div class="mb-3">
+                        <label for="rateLimit_window" class="form-label">Zaman Penceresi (saniye)</label>
+                        <input type="number" class="form-control" id="rateLimit_window" name="rateLimit_window" 
+                               value="{{#if formData.rateLimit_window}}{{formData.rateLimit_window}}{{else}}60{{/if}}" min="1">
+                    </div>
+                    <div class="form-text">
+                        <small>Belirtilen süre içinde maksimum istek sayısı</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-end gap-2">
+                <a href="/admin/tokens" class="btn btn-secondary">İptal</a>
+                <button type="submit" class="btn btn-success">
+                    <i class="bi bi-check-circle"></i>
+                    Token Oluştur
+                </button>
+            </div>
+        </div>
+    </div>
+</form>
+
+<script>
+// Bootstrap form validation
+(function() {
+    'use strict';
+    window.addEventListener('load', function() {
+        var forms = document.getElementsByClassName('needs-validation');
+        var validation = Array.prototype.filter.call(forms, function(form) {
+            form.addEventListener('submit', function(event) {
+                if (form.checkValidity() === false) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                form.classList.add('was-validated');
+            }, false);
+        });
+    }, false);
+})();
+
+// Domain input yardımcıları
+document.getElementById('domain').addEventListener('input', function(e) {
+    const value = e.target.value;
+    if (value === '*') {
+        e.target.setCustomValidity('');
+    } else if (value && !value.includes('.') && value !== 'localhost') {
+        e.target.setCustomValidity('Geçerli bir domain adı girin (örn: example.com)');
+    } else {
+        e.target.setCustomValidity('');
+    }
+});
+</script>

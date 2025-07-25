@@ -1,0 +1,456 @@
+{
+  "info": {
+    "_postman_id": "gold-server-api-v3",
+    "name": "Gold Server API v3 - Complete",
+    "description": "Gold Server API v3 - apiRoutes.js dosyasına göre güncellenmiş tam koleksiyon",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{api_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:6701",
+      "type": "string"
+    },
+    {
+      "key": "api_token",
+      "value": "YOUR_TOKEN_HERE",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "System & Authentication",
+      "item": [
+        {
+          "name": "Get API Info",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/info",
+              "host": ["{{base_url}}"],
+              "path": ["api", "info"]
+            },
+            "description": "API hakkında genel bilgi - Token gerektirmez"
+          }
+        },
+        {
+          "name": "Ping Health Check",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/ping",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ping"]
+            },
+            "description": "Sunucu sağlık kontrolü - Token gerektirmez"
+          }
+        },
+        {
+          "name": "Validate Token",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/token/validate",
+              "host": ["{{base_url}}"],
+              "path": ["api", "token", "validate"]
+            },
+            "description": "Token geçerliliğini kontrol eder"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Current Prices",
+      "item": [
+        {
+          "name": "Get All Current Prices",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/prices/current",
+              "host": ["{{base_url}}"],
+              "path": ["api", "prices", "current"]
+            },
+            "description": "Tüm kaynaklardan güncel fiyatları getirir"
+          }
+        },
+        {
+          "name": "Get Prices by Source - AltınKaynak",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/prices/current?source=altinkaynak",
+              "host": ["{{base_url}}"],
+              "path": ["api", "prices", "current"],
+              "query": [
+                {
+                  "key": "source",
+                  "value": "altinkaynak",
+                  "description": "Kaynak filtresi"
+                }
+              ]
+            },
+            "description": "Sadece AltınKaynak'tan güncel fiyatları getirir"
+          }
+        },
+        {
+          "name": "Get Prices with Symbol Filter",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/prices/current?source=altinkaynak&symbol=HAS/TRY",
+              "host": ["{{base_url}}"],
+              "path": ["api", "prices", "current"],
+              "query": [
+                {
+                  "key": "source",
+                  "value": "altinkaynak",
+                  "description": "Kaynak filtresi"
+                },
+                {
+                  "key": "symbol",
+                  "value": "HAS/TRY",
+                  "description": "Sembol filtresi"
+                }
+              ]
+            },
+            "description": "AltınKaynak'tan HAS/TRY fiyatını getirir"
+          }
+        },
+        {
+          "name": "Get Prices by Source - TCMB",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/prices/source/tcmb",
+              "host": ["{{base_url}}"],
+              "path": ["api", "prices", "source", "tcmb"]
+            },
+            "description": "TCMB'den güncel döviz kurlarını getirir"
+          }
+        },
+        {
+          "name": "Get Price by Symbol - USD/TRY",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/prices/current/USD%2FTRY",
+              "host": ["{{base_url}}"],
+              "path": ["api", "prices", "current", "USD%2FTRY"]
+            },
+            "description": "USD/TRY sembolü için güncel fiyat"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Symbols",
+      "item": [
+        {
+          "name": "Get All Symbols",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/prices/symbols",
+              "host": ["{{base_url}}"],
+              "path": ["api", "prices", "symbols"]
+            },
+            "description": "Tüm aktif sembolleri getirir"
+          }
+        },
+        {
+          "name": "Get Symbols by Source - AltınKaynak",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/prices/symbols?source=altinkaynak",
+              "host": ["{{base_url}}"],
+              "path": ["api", "prices", "symbols"],
+              "query": [
+                {
+                  "key": "source",
+                  "value": "altinkaynak",
+                  "description": "Kaynak filtresi"
+                }
+              ]
+            },
+            "description": "AltınKaynak'tan aktif sembolleri getirir"
+          }
+        },
+        {
+          "name": "Get Symbols by Source - TCMB",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/prices/symbols?source=tcmb",
+              "host": ["{{base_url}}"],
+              "path": ["api", "prices", "symbols"],
+              "query": [
+                {
+                  "key": "source",
+                  "value": "tcmb",
+                  "description": "Kaynak filtresi"
+                }
+              ]
+            },
+            "description": "TCMB'den aktif döviz kurlarının sembollerini getirir"
+          }
+        },
+        {
+          "name": "Get Symbols by Source - HaremGold",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/prices/symbols?source=haremgold",
+              "host": ["{{base_url}}"],
+              "path": ["api", "prices", "symbols"],
+              "query": [
+                {
+                  "key": "source",
+                  "value": "haremgold",
+                  "description": "Kaynak filtresi"
+                }
+              ]
+            },
+            "description": "HaremGold'dan aktif sembolleri getirir"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Price History",
+      "item": [
+        {
+          "name": "Get Price History - USD/TRY (Hourly)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/prices/history/USD%2FTRY?groupBy=hour&startDate=2025-07-23&endDate=2025-07-24&limit=50",
+              "host": ["{{base_url}}"],
+              "path": ["api", "prices", "history", "USD%2FTRY"],
+              "query": [
+                {
+                  "key": "groupBy",
+                  "value": "hour",
+                  "description": "Gruplama tipi: hour, day, none"
+                },
+                {
+                  "key": "startDate",
+                  "value": "2025-07-23",
+                  "description": "Başlangıç tarihi (YYYY-MM-DD)"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2025-07-24",
+                  "description": "Bitiş tarihi (YYYY-MM-DD)"
+                },
+                {
+                  "key": "source",
+                  "value": "",
+                  "description": "Kaynak filtresi (opsiyonel)",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "50",
+                  "description": "Kayıt sayısı limiti"
+                }
+              ]
+            },
+            "description": "USD/TRY için saatlik ortalama fiyat geçmişi (Max 30 gün)"
+          }
+        },
+        {
+          "name": "Get Price History - HAS/TRY (Daily)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/prices/history/HAS%2FTRY?groupBy=day&startDate=2025-01-01&endDate=2025-07-24&source=altinkaynak",
+              "host": ["{{base_url}}"],
+              "path": ["api", "prices", "history", "HAS%2FTRY"],
+              "query": [
+                {
+                  "key": "groupBy",
+                  "value": "day",
+                  "description": "Gruplama tipi: day (günlük ortalama)"
+                },
+                {
+                  "key": "startDate",
+                  "value": "2025-01-01",
+                  "description": "Başlangıç tarihi (günlük gruplamada max 1 yıl)"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2025-07-24",
+                  "description": "Bitiş tarihi"
+                },
+                {
+                  "key": "source",
+                  "value": "altinkaynak",
+                  "description": "Kaynak filtresi (opsiyonel)"
+                },
+                {
+                  "key": "limit",
+                  "value": "365",
+                  "description": "Kayıt sayısı limiti",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "HAS/TRY için günlük ortalama fiyat geçmişi (Max 1 yıl)"
+          }
+        },
+        {
+          "name": "Get Price History - EUR/TRY (Raw Data)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/prices/history/EUR%2FTRY?groupBy=none&startDate=2025-07-24&limit=100",
+              "host": ["{{base_url}}"],
+              "path": ["api", "prices", "history", "EUR%2FTRY"],
+              "query": [
+                {
+                  "key": "groupBy",
+                  "value": "none",
+                  "description": "Ham veri (gruplama yok)"
+                },
+                {
+                  "key": "startDate",
+                  "value": "2025-07-24",
+                  "description": "Başlangıç tarihi"
+                },
+                {
+                  "key": "endDate",
+                  "value": "",
+                  "description": "Bitiş tarihi (boş ise bugün)",
+                  "disabled": true
+                },
+                {
+                  "key": "source",
+                  "value": "",
+                  "description": "Kaynak filtresi (opsiyonel)",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "100",
+                  "description": "Kayıt sayısı limiti"
+                }
+              ]
+            },
+            "description": "EUR/TRY için ham fiyat verileri (Max 30 gün)"
+          }
+        },
+        {
+          "name": "Get Price History - Default (Last 24h)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/prices/history/USD%2FTRY",
+              "host": ["{{base_url}}"],
+              "path": ["api", "prices", "history", "USD%2FTRY"]
+            },
+            "description": "Varsayılan: Son 24 saatin saatlik ortalaması"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Sources & WebSocket",
+      "item": [
+        {
+          "name": "Get All Sources",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/sources",
+              "host": ["{{base_url}}"],
+              "path": ["api", "sources"]
+            },
+            "description": "Mevcut veri kaynaklarını listeler"
+          }
+        },
+        {
+          "name": "Get WebSocket Info",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/websocket/info",
+              "host": ["{{base_url}}"],
+              "path": ["api", "websocket", "info"]
+            },
+            "description": "WebSocket bağlantı bilgileri"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Error Examples",
+      "item": [
+        {
+          "name": "401 - No Token",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/prices/current",
+              "host": ["{{base_url}}"],
+              "path": ["api", "prices", "current"]
+            },
+            "description": "Token olmadan istek - 401 Unauthorized"
+          }
+        },
+        {
+          "name": "404 - Invalid Source",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/prices/source/invalid_source",
+              "host": ["{{base_url}}"],
+              "path": ["api", "prices", "source", "invalid_source"]
+            },
+            "description": "Geçersiz kaynak - 404 Not Found"
+          }
+        }
+      ]
+    }
+  ]
+}

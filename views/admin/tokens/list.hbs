@@ -1,0 +1,225 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>API Token Yönetimi</h2>
+    <div class="d-flex gap-2">
+        <a href="/admin/tokens/logs" class="btn btn-outline-info">
+            <i class="bi bi-activity"></i>
+            API Logları
+        </a>
+        <a href="/admin/tokens/new" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i>
+            Yeni Token Oluştur
+        </a>
+    </div>
+</div>
+
+{{#if error}}
+<div class="alert alert-danger" role="alert">
+    <i class="bi bi-exclamation-triangle"></i>
+    {{error}}
+</div>
+{{/if}}
+
+{{#if success}}
+<div class="alert alert-success" role="alert">
+    <i class="bi bi-check-circle"></i>
+    {{success}}
+</div>
+{{/if}}
+
+{{#if tokens.length}}
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title">{{tokens.length}}</h5>
+                <p class="card-text text-muted">Toplam Token</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title">{{countActive tokens}}</h5>
+                <p class="card-text text-muted">Aktif Token</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title" id="totalUsage">-</h5>
+                <p class="card-text text-muted">Toplam Kullanım</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title" id="uniqueDomains">-</h5>
+                <p class="card-text text-muted">Benzersiz Domain</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Token Adı</th>
+                        <th>Domain</th>
+                        <th>İzinler</th>
+                        <th>Son Kullanım</th>
+                        <th>Kullanım Sayısı</th>
+                        <th>Durum</th>
+                        <th>İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#each tokens}}
+                    <tr>
+                        <td>
+                            <strong>{{this.name}}</strong>
+                            {{#if this.description}}
+                            <br>
+                            <small class="text-muted">{{this.description}}</small>
+                            {{/if}}
+                        </td>
+                        <td>
+                            <code>{{this.domain}}</code>
+                        </td>
+                        <td>
+                            {{#each this.permissions}}
+                            <span class="badge bg-{{#if (eq this 'read')}}info{{else if (eq this 'write')}}warning{{else}}success{{/if}} me-1">{{this}}</span>
+                            {{/each}}
+                        </td>
+                        <td>
+                            {{#if this.lastUsedAt}}
+                            {{formatDateTimeLong this.lastUsedAt}}
+                            {{else}}
+                            <span class="text-muted">Hiç kullanılmamış</span>
+                            {{/if}}
+                        </td>
+                        <td>
+                            <span class="badge bg-secondary">{{this.usageCount}}</span>
+                        </td>
+                        <td>
+                            {{#if this.isActive}}
+                            <span class="badge bg-success">Aktif</span>
+                            {{else}}
+                            <span class="badge bg-danger">Pasif</span>
+                            {{/if}}
+                            {{#if this.expiresAt}}
+                            <br>
+                            <small class="text-muted">Bitiş: {{formatDateTimeLong this.expiresAt}}</small>
+                            {{/if}}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <button type="button" class="btn btn-outline-primary" 
+                                        onclick="toggleTokenStatus('/admin/api/tokens/{{this._id}}/toggle', this)">
+                                    {{#if this.isActive}}
+                                    <i class="bi bi-pause"></i>
+                                    {{else}}
+                                    <i class="bi bi-play"></i>
+                                    {{/if}}
+                                </button>
+                                <a href="/admin/tokens/{{this._id}}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <button type="button" class="btn btn-outline-danger" 
+                                        onclick="confirmTokenDelete('/admin/tokens/{{this._id}}')">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {{/each}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+{{else}}
+<div class="card">
+    <div class="card-body text-center py-5">
+        <i class="bi bi-key fs-1 text-muted mb-3"></i>
+        <h4>Henüz API Token Yok</h4>
+        <p class="text-muted">API erişimi için token oluşturun</p>
+        <a href="/admin/tokens/new" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i>
+            İlk Token'ı Oluştur
+        </a>
+    </div>
+</div>
+{{/if}}
+
+<script>
+// Sayfa yüklendiğinde istatistikleri yükle
+document.addEventListener('DOMContentLoaded', function() {
+    loadTokenStats();
+});
+
+// Token istatistiklerini yükle
+function loadTokenStats() {
+    fetch('/admin/api/tokens/stats')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('totalUsage').textContent = data.stats.totalUsage || '0';
+                document.getElementById('uniqueDomains').textContent = data.stats.domains.length || '0';
+            }
+        })
+        .catch(error => console.error('Stats yüklenemedi:', error));
+}
+
+// Token durumu değiştir
+function toggleTokenStatus(url, button) {
+    const row = button.closest('tr');
+    const icon = button.querySelector('i');
+    
+    fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Durum değişti, UI'yi güncelle
+            const newStatus = data.isActive;
+            
+            // Badge'i güncelle
+            const statusBadge = row.querySelector('.badge:last-of-type');
+            if (newStatus) {
+                statusBadge.className = 'badge bg-success';
+                statusBadge.textContent = 'Aktif';
+                icon.className = 'bi bi-pause';
+            } else {
+                statusBadge.className = 'badge bg-danger';
+                statusBadge.textContent = 'Pasif';
+                icon.className = 'bi bi-play';
+            }
+        } else {
+            alert('Durum değiştirilemedi: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Hata: ' + error.message);
+    });
+}
+
+function confirmTokenDelete(url) {
+    if (confirm('Bu API token\'ı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.')) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = url + '/delete';
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>

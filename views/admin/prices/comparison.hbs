@@ -1,0 +1,1036 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Kurlar Karşılaştırması</h2>
+    <div class="d-flex gap-2 flex-wrap">
+        <button class="btn btn-outline-primary" onclick="refreshComparison()">
+            <i class="bi bi-arrow-clockwise"></i>
+            Yenile
+        </button>
+        <button class="btn btn-outline-success" onclick="exportComparison()">
+            <i class="bi bi-download"></i>
+            Dışa Aktar
+        </button>
+        <button class="btn btn-outline-info" onclick="testSocket()">
+            <i class="bi bi-wifi"></i>
+            Socket Test
+        </button>
+        <button class="btn btn-outline-warning btn-sm" onclick="testAnimation()">
+            <i class="bi bi-play-circle"></i>
+            Animasyon Test
+        </button>
+        <a href="/admin/prices" class="btn btn-outline-secondary">
+            <i class="bi bi-list"></i>
+            Normal Görünüm
+        </a>
+    </div>
+</div>
+
+{{#if error}}
+<div class="alert alert-danger" role="alert">
+    <i class="bi bi-exclamation-triangle"></i>
+    {{error}}
+</div>
+{{/if}}
+
+{{#if comparisonData.length}}
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title text-primary">{{comparisonData.length}}</h5>
+                <p class="card-text">Karşılaştırılan Birim</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title text-success">{{activeSources.length}}</h5>
+                <p class="card-text">Aktif Kaynak</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title text-info" id="totalPrices">0</h5>
+                <p class="card-text">Toplam Fiyat</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title text-warning" id="lastUpdateTime">
+                    {{formatDate (now)}}
+                </h5>
+                <p class="card-text">Son Güncelleme</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Kurlar Karşılaştırma Tablosu</h5>
+        <div class="d-flex gap-3 align-items-center">
+            <button id="soundToggle" class="btn btn-outline-secondary btn-sm" onclick="toggleSound()">
+                <i class="bi bi-volume-mute"></i> Ses Kapalı
+            </button>
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="showChangePercent" onchange="toggleChangeDisplay()">
+                <label class="form-check-label" for="showChangePercent">
+                    Değişim Oranlarını Göster
+                </label>
+            </div>
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="showUpdateTimes" onchange="toggleUpdateTimes()">
+                <label class="form-check-label" for="showUpdateTimes">
+                    Güncelleme Zamanı
+                </label>
+            </div>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover table-sm mb-0" id="comparisonTable">
+                <thead class="table-dark">
+                    <tr>
+                        <th class="sticky-column" style="min-width: 120px;">Birim</th>
+                        {{#each activeSources}}
+                        <th class="text-center" style="min-width: 200px;">
+                            <div class="d-flex flex-column">
+                                <strong>{{this.displayName}}</strong>
+                                <small class="text-light">{{this.name}}</small>
+                            </div>
+                        </th>
+                        {{/each}}
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#each comparisonData}}
+                    <tr data-symbol="{{this.symbol}}">
+                        <td class="sticky-column bg-light">
+                            <div class="d-flex flex-column">
+                                <strong>{{this.symbol}}</strong>
+                                <small class="text-muted">{{this.name}}</small>
+                                {{!-- <span class="badge bg-secondary badge-sm">{{this.order}}</span> --}}
+                            </div>
+                        </td>
+                        {{#each ../activeSources}}
+                        {{#with (lookup ../this.sources this.name)}}
+                        <td class="text-center" data-symbol="{{../this.symbol}}" data-source="{{../this.name}}">
+                            {{#if this}}
+                            <div class="price-cell">
+                                <div class="price-info">
+                                    <div class="buy-sell-prices">
+                                        <span class="badge bg-success me-1 buy-price" title="Alış">{{formatNumber this.buyPrice}}</span>
+                                        <span class="badge bg-danger sell-price" title="Satış">{{formatNumber this.sellPrice}}</span>
+                                    </div>
+                                    <div class="change-percent mt-1">
+                                        {{#if this.changePercent}}
+                                        {{#if this.changePercent.buy}}
+                                        <small class="change-info {{#if (gt this.changePercent.buy 0)}}text-success{{else}}text-danger{{/if}}">
+                                            {{#if (gt this.changePercent.buy 0)}}+{{/if}}{{formatNumber this.changePercent.buy}}%
+                                        </small>
+                                        {{/if}}
+                                        {{/if}}
+                                    </div>
+                                </div>
+                                <div class="update-time">
+                                    <small class="text-muted update-timestamp">{{formatDate this.updatedAt}}</small>
+                                </div>
+                            </div>
+                            {{else}}
+                            <div class="text-muted no-data">
+                                <i class="bi bi-dash-circle"></i>
+                            </div>
+                            {{/if}}
+                        </td>
+                        {{else}}
+                        <td class="text-center text-muted no-data" data-symbol="{{../this.symbol}}" data-source="{{../this.name}}">
+                            <i class="bi bi-dash-circle"></i>
+                        </td>
+                        {{/with}}
+                        {{/each}}
+                    </tr>
+                    {{/each}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{{else}}
+<div class="card">
+    <div class="card-body text-center py-5">
+        <i class="bi bi-graph-up fs-1 text-muted mb-3"></i>
+        <h4>Karşılaştırılacak Veri Bulunamadı</h4>
+        <p class="text-muted">Henüz aktif birim ve kaynak verisi bulunmuyor</p>
+        <div class="d-flex gap-2 justify-content-center">
+            <a href="/admin/currencies" class="btn btn-primary">
+                <i class="bi bi-list"></i>
+                Birimleri Yönet
+            </a>
+            <a href="/admin/sources" class="btn btn-success">
+                <i class="bi bi-database"></i>
+                Kaynakları Yönet
+            </a>
+        </div>
+    </div>
+</div>
+{{/if}}
+
+<style>
+.sticky-column {
+    position: sticky;
+    left: 0;
+    z-index: 10;
+    background: #f8f9fa !important;
+    border-right: 2px solid #dee2e6;
+}
+
+.table-dark .sticky-column {
+    background: #343a40 !important;
+}
+
+.price-cell {
+    padding: 8px;
+}
+
+.buy-sell-prices {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.update-time {
+    margin-top: 4px;
+}
+
+.badge-sm {
+    font-size: 0.75em;
+}
+
+#comparisonTable {
+    min-width: 800px;
+}
+
+.table-responsive {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+/* Animasyon ve efektler */
+@keyframes priceUpdateBlink {
+    0% { 
+        background-color: #fff3cd;
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.7);
+    }
+    25% { 
+        background-color: #ffeaa7;
+        transform: scale(1.02);
+        box-shadow: 0 0 0 4px rgba(255, 193, 7, 0.4);
+    }
+    50% { 
+        background-color: #fdcb6e;
+        transform: scale(1.05);
+        box-shadow: 0 0 0 8px rgba(255, 193, 7, 0.2);
+    }
+    75% { 
+        background-color: #ffeaa7;
+        transform: scale(1.02);
+        box-shadow: 0 0 0 4px rgba(255, 193, 7, 0.1);
+    }
+    100% { 
+        background-color: transparent;
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(255, 193, 7, 0);
+    }
+}
+
+@keyframes priceUpBlink {
+    0% { 
+        background-color: #d1edff;
+        box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7);
+    }
+    25% { 
+        background-color: #a3d5ff;
+        box-shadow: 0 0 0 4px rgba(40, 167, 69, 0.4);
+    }
+    50% { 
+        background-color: #74c0fc;
+        box-shadow: 0 0 0 8px rgba(40, 167, 69, 0.2);
+    }
+    75% { 
+        background-color: #a3d5ff;
+        box-shadow: 0 0 0 4px rgba(40, 167, 69, 0.1);
+    }
+    100% { 
+        background-color: transparent;
+        box-shadow: 0 0 0 0 rgba(40, 167, 69, 0);
+    }
+}
+
+@keyframes priceDownBlink {
+    0% { 
+        background-color: #ffebee;
+        box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+    }
+    25% { 
+        background-color: #ffcdd2;
+        box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.4);
+    }
+    50% { 
+        background-color: #ef9a9a;
+        box-shadow: 0 0 0 8px rgba(220, 53, 69, 0.2);
+    }
+    75% { 
+        background-color: #ffcdd2;
+        box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.1);
+    }
+    100% { 
+        background-color: transparent;
+        box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+    }
+}
+
+@keyframes badgeBounce {
+    0%, 100% { transform: scale(1); }
+    25% { transform: scale(1.1) rotate(2deg); }
+    50% { transform: scale(1.15) rotate(-2deg); }
+    75% { transform: scale(1.05) rotate(1deg); }
+}
+
+@keyframes connectionPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.8; transform: scale(1.05); }
+}
+
+.price-update-blink {
+    animation: priceUpdateBlink 1.5s ease-in-out;
+    transition: all 0.3s ease;
+}
+
+.price-up-blink {
+    animation: priceUpBlink 1.2s ease-in-out;
+}
+
+.price-down-blink {
+    animation: priceDownBlink 1.2s ease-in-out;
+}
+
+.badge-bounce {
+    animation: badgeBounce 0.6s ease-in-out;
+}
+
+.connection-status {
+    animation: connectionPulse 2s infinite;
+}
+
+.price-cell {
+    padding: 8px;
+    transition: all 0.3s ease;
+    border-radius: 6px;
+}
+
+.price-cell:hover {
+    background-color: rgba(0, 123, 255, 0.1);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.buy-sell-prices .badge {
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
+}
+
+.buy-sell-prices .badge:hover {
+    transform: scale(1.05);
+    filter: brightness(1.1);
+}
+
+/* Sparkle effect */
+@keyframes sparkle {
+    0%, 100% { opacity: 0; transform: scale(0) rotate(0deg); }
+    50% { opacity: 1; transform: scale(1) rotate(180deg); }
+}
+
+.sparkle {
+    position: relative;
+    overflow: visible;
+}
+
+.sparkle::after {
+    content: '✨';
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    font-size: 12px;
+    animation: sparkle 1.5s ease-in-out;
+    pointer-events: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .buy-sell-prices {
+        flex-direction: column;
+        gap: 2px;
+    }
+    
+    .sticky-column {
+        min-width: 100px !important;
+    }
+    
+    @keyframes priceUpdateBlink {
+        0% { background-color: #fff3cd; transform: scale(1); }
+        50% { background-color: #fdcb6e; transform: scale(1.02); }
+        100% { background-color: transparent; transform: scale(1); }
+    }
+}
+</style>
+
+<script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
+{{{clientDateHelperScript}}}
+<script>
+let socket = null;
+const API_TOKEN = 'sk_af0c2703ea562a2c465f9108ec527bc6264c7ab2910d0eb6f974da9c70eba118';
+const priceData = new Map(); // Symbol -> { sources: { sourceName: priceInfo } }
+
+// Socket.IO bağlantısı
+function initializeSocket() {
+    console.log('🚀 Socket bağlantısı başlatılıyor...');
+    console.log('🔑 Token:', API_TOKEN.substring(0, 10) + '...');
+    
+    // Birden fazla port deneyelim
+    const socketUrls = [
+        'http://localhost:6701',  // Ana sunucu portu
+        'http://localhost:3001',  // Socket portu  
+        'http://localhost:3000',  // Geliştirme portu
+        window.location.origin    // Mevcut sayfa portu
+    ];
+    
+    let currentUrlIndex = 0;
+    
+    function attemptConnection() {
+        const url = socketUrls[currentUrlIndex];
+        console.log(`🔗 Bağlantı denemesi ${currentUrlIndex + 1}/${socketUrls.length}: ${url}`);
+        
+        socket = io(url, {
+            auth: {
+                token: API_TOKEN
+            },
+            transports: ['websocket', 'polling'], // Farklı transport tipleri dene
+            timeout: 5000, // 5 saniye timeout
+            forceNew: true // Yeni bağlantı zorla
+        });
+
+        socket.on('connect', () => {
+            console.log('💹 Socket bağlantısı kuruldu!');
+            console.log('🆔 Socket ID:', socket.id);
+            console.log('🌐 Bağlanan URL:', url);
+            
+            // Fiyat kanalına abone ol
+            socket.emit('subscribe', 'price');
+            console.log('📢 Price kanalına abone olundu');
+            
+            // Test için diğer kanalları da deneyelim
+            ['market', 'alerts', 'altinkaynak', 'hakangold', 'haremgold'].forEach(channel => {
+                socket.emit('subscribe', channel);
+                console.log(`📢 ${channel} kanalına abone olundu`);
+            });
+            
+            // Bağlantı durumunu göster
+            updateConnectionStatus('connected');
+        });
+
+        socket.on('disconnect', (reason) => {
+            console.log('📡 Socket bağlantısı kesildi:', reason);
+            updateConnectionStatus('disconnected');
+        });
+
+        socket.on('connect_error', (error) => {
+            console.error(`🔴 ${url} bağlantı hatası:`, error);
+            
+            // Bir sonraki URL'yi dene
+            currentUrlIndex++;
+            if (currentUrlIndex < socketUrls.length) {
+                console.log('⏭️ Bir sonraki URL deneniyor...');
+                setTimeout(() => {
+                    socket.disconnect();
+                    attemptConnection();
+                }, 1000);
+            } else {
+                console.error('❌ Tüm bağlantı denemeleri başarısız!');
+                updateConnectionStatus('error');
+            }
+        });
+
+        // Fiyat güncellemelerini dinle (yeni format)
+        socket.on('price_update', (messageData) => {
+            console.log('📨 price_update eventi alındı:', messageData);
+            // Yeni format: messageData = { timestamp, channel, data }
+            if (messageData && messageData.data) {
+                updatePriceData(messageData);
+                playUpdateSound(); // Ses çalma
+            }
+        });
+        
+        // Kaynak bazlı güncellemeler
+        socket.on('source_price_update', (messageData) => {
+            console.log('🏪 source_price_update eventi alındı:', messageData);
+            if (messageData && messageData.data) {
+                updatePriceData(messageData);
+                playUpdateSound(); // Ses çalma
+            }
+        });
+        
+        // Genel mesaj dinleyicisi - hangi eventler geliyor görelim
+        socket.onAny((eventName, ...args) => {
+            console.log(`🎧 Event alındı: ${eventName}`, args);
+        });
+    }
+    
+    attemptConnection();
+}
+
+// Bağlantı durumunu güncelle
+function updateConnectionStatus(status) {
+    const statusColors = {
+        connected: 'success',
+        disconnected: 'warning', 
+        error: 'danger'
+    };
+    
+    const statusText = {
+        connected: 'Canlı Veriler',
+        disconnected: 'Bağlantı Kesildi',
+        error: 'Bağlantı Hatası'
+    };
+    
+    // Başlığa durum badge'i ekle
+    const titleElement = document.querySelector('h2');
+    if (titleElement) {
+        const existingBadge = titleElement.querySelector('.connection-status');
+        if (existingBadge) {
+            existingBadge.remove();
+        }
+        
+        const badge = document.createElement('span');
+        badge.className = `badge bg-${statusColors[status]} ms-2 connection-status`;
+        badge.textContent = statusText[status];
+        titleElement.appendChild(badge);
+    }
+}
+
+// Fiyat verisini güncelle
+function updatePriceData(messageData) {
+    console.log('📨 Socketten gelen veri:', messageData);
+    
+    // Yeni format: { timestamp, channel, data: { symbol, buyPrice, ... } }
+    const priceInfo = messageData.data;
+    const messageTimestamp = messageData.timestamp;
+    
+    if (!priceInfo) {
+        console.warn('❌ Message data eksik:', messageData);
+        return;
+    }
+    
+    const symbol = priceInfo.symbol;
+    const source = priceInfo.source || priceInfo.sourceId;
+    
+    if (!symbol || !source) {
+        console.warn('❌ Symbol veya source eksik:', { symbol, source, priceInfo });
+        return;
+    }
+    
+    console.log(`📈 Fiyat güncelleme: ${symbol} - ${source}`);
+    
+    // Önceki fiyatları al (değişim hesabı için)
+    let previousBuyPrice = null;
+    let previousSellPrice = null;
+    
+    if (priceData.has(symbol) && priceData.get(symbol).sources[source]) {
+        const prevData = priceData.get(symbol).sources[source];
+        previousBuyPrice = prevData.buyPrice;
+        previousSellPrice = prevData.sellPrice;
+    }
+    
+    // Veriyi sakla
+    if (!priceData.has(symbol)) {
+        priceData.set(symbol, { sources: {} });
+    }
+    
+    // Değişim oranını hesapla
+    const buyChange = previousBuyPrice ? ((priceInfo.buyPrice - previousBuyPrice) / previousBuyPrice) * 100 : 0;
+    const sellChange = previousSellPrice ? ((priceInfo.sellPrice - previousSellPrice) / previousSellPrice) * 100 : 0;
+    
+    priceData.get(symbol).sources[source] = {
+        buyPrice: priceInfo.buyPrice,
+        sellPrice: priceInfo.sellPrice,
+        previousBuyPrice: previousBuyPrice,
+        previousSellPrice: previousSellPrice,
+        buyChange: buyChange,
+        sellChange: sellChange,
+        change: priceInfo.change || { buy: buyChange, sell: sellChange },
+        updatedAt: messageTimestamp || window.ClientDateHelper.toISOString(),
+        trend: buyChange > 0 ? 'up' : buyChange < 0 ? 'down' : 'stable'
+    };
+    
+    // Tabloyu güncelle
+    updateTableRow(symbol, source, priceData.get(symbol).sources[source]);
+    
+    // Son güncelleme zamanını güncelle
+    updateLastUpdateTime();
+    
+    // Güncelleme sayacını artır
+    incrementUpdateCounter();
+    
+    console.log(`💰 ${symbol} fiyatı güncellendi (${source}):`, 
+        `Alış: ${priceInfo.buyPrice} / Satış: ${priceInfo.sellPrice}`,
+        `Değişim: %${buyChange.toFixed(2)}`);
+}
+
+// Tablo satırını güncelle
+function updateTableRow(symbol, sourceName, priceInfo) {
+    // Kaynak mapping'i - socket\'ten gelen source name\'leri tablodaki source name\'lerle eşleştir
+    const sourceMapping = {
+        'Altın Kaynak': 'altinkaynak',
+        'altinkaynak': 'altinkaynak',
+        'AltınKaynak': 'altinkaynak',
+        'Hakan Altın': 'hakangold', 
+        'hakangold': 'hakangold',
+        'HakanGold': 'hakangold',
+        'Harem Altın': 'haremgold',
+        'haremgold': 'haremgold',
+        'HaremGold': 'haremgold',
+        'Harem Altın Web': 'haremgoldweb',
+        'haremgoldweb': 'haremgoldweb',
+        'HaremGoldWeb': 'haremgoldweb',
+        'HaremAltınWeb': 'haremgoldweb',
+        'TCMB': 'tcmb',
+        'tcmb': 'tcmb',
+        'Tcmb': 'tcmb'
+    };
+    
+    // Source name\'i normalize et
+    const normalizedSourceName = sourceMapping[sourceName] || sourceName.toLowerCase();
+    
+    console.log(`🔍 Güncellenecek: ${symbol} - Socket Source: "${sourceName}" → Normalized: "${normalizedSourceName}"`);
+    
+    // Data-attribute'ları kullanarak doğrudan doğru hücreyi bul
+    const targetCell = document.querySelector(`td[data-symbol="${symbol}"][data-source="${normalizedSourceName}"]`);
+    
+    if (!targetCell) {
+        console.error(`❌ Hedef hücre bulunamadı: Symbol="${symbol}", Source="${normalizedSourceName}"`);
+        console.log('📋 Mevcut hücreler:');
+        const allCells = document.querySelectorAll('td[data-symbol][data-source]');
+        allCells.forEach((cell, index) => {
+            const cellSymbol = cell.dataset.symbol;
+            const cellSource = cell.dataset.source;
+            console.log(`  ${index}: Symbol="${cellSymbol}", Source="${cellSource}"`);
+        });
+        return;
+    }
+    
+    console.log(`✅ Hedef hücre bulundu: Symbol="${symbol}", Source="${normalizedSourceName}"`);
+    
+    // Hücreyi güncelle
+    const changePercent = priceInfo.change || {};
+    const buyChange = changePercent.buy || 0;
+    const trend = changePercent.trend || 'stable';
+    
+    const changeClass = buyChange > 0 ? 'text-success' : buyChange < 0 ? 'text-danger' : 'text-muted';
+    const changeIcon = buyChange > 0 ? '+' : '';
+    
+    // Trend'e göre emoji ve renk seç
+    const trendEmoji = buyChange > 0 ? '📈' : buyChange < 0 ? '📉' : '➖';
+    const sparkleClass = Math.abs(buyChange) > 0.1 ? 'sparkle' : ''; // %0.1'den fazla değişimde sparkle efekti
+    
+    // Hücre içeriğini güncelle - önceki class'ları koru
+    targetCell.innerHTML = `
+        <div class="price-cell ${sparkleClass}">
+            <div class="price-info">
+                <div class="buy-sell-prices">
+                    <span class="badge bg-success me-1 buy-price" title="Alış">${formatNumber(priceInfo.buyPrice)}</span>
+                    <span class="badge bg-danger sell-price" title="Satış">${formatNumber(priceInfo.sellPrice)}</span>
+                </div>
+                <div class="change-percent mt-1">
+                    <small class="change-info ${changeClass}">
+                        ${trendEmoji} ${changeIcon}${formatNumber(buyChange)}%
+                    </small>
+                </div>
+            </div>
+            <div class="update-time">
+                <small class="text-muted update-timestamp">${formatDate(priceInfo.updatedAt)}</small>
+            </div>
+        </div>
+    `;
+    
+    // Animasyon efektleri ekle
+    const priceCell = targetCell.querySelector('.price-cell');
+    const badges = targetCell.querySelectorAll('.badge');
+    
+    // Önceki animasyonları temizle
+    targetCell.classList.remove('price-update-blink', 'price-up-blink', 'price-down-blink');
+    badges.forEach(badge => badge.classList.remove('badge-bounce'));
+    
+    // Trend'e göre animasyon seç
+    let animationClass = 'price-update-blink';
+    if (buyChange > 0) {
+        animationClass = 'price-up-blink';
+    } else if (buyChange < 0) {
+        animationClass = 'price-down-blink';
+    }
+    
+    // Debug: Animasyon kontrolü
+    console.log(`🎬 Animasyon başlatılıyor: ${animationClass}, Değişim: ${buyChange}`);
+    
+    // Ana animasyonu başlat
+    requestAnimationFrame(() => {
+        console.log(`🎬 requestAnimationFrame: ${animationClass} ekleniyor`);
+        targetCell.classList.add(animationClass);
+        
+        // Badge animasyonlarını başlat
+        setTimeout(() => {
+            badges.forEach((badge, index) => {
+                setTimeout(() => {
+                    badge.classList.add('badge-bounce');
+                }, index * 100);
+            });
+        }, 200);
+        
+        // Sparkle efekti için ek class
+        if (sparkleClass) {
+            console.log(`✨ Sparkle efekti ekleniyor`);
+            priceCell.classList.add('sparkle');
+        }
+    });
+    
+    // Temizleme
+    setTimeout(() => {
+        console.log(`🧹 Animasyon temizleniyor: ${animationClass}`);
+        targetCell.classList.remove(animationClass);
+        badges.forEach(badge => badge.classList.remove('badge-bounce'));
+        if (priceCell) priceCell.classList.remove('sparkle');
+    }, 2000);
+    
+    // Ses efekti (opsiyonel - kullanıcı etkileşimi gerektirir)
+    playUpdateSound(buyChange);
+}
+
+// Ses efekti fonksiyonu
+function playUpdateSound(change) {
+    // Web Audio API ile basit beep sesi
+    if (typeof AudioContext !== 'undefined' || typeof webkitAudioContext !== 'undefined') {
+        try {
+            const audioContext = new (AudioContext || webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            // Frekansı trend'e göre ayarla
+            oscillator.frequency.value = change > 0 ? 800 : change < 0 ? 400 : 600;
+            oscillator.type = 'sine';
+            
+            // Ses seviyesi
+            gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.1);
+        } catch (e) {
+            // Ses çalamıyorsa sessizce devam et
+            console.debug('Audio context not available');
+        }
+    }
+}
+
+// Sayfa üzerinde fiyat güncelleme sayacı
+let updateCount = 0;
+function incrementUpdateCounter() {
+    updateCount++;
+    const counterElement = document.getElementById('totalPrices');
+    if (counterElement) {
+        counterElement.textContent = updateCount;
+        counterElement.classList.add('badge-bounce');
+        setTimeout(() => {
+            counterElement.classList.remove('badge-bounce');
+        }, 600);
+    }
+}
+
+// Sayı formatlama
+function formatNumber(num) {
+    if (!num) return '0';
+    return parseFloat(num).toLocaleString('tr-TR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 4
+    });
+}
+
+// Tarih formatlama
+function formatDate(dateStr) {
+    if (!dateStr) return '';
+    return window.ClientDateHelper.toLocaleString(dateStr);
+}
+
+function refreshComparison() {
+    location.reload();
+}
+
+// Socket test fonksiyonu
+function testSocket() {
+    console.log('🔧 Socket bağlantı testi başlatılıyor...');
+    
+    if (socket && socket.connected) {
+        console.log('✅ Socket zaten bağlı - Test mesajı gönderiliyor');
+        
+        // Test mesajı gönder
+        socket.emit('test_message', { message: 'Test mesajı', timestamp: window.ClientDateHelper.toISOString() });
+        
+        // Test fiyat verisi oluştur - animasyonu görünür kılmak için büyük değişim
+        const testPriceData = {
+            symbol: 'USD/TRY',
+            source: 'altinkaynak', // Gerçek kaynak adı kullan
+            buyPrice: Math.random() * 30 + 30, // 30-60 arası
+            sellPrice: Math.random() * 30 + 30,
+            change: {
+                buy: (Math.random() - 0.5) * 20, // %20'ye kadar değişim
+                sell: (Math.random() - 0.5) * 20,
+                trend: Math.random() > 0.5 ? 'up' : 'down'
+            },
+            timestamp: window.ClientDateHelper.toISOString()
+        };
+        
+        console.log('📊 Test fiyat verisi oluşturuluyor:', testPriceData);
+        updatePriceData({ 
+            data: testPriceData,
+            timestamp: testPriceData.timestamp,
+            channel: 'price'
+        });
+        
+        alert('Socket bağlı! Test verisi gönderildi - Console kontrol edin');
+    } else {
+        console.log('❌ Socket bağlı değil - Yeniden bağlanmayı deneyiniz');
+        alert('Socket bağlantısı yok! Sayfa yenilenerek yeniden denenecek');
+        
+        // Socket'i yeniden başlat
+        if (socket) {
+            socket.disconnect();
+        }
+        initializeSocket();
+    }
+}
+
+function exportComparison() {
+    const table = document.querySelector('#comparisonTable');
+    if (!table) {
+        alert('Dışa aktarılacak veri bulunamadı');
+        return;
+    }
+    
+    let csv = '';
+    const rows = table.querySelectorAll('tr');
+    
+    rows.forEach(row => {
+        const cols = row.querySelectorAll('td, th');
+        const rowData = Array.from(cols).map(col => {
+            return '"' + col.textContent.trim().replace(/"/g, '""') + '"';
+        });
+        csv += rowData.join(',') + '\n';
+    });
+    
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'kurlar_karsilastirma_' + window.ClientDateHelper.toISODate() + '.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// Değişim oranlarını göster/gizle
+document.getElementById('showChangePercent').addEventListener('change', function() {
+    const changeElements = document.querySelectorAll('.change-percent');
+    changeElements.forEach(element => {
+        element.style.display = this.checked ? 'block' : 'none';
+    });
+});
+
+// Sayfa yüklendiğinde
+document.addEventListener('DOMContentLoaded', function() {
+    // Toplam fiyat sayısını hesapla
+    const priceCells = document.querySelectorAll('.price-cell');
+    const totalPrices = priceCells.length;
+    document.getElementById('totalPrices').textContent = totalPrices;
+    
+    // Checkboxların durumlarına göre elementleri gizle/göster (başlangıçta kapalı)
+    toggleChangeDisplay(); // Değişim oranlarını gizle (checkbox kapalı)
+    toggleUpdateTimes(); // Güncelleme zamanlarını gizle (checkbox kapalı)
+    
+    // Debug: Mevcut tablo yapısını logla
+    console.log('🏗️ Sayfa yüklendi - Tablo yapısı:');
+    const rows = document.querySelectorAll('#comparisonTable tbody tr');
+    rows.forEach((row, rowIndex) => {
+        const symbolElement = row.querySelector('[data-symbol]');
+        const symbol = row.getAttribute('data-symbol');
+        console.log(`  Satır ${rowIndex}: Symbol = "${symbol}"`);
+    });
+    
+    const headers = document.querySelectorAll('#comparisonTable thead th');
+    console.log('📊 Header yapısı:');
+    headers.forEach((header, index) => {
+        const displayNameElement = header.querySelector('strong');
+        const sourceNameElement = header.querySelector('small');
+        if (displayNameElement && sourceNameElement) {
+            console.log(`  Sütun ${index}: "${displayNameElement.textContent.trim()}" / "${sourceNameElement.textContent.trim()}"`);
+        }
+    });
+    
+    // Socket bağlantısını başlat
+    initializeSocket();
+});
+
+// Ses çalma fonksiyonu
+let soundEnabled = false;
+let updateSoundUrl = null;
+
+function playUpdateSound() {
+    if (!soundEnabled) return;
+    
+    try {
+        // Basit beep sesi oluştur
+        if (!updateSoundUrl) {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.value = 800; // Hz
+            gainNode.gain.value = 0.1;
+            
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + 0.1);
+        }
+    } catch (error) {
+        console.warn('🔊 Ses çalınamadı:', error);
+    }
+}
+
+// Ses kontrol butonları
+function toggleSound() {
+    soundEnabled = !soundEnabled;
+    const soundButton = document.getElementById('soundToggle');
+    if (soundButton) {
+        soundButton.innerHTML = soundEnabled 
+            ? '<i class="bi bi-volume-up"></i> Ses Açık'
+            : '<i class="bi bi-volume-mute"></i> Ses Kapalı';
+        soundButton.className = soundEnabled 
+            ? 'btn btn-outline-success btn-sm'
+            : 'btn btn-outline-secondary btn-sm';
+    }
+    
+    // Test sesi çal
+    if (soundEnabled) {
+        playUpdateSound();
+    }
+}
+
+// Son güncelleme zamanını güncelle
+function updateLastUpdateTime() {
+    const timeElement = document.getElementById('lastUpdateTime');
+    if (timeElement) {
+        timeElement.textContent = window.ClientDateHelper.toLocaleString();
+        timeElement.title = 'Son güncelleme: ' + window.ClientDateHelper.toLocaleString();
+    }
+}
+
+// Değişim oranı toggle
+function toggleChangeDisplay() {
+    const changeElements = document.querySelectorAll('.change-percent');
+    const showChanges = document.getElementById('showChangePercent').checked;
+    
+    changeElements.forEach(element => {
+        element.style.display = showChanges ? 'inline-block' : 'none';
+    });
+}
+
+// Güncelleme zamanı toggle
+function toggleUpdateTimes() {
+    const timeElements = document.querySelectorAll('.update-time');
+    const showTimes = document.getElementById('showUpdateTimes').checked;
+    
+    timeElements.forEach(element => {
+        element.style.display = showTimes ? 'block' : 'none';
+    });
+}
+
+// Manual animasyon test fonksiyonu
+function testAnimation() {
+    console.log('🎬 Manual animasyon testi başlatılıyor...');
+    
+    // İlk görünür hücreyi bul
+    const firstCell = document.querySelector('td[data-symbol][data-source]:not(.sticky-column)');
+    if (!firstCell) {
+        alert('Test edilecek hücre bulunamadı!');
+        return;
+    }
+    
+    console.log('🎯 Test hücresi:', firstCell);
+    
+    // Test animasyonları uygula
+    const animations = ['price-update-blink', 'price-up-blink', 'price-down-blink'];
+    let currentIndex = 0;
+    
+    function runNextAnimation() {
+        if (currentIndex >= animations.length) {
+            console.log('✅ Tüm animasyonlar test edildi');
+            return;
+        }
+        
+        const animationClass = animations[currentIndex];
+        console.log(`🎬 Test animasyonu: ${animationClass}`);
+        
+        // Önceki animasyonu temizle
+        firstCell.classList.remove(...animations);
+        
+        // Yeni animasyonu başlat
+        requestAnimationFrame(() => {
+            firstCell.classList.add(animationClass);
+            console.log(`✅ ${animationClass} eklendi`);
+        });
+        
+        // 2 saniye sonra temizle ve sıradakine geç
+        setTimeout(() => {
+            firstCell.classList.remove(animationClass);
+            console.log(`🧹 ${animationClass} temizlendi`);
+            currentIndex++;
+            setTimeout(runNextAnimation, 500); // 0.5 saniye ara
+        }, 2000);
+    }
+    
+    runNextAnimation();
+    alert('Animasyon testi başladı! Console\'da takip edin.');
+}
+
+// Sayfa kapatılırken socket'i temizle
+window.addEventListener('beforeunload', () => {
+    if (socket) {
+        socket.disconnect();
+    }
+});
+</script>

@@ -1,0 +1,365 @@
+<div id="overview">
+    <h1 class="mb-4">
+        <i class="bi bi-server"></i>
+        Gold Server API Dokümantasyonu
+    </h1>
+    
+    <div class="alert alert-info">
+        <h5><i class="bi bi-info-circle"></i> Hoş Geldiniz</h5>
+        <p class="mb-0">Bu API, altın ve döviz fiyatlarına gerçek zamanlı erişim sağlayan güçlü bir REST servisidir. WebSocket desteği ile canlı veri akışı da mevcuttur.</p>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-lightning text-warning fs-1"></i>
+                    <h5 class="card-title">Gerçek Zamanlı</h5>
+                    <p class="card-text">WebSocket ile anlık fiyat güncellemeleri</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-shield-check text-success fs-1"></i>
+                    <h5 class="card-title">Güvenli</h5>
+                    <p class="card-text">Token tabanlı authentication ve rate limiting</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-graph-up text-info fs-1"></i>
+                    <h5 class="card-title">Kapsamlı</h5>
+                    <p class="card-text">Çoklu veri kaynağı ve geçmiş veriler</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h4>Base URL</h4>
+    <div class="code-block">
+        <code>{{req.protocol}}://{{req.headers.host}}/api</code>
+    </div>
+</div>
+
+<div id="authentication" class="mt-5">
+    <h2><i class="bi bi-key"></i> Authentication</h2>
+    
+    <p>Tüm API endpoint'leri (info hariç) authentication gerektirir. API token'ınızı iki şekilde gönderebilirsiniz:</p>
+    
+    <h5>Bearer Token (Önerilen)</h5>
+    <div class="code-block">
+        <button class="btn btn-sm btn-outline-light mb-2" onclick="copyCode(this)">Kopyala</button>
+        <pre><code class="language-bash">Authorization: Bearer sk_your_token_here</code></pre>
+    </div>
+    
+    <h5>Query Parameter</h5>
+    <div class="code-block">
+        <button class="btn btn-sm btn-outline-light mb-2" onclick="copyCode(this)">Kopyala</button>
+        <pre><code class="language-bash">GET /api/prices/current?token=sk_your_token_here</code></pre>
+    </div>
+
+    <div class="alert alert-warning">
+        <h6><i class="bi bi-exclamation-triangle"></i> Token Güvenliği</h6>
+        <ul class="mb-0">
+            <li>Token'ınızı güvenli bir yerde saklayın</li>
+            <li>Client-side kodlarda token'ı expose etmeyin</li>
+            <li>Domain kısıtlaması kullanarak güvenliği artırın</li>
+            <li>Expiry date belirleyerek token'ı geçersiz kılın</li>
+        </ul>
+    </div>
+</div>
+
+<div id="endpoints" class="mt-5">
+    <h2><i class="bi bi-list-ul"></i> API Endpoints</h2>
+
+    <div id="api-info" class="endpoint">
+        <h4>
+            <span class="method get">GET</span>
+            /api/info
+        </h4>
+        <p>API hakkında genel bilgileri döndürür.</p>
+        <span class="badge bg-success badge-permission">Authentication: Gerekli değil</span>
+        
+        <h6 class="mt-3">Örnek İstek:</h6>
+        <div class="code-block">
+            <button class="btn btn-sm btn-outline-light mb-2" onclick="copyCode(this)">Kopyala</button>
+            <pre><code class="language-bash">curl "{{req.protocol}}://{{req.headers.host}}/api/info"</code></pre>
+        </div>
+        
+        <h6>Örnek Response:</h6>
+        <div class="response-example">
+            <pre><code class="language-json">{
+  "name": "Gold Server API",
+  "version": "1.0.0",
+  "description": "Altın ve döviz fiyatları API",
+  "documentation": "/docs",
+  "endpoints": {
+    "prices": {
+      "current": "/api/prices/current",
+      "history": "/api/prices/history",
+      "symbols": "/api/prices/symbols"
+    }
+  },
+  "timezone": {
+    "name": "Europe/Istanbul",
+    "offset": "+03:00",
+    "current_time": "2025-01-22T15:30:00+03:00"
+  }
+}</code></pre>
+        </div>
+    </div>
+
+    <div id="current-prices" class="endpoint">
+        <h4>
+            <span class="method get">GET</span>
+            /api/prices/current
+        </h4>
+        <p>Tüm aktif güncel fiyatları döndürür.</p>
+        <span class="badge bg-primary badge-permission">Permission: read</span>
+        
+        <h6 class="mt-3">Query Parameters:</h6>
+        <ul>
+            <li><code>source</code> (string, optional): Kaynak filtresi</li>
+            <li><code>symbol</code> (string, optional): Sembol filtresi (regex destekli)</li>
+            <li><code>category</code> (string, optional): Kategori filtresi</li>
+            <li><code>currency</code> (string, optional): Para birimi filtresi</li>
+        </ul>
+        
+        <h6>Örnek İstek:</h6>
+        <div class="code-block">
+            <button class="btn btn-sm btn-outline-light mb-2" onclick="copyCode(this)">Kopyala</button>
+            <pre><code class="language-bash">curl -H "Authorization: Bearer sk_your_token" \
+     "{{req.protocol}}://{{req.headers.host}}/api/prices/current?source=altinkaynak"</code></pre>
+        </div>
+    </div>
+
+    <div id="current-price-symbol" class="endpoint">
+        <h4>
+            <span class="method get">GET</span>
+            /api/prices/current/:symbol
+        </h4>
+        <p>Belirli bir sembol için güncel fiyat döndürür.</p>
+        <span class="badge bg-primary badge-permission">Permission: read</span>
+        
+        <h6 class="mt-3">Path Parameters:</h6>
+        <ul>
+            <li><code>symbol</code> (string): Para birimi sembolü (örn: USD/TRY)</li>
+        </ul>
+        
+        <h6>Örnek İstek:</h6>
+        <div class="code-block">
+            <button class="btn btn-sm btn-outline-light mb-2" onclick="copyCode(this)">Kopyala</button>
+            <pre><code class="language-bash">curl -H "Authorization: Bearer sk_your_token" \
+     "{{req.protocol}}://{{req.headers.host}}/api/prices/current/USD/TRY"</code></pre>
+        </div>
+    </div>
+
+    <div id="price-history" class="endpoint">
+        <h4>
+            <span class="method get">GET</span>
+            /api/prices/history/:symbol
+        </h4>
+        <p>Belirli bir sembol için fiyat geçmişini döndürür.</p>
+        <span class="badge bg-primary badge-permission">Permission: read</span>
+        
+        <h6 class="mt-3">Query Parameters:</h6>
+        <ul>
+            <li><code>startDate</code> (string, optional): Başlangıç tarihi (ISO 8601)</li>
+            <li><code>endDate</code> (string, optional): Bitiş tarihi (ISO 8601)</li>
+            <li><code>limit</code> (number, optional): Maksimum kayıt sayısı (default: 100)</li>
+            <li><code>interval</code> (string, optional): Interval (hour, day, week, month)</li>
+        </ul>
+    </div>
+
+    <div id="websocket" class="endpoint">
+        <h4>
+            <span class="method get">GET</span>
+            /api/websocket/info
+        </h4>
+        <p>WebSocket bağlantı bilgilerini döndürür.</p>
+        <span class="badge bg-primary badge-permission">Permission: read</span>
+        
+        <h6 class="mt-3">WebSocket Kullanımı:</h6>
+        <div class="code-block">
+            <button class="btn btn-sm btn-outline-light mb-2" onclick="copyCode(this)">Kopyala</button>
+            <pre><code class="language-javascript">const socket = io('{{req.protocol}}://{{req.headers.host}}', {
+  auth: {
+    token: 'sk_your_token_here'
+  }
+});
+
+// Kanala abone ol
+socket.emit('subscribe', 'price');
+
+// Fiyat güncellemelerini dinle
+socket.on('price_update', (data) => {
+  console.log('Fiyat güncellendi:', data);
+});</code></pre>
+        </div>
+
+        <h6>Mevcut Kanallar:</h6>
+        <ul>
+            <li><code>price</code> - Fiyat güncellemeleri</li>
+            <li><code>system</code> - Sistem bildirimleri</li>
+            <li><code>alerts</code> - Anomali uyarıları</li>
+            <li><code>altinkaynak</code> - Altın Kaynak verileri</li>
+            <li><code>hakangold</code> - Hakan Altın verileri</li>
+            <li><code>haremgold</code> - Harem Altın verileri</li>
+            <li><code>tcmb</code> - TCMB verileri</li>
+        </ul>
+    </div>
+
+    <div id="statistics" class="endpoint">
+        <h4>
+            <span class="method get">GET</span>
+            /api/stats
+        </h4>
+        <p>Sistem istatistiklerini döndürür.</p>
+        <span class="badge bg-danger badge-permission">Permission: admin</span>
+    </div>
+</div>
+
+<div id="rate-limiting" class="mt-5">
+    <h2><i class="bi bi-speedometer2"></i> Rate Limiting</h2>
+    
+    <p>API istekleriniz token bazında sınırlanır. Rate limit bilgileri response header'larında bulunur:</p>
+    
+    <ul>
+        <li><code>X-RateLimit-Limit</code>: Maksimum istek sayısı</li>
+        <li><code>X-RateLimit-Window</code>: Zaman penceresi (saniye)</li>
+        <li><code>X-RateLimit-Remaining</code>: Kalan istek sayısı</li>
+        <li><code>X-RateLimit-Reset</code>: Limit sıfırlanma zamanı</li>
+    </ul>
+    
+    <div class="alert alert-warning">
+        <h6><i class="bi bi-exclamation-triangle"></i> Rate Limit Aşımı</h6>
+        <p class="mb-0">Rate limit aştığınızda <code>429 Too Many Requests</code> hatası alırsınız. <code>retryAfter</code> değerini kontrol ederek ne zaman tekrar deneyebileceğinizi öğrenebilirsiniz.</p>
+    </div>
+</div>
+
+<div id="errors" class="mt-5">
+    <h2><i class="bi bi-exclamation-triangle"></i> Hata Kodları</h2>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <h5>401 Unauthorized</h5>
+            <div class="response-example">
+                <pre><code class="language-json">{
+  "error": "Token expired",
+  "message": "This token expired on 2025-01-22T15:30:00.000Z",
+  "expiredAt": "2025-01-22T15:30:00.000Z"
+}</code></pre>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <h5>403 Forbidden</h5>
+            <div class="response-example">
+                <pre><code class="language-json">{
+  "error": "Domain not allowed",
+  "message": "This token is restricted to domain: example.com",
+  "allowedDomain": "example.com",
+  "yourDomain": "unauthorized.com"
+}</code></pre>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <h5>429 Too Many Requests</h5>
+            <div class="response-example">
+                <pre><code class="language-json">{
+  "error": "Rate limit exceeded",
+  "message": "Maximum 1000 requests per 60 seconds allowed",
+  "rateLimit": {
+    "requests": 1000,
+    "window": 60,
+    "remaining": 0,
+    "resetTime": "2025-01-22T15:31:00.000Z"
+  },
+  "retryAfter": 25
+}</code></pre>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <h5>404 Not Found</h5>
+            <div class="response-example">
+                <pre><code class="language-json">{
+  "error": "Symbol not found",
+  "message": "No active price data found for symbol: XYZ/TRY",
+  "symbol": "XYZ/TRY"
+}</code></pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="examples" class="mt-5">
+    <h2><i class="bi bi-code-slash"></i> Kod Örnekleri</h2>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <h5>JavaScript/Node.js</h5>
+            <div class="code-block">
+                <button class="btn btn-sm btn-outline-light mb-2" onclick="copyCode(this)">Kopyala</button>
+                <pre><code class="language-javascript">const axios = require('axios');
+
+const api = axios.create({
+  baseURL: '{{req.protocol}}://{{req.headers.host}}/api',
+  headers: {
+    'Authorization': 'Bearer sk_your_token_here'
+  }
+});
+
+// Güncel fiyatları al
+const prices = await api.get('/prices/current');
+console.log(prices.data);</code></pre>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <h5>Python</h5>
+            <div class="code-block">
+                <button class="btn btn-sm btn-outline-light mb-2" onclick="copyCode(this)">Kopyala</button>
+                <pre><code class="language-python">import requests
+
+headers = {
+    'Authorization': 'Bearer sk_your_token_here'
+}
+
+response = requests.get(
+    '{{req.protocol}}://{{req.headers.host}}/api/prices/current',
+    headers=headers
+)
+
+data = response.json()
+print(data)</code></pre>
+            </div>
+        </div>
+    </div>
+    
+    <h5>cURL</h5>
+    <div class="code-block">
+        <button class="btn btn-sm btn-outline-light mb-2" onclick="copyCode(this)">Kopyala</button>
+        <pre><code class="language-bash"># Güncel fiyatları al
+curl -H "Authorization: Bearer sk_your_token_here" \
+     "{{req.protocol}}://{{req.headers.host}}/api/prices/current"
+
+# Belirli sembol için fiyat
+curl -H "Authorization: Bearer sk_your_token_here" \
+     "{{req.protocol}}://{{req.headers.host}}/api/prices/current/USD/TRY"</code></pre>
+    </div>
+</div>
+
+<div class="mt-5 p-4 bg-light rounded">
+    <h5><i class="bi bi-question-circle"></i> Destek</h5>
+    <p class="mb-2">API kullanımı hakkında sorularınız için:</p>
+    <ul class="mb-0">
+        <li><strong>Admin Panel:</strong> <a href="/admin">{{req.protocol}}://{{req.headers.host}}/admin</a></li>
+        <li><strong>Token Yönetimi:</strong> <a href="/admin/tokens">{{req.protocol}}://{{req.headers.host}}/admin/tokens</a></li>
+        <li><strong>Live Demo:</strong> <a href="/api/info" target="_blank">API Info Endpoint</a></li>
+    </ul>
+</div>

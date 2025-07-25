@@ -1,0 +1,566 @@
+{{#if error}}
+<div class="alert alert-danger alert-dismissible fade show" role="alert">
+    <i class="fas fa-exclamation-circle me-2"></i>
+    {{error}}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{{/if}}
+
+{{#if success}}
+<div class="alert alert-success alert-dismissible fade show" role="alert">
+    <i class="fas fa-check-circle me-2"></i>
+    {{success}}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{{/if}}
+
+<div class="row mb-4">
+    <div class="col">
+        <h2 class="h3">
+            <i class="fas fa-server me-2"></i>
+            Servis Yönetimi
+        </h2>
+    </div>
+</div>
+
+<!-- Service Categories -->
+<div class="row">
+    <!-- Sistem Servisleri -->
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-cogs me-2"></i>
+                    Sistem Servisleri
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Servis Adı</th>
+                                <th>Durum</th>
+                                <th>Detaylar</th>
+                                <th>İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{#each services}}
+                                {{#if (eq this.category "Sistem Servisleri")}}
+                                <tr>
+                                    <td>
+                                        <strong>{{this.name}}</strong>
+                                        <br>
+                                        <small class="text-muted">{{this.description}}</small>
+                                    </td>
+                                    <td>
+                                        {{#if this.status.isRunning}}
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-check-circle me-1"></i>Aktif
+                                            </span>
+                                        {{else}}
+                                            <span class="badge bg-danger">
+                                                <i class="fas fa-times-circle me-1"></i>Pasif
+                                            </span>
+                                        {{/if}}
+                                    </td>
+                                    <td>
+                                        {{#if this.status.details}}
+                                            {{#if (eq this.id "database")}}
+                                                <small>
+                                                    Boyut: <strong>{{formatBytes this.status.details.dataSize}}</strong><br>
+                                                    Koleksiyonlar: {{this.status.details.collections}}<br>
+                                                    Bağlantılar: {{this.status.details.connections}}
+                                                </small>
+                                            {{else if (eq this.id "server")}}
+                                                <small>
+                                                    Uptime: <strong>{{this.status.details.uptimeHuman}}</strong><br>
+                                                    Memory: {{formatBytes this.status.details.memoryUsage.heapUsed}} / {{formatBytes this.status.details.memoryUsage.heapTotal}}<br>
+                                                    CPU: {{this.status.details.cpuUsage}}%
+                                                </small>
+                                            {{else if (eq this.id "socket")}}
+                                                <small>
+                                                    Port: {{this.status.details.port}}<br>
+                                                    Bağlı istemciler: {{this.status.details.connectedClients}}<br>
+                                                    Token bağlantıları: {{this.status.details.tokenAuthClients}}
+                                                </small>
+                                            {{/if}}
+                                        {{/if}}
+                                    </td>
+                                    <td>
+                                        {{#if (eq this.id "database")}}
+                                            <button type="button" class="btn btn-sm btn-outline-info" 
+                                                    onclick="showDbStats()">
+                                                <i class="fas fa-chart-pie"></i> İstatistikler
+                                            </button>
+                                        {{else if (eq this.id "server")}}
+                                            <button type="button" class="btn btn-sm btn-outline-warning" 
+                                                    onclick="restartSystem()">
+                                                <i class="fas fa-sync"></i> Yeniden Başlat
+                                            </button>
+                                        {{/if}}
+                                    </td>
+                                </tr>
+                                {{/if}}
+                            {{/each}}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Veri Servisleri -->
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-database me-2"></i>
+                    Veri Servisleri
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Servis Adı</th>
+                                <th>Durum</th>
+                                <th>Bağlantı</th>
+                                <th>Son Güncelleme</th>
+                                <th>İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{#each services}}
+                                {{#if (eq this.category "Veri Servisleri")}}
+                                <tr>
+                                    <td>
+                                        <strong>{{this.name}}</strong>
+                                    </td>
+                                    <td>
+                                        {{#if this.status.isRunning}}
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-play me-1"></i>Çalışıyor
+                                            </span>
+                                        {{else}}
+                                            <span class="badge bg-danger">
+                                                <i class="fas fa-stop me-1"></i>Durduruldu
+                                            </span>
+                                        {{/if}}
+                                    </td>
+                                    <td>
+                                        {{#if this.status.isConnected}}
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-link me-1"></i>Bağlı
+                                            </span>
+                                        {{else}}
+                                            <span class="badge bg-warning">
+                                                <i class="fas fa-unlink me-1"></i>Bağlı Değil
+                                            </span>
+                                        {{/if}}
+                                    </td>
+                                    <td>
+                                        {{#if this.status.lastUpdateTime}}
+                                            <small>{{formatDate this.status.lastUpdateTime}}</small>
+                                        {{else}}
+                                            <small class="text-muted">-</small>
+                                        {{/if}}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            {{#if this.status.isRunning}}
+                                                <button type="button" class="btn btn-outline-danger" 
+                                                        onclick="controlService('{{this.id}}', 'stop')">
+                                                    <i class="fas fa-stop"></i> Durdur
+                                                </button>
+                                                <button type="button" class="btn btn-outline-warning" 
+                                                        onclick="controlService('{{this.id}}', 'restart')">
+                                                    <i class="fas fa-sync"></i> Yeniden Başlat
+                                                </button>
+                                            {{else}}
+                                                <button type="button" class="btn btn-outline-success" 
+                                                        onclick="controlService('{{this.id}}', 'start')">
+                                                    <i class="fas fa-play"></i> Başlat
+                                                </button>
+                                            {{/if}}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {{/if}}
+                            {{/each}}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Zamanlanmış Görevler -->
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-clock me-2"></i>
+                    Zamanlanmış Görevler (Cron Services)
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Servis Adı</th>
+                                <th>Durum</th>
+                                <th>Zamanlama</th>
+                                <th>Sonraki Çalışma</th>
+                                <th>Ayarlar</th>
+                                <th>İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{#each services}}
+                                {{#if (eq this.category "Zamanlanmış Görevler")}}
+                                <tr>
+                                    <td>
+                                        <strong>{{this.name}}</strong>
+                                    </td>
+                                    <td>
+                                        {{#if this.status.scheduleActive}}
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-check-circle me-1"></i>Aktif
+                                            </span>
+                                        {{else}}
+                                            <span class="badge bg-danger">
+                                                <i class="fas fa-times-circle me-1"></i>Pasif
+                                            </span>
+                                        {{/if}}
+                                        {{#if this.status.isRunning}}
+                                            <span class="badge bg-info ms-1">
+                                                <i class="fas fa-spinner fa-spin me-1"></i>Çalışıyor
+                                            </span>
+                                        {{/if}}
+                                    </td>
+                                    <td>
+                                        {{#if (eq this.id "pricearchive")}}
+                                            <small>Her 15 dakika<br>Hafta içi 09:00-18:00</small>
+                                        {{else if (eq this.id "cleanup")}}
+                                            <small>Günlük<br>Saat: {{this.status.settings.cleanupHour}}:00</small>
+                                        {{/if}}
+                                    </td>
+                                    <td>
+                                        {{#if this.status.nextArchiveWindow}}
+                                            <small>{{formatDate this.status.nextArchiveWindow}}</small>
+                                        {{else if this.status.nextCleanup}}
+                                            <small>{{formatDate this.status.nextCleanup}}</small>
+                                        {{else}}
+                                            <small class="text-muted">-</small>
+                                        {{/if}}
+                                    </td>
+                                    <td>
+                                        {{#if this.status.settings}}
+                                            {{#if (eq this.id "pricearchive")}}
+                                                <small>
+                                                    Saklama: {{this.status.settings.archiveRetentionDays}} gün<br>
+                                                    Timezone: {{this.status.settings.timezone}}
+                                                </small>
+                                            {{else if (eq this.id "cleanup")}}
+                                                <small>
+                                                    Fiyat Geçmişi: {{this.status.settings.priceHistoryRetentionDays}} gün<br>
+                                                    Log Saklama: {{this.status.settings.logRetentionDays}} gün
+                                                </small>
+                                            {{/if}}
+                                        {{/if}}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            {{#if this.status.scheduleActive}}
+                                                <button type="button" class="btn btn-outline-danger" 
+                                                        onclick="controlService('{{this.id}}', 'stop')">
+                                                    <i class="fas fa-stop"></i> Durdur
+                                                </button>
+                                                <button type="button" class="btn btn-outline-warning" 
+                                                        onclick="controlService('{{this.id}}', 'restart')">
+                                                    <i class="fas fa-sync"></i> Yeniden Başlat
+                                                </button>
+                                            {{else}}
+                                                <button type="button" class="btn btn-outline-success" 
+                                                        onclick="controlService('{{this.id}}', 'start')">
+                                                    <i class="fas fa-play"></i> Başlat
+                                                </button>
+                                            {{/if}}
+                                            
+                                            {{#if (eq this.id "pricearchive")}}
+                                                <button type="button" class="btn btn-outline-primary" 
+                                                        onclick="manualArchive()">
+                                                    <i class="fas fa-archive"></i> Manuel Arşivle
+                                                </button>
+                                            {{else if (eq this.id "cleanup")}}
+                                                <button type="button" class="btn btn-outline-primary" 
+                                                        onclick="manualCleanup()">
+                                                    <i class="fas fa-broom"></i> Manuel Temizle
+                                                </button>
+                                            {{/if}}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {{/if}}
+                            {{/each}}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Service Status Auto Refresh -->
+<script>
+// Service control functions
+async function controlService(serviceName, action) {
+    try {
+        const confirmMsg = {
+            'start': 'Bu servisi başlatmak istediğinizden emin misiniz?',
+            'stop': 'Bu servisi durdurmak istediğinizden emin misiniz?',
+            'restart': 'Bu servisi yeniden başlatmak istediğinizden emin misiniz?'
+        };
+        
+        if (!confirm(confirmMsg[action])) {
+            return;
+        }
+        
+        const response = await fetch(`/admin/api/services/${serviceName}/${action}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showAlert('success', result.message);
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showAlert('danger', result.error || 'İşlem başarısız oldu');
+        }
+    } catch (error) {
+        showAlert('danger', 'Bir hata oluştu: ' + error.message);
+    }
+}
+
+// Manual archive function
+async function manualArchive() {
+    if (!confirm('Manuel arşivleme işlemini başlatmak istediğinizden emin misiniz?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('/admin/api/services/pricearchive/manual-archive', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showAlert('success', result.message);
+        } else {
+            showAlert('danger', result.error || 'Manuel arşivleme başarısız');
+        }
+    } catch (error) {
+        showAlert('danger', 'Bir hata oluştu: ' + error.message);
+    }
+}
+
+// Manual cleanup function
+async function manualCleanup() {
+    if (!confirm('Manuel temizlik işlemini başlatmak istediğinizden emin misiniz?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('/admin/api/services/cleanup/manual-cleanup', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showAlert('success', result.message);
+        } else {
+            showAlert('danger', result.error || 'Manuel temizlik başarısız');
+        }
+    } catch (error) {
+        showAlert('danger', 'Bir hata oluştu: ' + error.message);
+    }
+}
+
+// Show alert helper
+function showAlert(type, message) {
+    const alertHtml = `
+        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+            <i class="fas fa-${type === 'success' ? 'check' : 'exclamation'}-circle me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    
+    const container = document.querySelector('.col-12');
+    container.insertAdjacentHTML('afterbegin', alertHtml);
+}
+
+// Show database statistics
+async function showDbStats() {
+    try {
+        const response = await fetch('/admin/api/system/db-stats');
+        const data = await response.json();
+        
+        if (data.success) {
+            // Create modal with stats
+            const modalHtml = `
+                <div class="modal fade" id="dbStatsModal" tabindex="-1">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Veritabanı İstatistikleri</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h6>Genel Bilgiler</h6>
+                                        <table class="table table-sm">
+                                            <tr><td>Veritabanı:</td><td><strong>${data.stats.dbName}</strong></td></tr>
+                                            <tr><td>Koleksiyon Sayısı:</td><td><strong>${data.stats.collections}</strong></td></tr>
+                                            <tr><td>Veri Boyutu:</td><td><strong>${formatBytes(data.stats.dataSize)}</strong></td></tr>
+                                            <tr><td>Index Boyutu:</td><td><strong>${formatBytes(data.stats.indexSize)}</strong></td></tr>
+                                            <tr><td>Toplam Boyut:</td><td><strong>${formatBytes(data.stats.totalSize)}</strong></td></tr>
+                                        </table>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6>Koleksiyon Detayları</h6>
+                                        <div style="max-height: 300px; overflow-y: auto;">
+                                            <table class="table table-sm">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Koleksiyon</th>
+                                                        <th>Kayıt</th>
+                                                        <th>Boyut</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    ${data.stats.collectionDetails.map(col => `
+                                                        <tr>
+                                                            <td>${col.name}</td>
+                                                            <td>${col.count}</td>
+                                                            <td>${formatBytes(col.size)}</td>
+                                                        </tr>
+                                                    `).join('')}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            const modal = new bootstrap.Modal(document.getElementById('dbStatsModal'));
+            modal.show();
+            
+            // Clean up after modal is hidden
+            document.getElementById('dbStatsModal').addEventListener('hidden.bs.modal', function() {
+                this.remove();
+            });
+        }
+    } catch (error) {
+        showAlert('danger', 'Veritabanı istatistikleri alınamadı: ' + error.message);
+    }
+}
+
+// Restart system
+async function restartSystem() {
+    if (!confirm('Sistemi yeniden başlatmak istediğinizden emin misiniz?\n\nBu işlem tüm servisleri yeniden başlatacaktır.')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('/admin/api/system/restart', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showAlert('warning', result.message);
+            
+            // Show countdown
+            let countdown = 5;
+            const interval = setInterval(() => {
+                showAlert('warning', `Sistem ${countdown} saniye içinde yeniden başlatılacak...`);
+                countdown--;
+                
+                if (countdown === 0) {
+                    clearInterval(interval);
+                    showAlert('info', 'Sistem yeniden başlatılıyor. Lütfen bekleyin...');
+                }
+            }, 1000);
+        }
+    } catch (error) {
+        showAlert('danger', 'Sistem yeniden başlatılamadı: ' + error.message);
+    }
+}
+
+// Format bytes helper
+function formatBytes(bytes) {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+// Auto refresh service status every 30 seconds
+let refreshInterval;
+
+function startAutoRefresh() {
+    refreshInterval = setInterval(async () => {
+        try {
+            const response = await fetch('/admin/api/services/status');
+            const data = await response.json();
+            
+            if (data.success) {
+                // Update service statuses without full page reload
+                console.log('Service status refreshed');
+            }
+        } catch (error) {
+            console.error('Auto refresh error:', error);
+        }
+    }, 30000);
+}
+
+// Start auto refresh when page loads
+document.addEventListener('DOMContentLoaded', () => {
+    startAutoRefresh();
+});
+
+// Stop auto refresh when page unloads
+window.addEventListener('beforeunload', () => {
+    if (refreshInterval) {
+        clearInterval(refreshInterval);
+    }
+});
+</script>

@@ -1,0 +1,191 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Fiyat Eşleştirmesi Düzenle</h2>
+    <a href="/admin/mappings" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i>
+        Geri Dön
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST" action="/admin/mappings/{{editMapping._id}}">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="sourceId" class="form-label">Veri Kaynağı *</label>
+                        <select class="form-select" id="sourceId" name="sourceId" required>
+                            <option value="">Kaynak seçin</option>
+                            {{#each sources}}
+                            <option value="{{this._id}}" {{#if (eq this._id ../editMapping.sourceId)}}selected{{/if}}>
+                                {{this.displayName}} ({{this.name}})
+                            </option>
+                            {{/each}}
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="sourceField" class="form-label">Kaynak Alanı *</label>
+                        <input type="text" class="form-control" id="sourceField" name="sourceField" 
+                               value="{{editMapping.sourceField}}" required>
+                        <div class="form-text">API'deki alan adı veya CSS seçici</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="sourceDescription" class="form-label">Kaynak Alan Açıklaması</label>
+                <input type="text" class="form-control" id="sourceDescription" name="sourceDescription" 
+                       value="{{editMapping.sourceDescription}}">
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="targetSymbol" class="form-label">Hedef Sembol *</label>
+                        <select class="form-select" id="targetSymbol" name="targetSymbol" required>
+                            <option value="">Sembol seçin</option>
+                            <optgroup label="Forex">
+                                <option value="USD/TRY" {{#if (eq editMapping.targetSymbol 'USD/TRY')}}selected{{/if}}>USD/TRY</option>
+                                <option value="EUR/TRY" {{#if (eq editMapping.targetSymbol 'EUR/TRY')}}selected{{/if}}>EUR/TRY</option>
+                                <option value="GBP/TRY" {{#if (eq editMapping.targetSymbol 'GBP/TRY')}}selected{{/if}}>GBP/TRY</option>
+                                <option value="CHF/TRY" {{#if (eq editMapping.targetSymbol 'CHF/TRY')}}selected{{/if}}>CHF/TRY</option>
+                                <option value="RUB/TRY" {{#if (eq editMapping.targetSymbol 'RUB/TRY')}}selected{{/if}}>RUB/TRY</option>
+                                <option value="SAR/TRY" {{#if (eq editMapping.targetSymbol 'SAR/TRY')}}selected{{/if}}>SAR/TRY</option>
+                            </optgroup>
+                            <optgroup label="Altın">
+                                <option value="HAS/TRY" {{#if (eq editMapping.targetSymbol 'HAS/TRY')}}selected{{/if}}>HAS/TRY (Gram Altın)</option>
+                                <option value="QUARTER_GOLD/TRY" {{#if (eq editMapping.targetSymbol 'QUARTER_GOLD/TRY')}}selected{{/if}}>QUARTER_GOLD/TRY (Çeyrek Altın)</option>
+                                <option value="HALF_GOLD/TRY" {{#if (eq editMapping.targetSymbol 'HALF_GOLD/TRY')}}selected{{/if}}>HALF_GOLD/TRY (Yarım Altın)</option>
+                                <option value="FULL_GOLD/TRY" {{#if (eq editMapping.targetSymbol 'FULL_GOLD/TRY')}}selected{{/if}}>FULL_GOLD/TRY (Tam Altın)</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="targetType" class="form-label">Hedef Tip *</label>
+                        <select class="form-select" id="targetType" name="targetType" required>
+                            <option value="">Tip seçin</option>
+                            <option value="forex" {{#if (eq editMapping.targetType 'forex')}}selected{{/if}}>Forex</option>
+                            <option value="gold" {{#if (eq editMapping.targetType 'gold')}}selected{{/if}}>Altın</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label for="priority" class="form-label">Öncelik *</label>
+                        <select class="form-select" id="priority" name="priority" required>
+                            <option value="1" {{#if (eq editMapping.priority 1)}}selected{{/if}}>1 (En Yüksek)</option>
+                            <option value="2" {{#if (eq editMapping.priority 2)}}selected{{/if}}>2 (Yüksek)</option>
+                            <option value="3" {{#if (eq editMapping.priority 3)}}selected{{/if}}>3 (Normal)</option>
+                            <option value="4" {{#if (eq editMapping.priority 4)}}selected{{/if}}>4 (Düşük)</option>
+                            <option value="5" {{#if (eq editMapping.priority 5)}}selected{{/if}}>5 (En Düşük)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label for="multiplier" class="form-label">Çarpan</label>
+                        <input type="number" class="form-control" id="multiplier" name="multiplier" 
+                               value="{{editMapping.multiplier}}" step="0.0001" placeholder="1.0000">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label for="offset" class="form-label">Ofset</label>
+                        <input type="number" class="form-control" id="offset" name="offset" 
+                               value="{{editMapping.offset}}" step="0.0001" placeholder="0.0000">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="formula" class="form-label">Özel Formül</label>
+                <input type="text" class="form-control" id="formula" name="formula" 
+                       value="{{editMapping.formula}}">
+                <div class="form-text">JavaScript formülü (value değişkenini kullanın)</div>
+            </div>
+            
+            <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" id="isActive" name="isActive" 
+                       {{#if editMapping.isActive}}checked{{/if}}>
+                <label class="form-check-label" for="isActive">
+                    Eşleştirme aktif olsun
+                </label>
+            </div>
+            
+            <hr>
+            
+            <h6>Eşleştirme Bilgileri</h6>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label">Oluşturulma Tarihi</label>
+                        <div class="form-control-plaintext">{{formatDate editMapping.createdAt}}</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label">Son Güncelleme</label>
+                        <div class="form-control-plaintext">{{formatDate editMapping.updatedAt}}</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label">Son Kullanım</label>
+                        <div class="form-control-plaintext">
+                            {{#if editMapping.lastUsed}}
+                            {{formatDate editMapping.lastUsed}}
+                            {{else}}
+                            Henüz kullanılmadı
+                            {{/if}}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check"></i>
+                    Eşleştirmeyi Güncelle
+                </button>
+                <a href="/admin/mappings" class="btn btn-secondary">
+                    <i class="bi bi-x"></i>
+                    İptal
+                </a>
+                <button type="button" class="btn btn-outline-danger ms-auto" onclick="confirmDelete()">
+                    <i class="bi bi-trash"></i>
+                    Eşleştirmeyi Sil
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Hedef sembol değiştiğinde tipi otomatik ayarla
+document.getElementById('targetSymbol').addEventListener('change', function() {
+    const symbol = this.value;
+    const typeSelect = document.getElementById('targetType');
+    
+    if (symbol.includes('/')) {
+        typeSelect.value = 'forex';
+    } else if (symbol.includes('GOLD') || symbol.includes('HAS')) {
+        typeSelect.value = 'gold';
+    }
+});
+
+function confirmDelete() {
+    if (confirm('Bu eşleştirmeyi silmek istediğinizden emin misiniz?')) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/admin/mappings/{{editMapping._id}}/delete';
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>

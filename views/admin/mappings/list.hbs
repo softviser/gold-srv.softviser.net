@@ -1,0 +1,770 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Fiyat Eşleştirmeleri</h2>
+    <div class="d-flex gap-2">
+        <a href="/admin/currencies" class="btn btn-outline-info">
+            <i class="bi bi-currency-exchange"></i>
+            Sistem Birimleri
+        </a>
+        {{#if (or (eq user.role 'admin') (eq user.role 'manager'))}}
+        <button type="button" class="btn btn-info" onclick="showBulkMappingModal()">
+            <i class="bi bi-collection"></i>
+            Toplu Eşleştirme
+        </button>
+        <a href="/admin/mappings/new" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i>
+            Yeni Eşleştirme Ekle
+        </a>
+        {{/if}}
+    </div>
+</div>
+
+<!-- Filtreler ve Arama -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h6 class="mb-0">
+            <i class="bi bi-funnel"></i>
+            Filtreler ve Arama
+        </h6>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label for="sourceFilter" class="form-label">Kaynak</label>
+                <select class="form-select" id="sourceFilter" onchange="applyFilters()">
+                    <option value="">Tüm Kaynaklar</option>
+                    {{#each sources}}
+                    <option value="{{this.name}}">{{this.displayName}}</option>
+                    {{/each}}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="typeFilter" class="form-label">Tip</label>
+                <select class="form-select" id="typeFilter" onchange="applyFilters()">
+                    <option value="">Tüm Tipler</option>
+                    <option value="forex">Forex</option>
+                    <option value="gold">Altın</option>
+                    <option value="crypto">Kripto</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="statusFilter" class="form-label">Durum</label>
+                <select class="form-select" id="statusFilter" onchange="applyFilters()">
+                    <option value="">Tüm Durumlar</option>
+                    <option value="active">Aktif</option>
+                    <option value="inactive">Pasif</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="searchInput" class="form-label">Arama</label>
+                <div class="input-group">
+                    <input type="text" class="form-control" id="searchInput" placeholder="Sembol, kaynak alanı ara..." onkeyup="applyFilters()">
+                    <button class="btn btn-outline-secondary" type="button" onclick="clearSearch()">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-2">
+            <div class="col-12">
+                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="clearAllFilters()">
+                    <i class="bi bi-arrow-clockwise"></i>
+                    Tüm Filtreleri Temizle
+                </button>
+                <span id="filterResults" class="ms-3 text-muted small"></span>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{#if mappings.length}}
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Kaynak</th>
+                        <th>Kaynak Alanı</th>
+                        <th>Hedef Sembol</th>
+                        <th>Tip</th>
+                        <th>Öncelik</th>
+                        <th>Durum</th>
+                        <th>İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody id="mappingsTableBody">
+                    {{#each mappings}}
+                    <tr class="mapping-row" 
+                        data-source="{{this.source.name}}" 
+                        data-type="{{this.targetType}}" 
+                        data-status="{{#if this.isActive}}active{{else}}inactive{{/if}}"
+                        data-search-text="{{this.targetSymbol}} {{this.sourceField}} {{this.source.displayName}} {{this.sourceDescription}}">
+                        <td>
+                            <strong>{{this.source.displayName}}</strong>
+                            <br>
+                            <small class="text-muted">{{this.source.name}}</small>
+                        </td>
+                        <td>
+                            <code>{{this.sourceField}}</code>
+                            {{#if this.sourceDescription}}
+                            <br>
+                            <small class="text-muted">{{this.sourceDescription}}</small>
+                            {{/if}}
+                        </td>
+                        <td>
+                            <strong>{{this.targetSymbol}}</strong>
+                            {{#if this.formula}}
+                            <br>
+                            <small class="text-muted">Formula: {{this.formula}}</small>
+                            {{/if}}
+                            {{#if this.multiplier}}
+                            <br>
+                            <small class="text-muted">×{{this.multiplier}}</small>
+                            {{/if}}
+                        </td>
+                        <td>
+                            {{#if (eq this.targetType 'forex')}}
+                            <span class="badge bg-primary">Forex</span>
+                            {{else if (eq this.targetType 'gold')}}
+                            <span class="badge bg-warning">Altın</span>
+                            {{else}}
+                            <span class="badge bg-secondary">{{this.targetType}}</span>
+                            {{/if}}
+                        </td>
+                        <td>
+                            <span class="badge {{#if (eq this.priority 1)}}bg-success{{else if (eq this.priority 2)}}bg-warning{{else}}bg-secondary{{/if}}">
+                                {{this.priority}}
+                            </span>
+                        </td>
+                        <td>
+                            {{#if this.isActive}}
+                            <span class="badge bg-success">Aktif</span>
+                            {{else}}
+                            <span class="badge bg-danger">Pasif</span>
+                            {{/if}}
+                        </td>
+                        <td>
+                            {{#if (or (eq ../user.role 'admin') (eq ../user.role 'manager'))}}
+                            <div class="btn-group btn-group-sm">
+                                <button type="button" class="btn btn-outline-primary" 
+                                        onclick="toggleStatus('/admin/api/mappings/{{this._id}}/toggle', this)">
+                                    {{#if this.isActive}}
+                                    <i class="bi bi-pause"></i>
+                                    {{else}}
+                                    <i class="bi bi-play"></i>
+                                    {{/if}}
+                                </button>
+                                <a href="/admin/mappings/{{this._id}}/edit" class="btn btn-outline-secondary">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                {{#if (eq ../user.role 'admin')}}
+                                <button type="button" class="btn btn-outline-danger" 
+                                        onclick="confirmDelete('/admin/mappings/{{this._id}}')">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                                {{/if}}
+                            </div>
+                            {{/if}}
+                        </td>
+                    </tr>
+                    {{/each}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title">{{mappings.length}}</h5>
+                <p class="card-text text-muted">Toplam Eşleştirme</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title">{{countActive mappings}}</h5>
+                <p class="card-text text-muted">Aktif</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title">{{countForexMappings mappings}}</h5>
+                <p class="card-text text-muted">Forex</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title">{{countGoldMappings mappings}}</h5>
+                <p class="card-text text-muted">Altın</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{else}}
+<div class="card">
+    <div class="card-body text-center py-5">
+        <i class="bi bi-arrow-left-right fs-1 text-muted mb-3"></i>
+        <h4>Henüz Fiyat Eşleştirmesi Yok</h4>
+        <p class="text-muted">Veri kaynaklarınızı fiyat sembollerine eşleştirin</p>
+        {{#if (or (eq user.role 'admin') (eq user.role 'manager'))}}
+        <a href="/admin/mappings/new" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i>
+            İlk Eşleştirmeyi Ekle
+        </a>
+        {{/if}}
+    </div>
+</div>
+{{/if}}
+
+<script>
+let allMappings = [];
+
+// Sayfa yüklendiğinde
+document.addEventListener('DOMContentLoaded', function() {
+    // Tüm eşleştirmeleri yakala
+    allMappings = Array.from(document.querySelectorAll('.mapping-row'));
+    updateFilterResults();
+});
+
+// Filtreleri uygula
+function applyFilters() {
+    const sourceFilter = document.getElementById('sourceFilter').value.toLowerCase();
+    const typeFilter = document.getElementById('typeFilter').value.toLowerCase();
+    const statusFilter = document.getElementById('statusFilter').value.toLowerCase();
+    const searchText = document.getElementById('searchInput').value.toLowerCase();
+    
+    let visibleCount = 0;
+    
+    allMappings.forEach(row => {
+        const source = row.dataset.source.toLowerCase();
+        const type = row.dataset.type.toLowerCase();
+        const status = row.dataset.status.toLowerCase();
+        const searchableText = row.dataset.searchText.toLowerCase();
+        
+        let show = true;
+        
+        // Kaynak filtresi
+        if (sourceFilter && !source.includes(sourceFilter)) {
+            show = false;
+        }
+        
+        // Tip filtresi
+        if (typeFilter && type !== typeFilter) {
+            show = false;
+        }
+        
+        // Durum filtresi
+        if (statusFilter && status !== statusFilter) {
+            show = false;
+        }
+        
+        // Arama filtresi
+        if (searchText && !searchableText.includes(searchText)) {
+            show = false;
+        }
+        
+        row.style.display = show ? '' : 'none';
+        if (show) visibleCount++;
+    });
+    
+    updateFilterResults(visibleCount);
+}
+
+// Filtre sonuçlarını güncelle
+function updateFilterResults(visibleCount = null) {
+    const total = allMappings.length;
+    const visible = visibleCount !== null ? visibleCount : total;
+    
+    document.getElementById('filterResults').textContent = 
+        `${visible} / ${total} eşleştirme gösteriliyor`;
+}
+
+// Aramayı temizle
+function clearSearch() {
+    document.getElementById('searchInput').value = '';
+    applyFilters();
+}
+
+// Tüm filtreleri temizle
+function clearAllFilters() {
+    document.getElementById('sourceFilter').value = '';
+    document.getElementById('typeFilter').value = '';
+    document.getElementById('statusFilter').value = '';
+    document.getElementById('searchInput').value = '';
+    applyFilters();
+}
+
+// Durum değiştir
+function toggleStatus(url, button) {
+    const row = button.closest('tr');
+    const icon = button.querySelector('i');
+    
+    fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Durum değişti, UI'yi güncelle
+            const newStatus = data.isActive;
+            row.dataset.status = newStatus ? 'active' : 'inactive';
+            
+            // Badge'i güncelle
+            const badge = row.querySelector('.badge:last-of-type');
+            if (newStatus) {
+                badge.className = 'badge bg-success';
+                badge.textContent = 'Aktif';
+                icon.className = 'bi bi-pause';
+            } else {
+                badge.className = 'badge bg-danger';
+                badge.textContent = 'Pasif';
+                icon.className = 'bi bi-play';
+            }
+            
+            // Filtreleri yeniden uygula
+            applyFilters();
+        } else {
+            alert('Durum değiştirilemedi: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Hata: ' + error.message);
+    });
+}
+
+function confirmDelete(url) {
+    if (confirm('Bu eşleştirmeyi silmek istediğinizden emin misiniz?')) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = url + '/delete';
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+// Toplu Eşleştirme Fonksiyonları
+let currentSampleData = null;
+let currentSourceName = null;
+
+function showBulkMappingModal() {
+    const modal = new bootstrap.Modal(document.getElementById('bulkMappingModal'));
+    modal.show();
+}
+
+function fetchSampleData() {
+    const sourceName = document.getElementById('sourceSelect').value;
+    
+    if (!sourceName) {
+        alert('Önce kaynak seçin');
+        return;
+    }
+    
+    currentSourceName = sourceName;
+    const sampleDataDiv = document.getElementById('sampleData');
+    sampleDataDiv.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Yükleniyor...</span></div></div>';
+    
+    // Hakangold ve haremgold için farklı davranış
+    if (sourceName === 'hakangold' || sourceName === 'haremgold') {
+        displayManualMappingInterface(sourceName);
+        return;
+    }
+    
+    // Diğer kaynaklar için normal fetch işlemi
+    fetch(`/admin/api/sources/${sourceName}/fetch-sample`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            currentSampleData = data.sampleData;
+            displaySampleData(data.sampleData);
+            loadMappingOptions(sourceName, data.sampleData);
+        } else {
+            sampleDataDiv.innerHTML = `<div class="alert alert-danger">Hata: ${data.error}</div>`;
+        }
+    })
+    .catch(error => {
+        sampleDataDiv.innerHTML = `<div class="alert alert-danger">Network Error: ${error.message}</div>`;
+    });
+}
+
+function displaySampleData(sampleData) {
+    const sampleDataDiv = document.getElementById('sampleData');
+    
+    let html = '<div class="row">';
+    
+    if (sampleData.currency && sampleData.currency.length > 0) {
+        html += '<div class="col-md-6"><h6>Currency Data:</h6><pre class="small">';
+        sampleData.currency.slice(0, 5).forEach(item => {
+            html += `${item.kod}: ${item.aciklama || item.symbol || 'N/A'}\n`;
+        });
+        if (sampleData.currency.length > 5) {
+            html += `... ve ${sampleData.currency.length - 5} adet daha`;
+        }
+        html += '</pre></div>';
+    }
+    
+    if (sampleData.gold && sampleData.gold.length > 0) {
+        html += '<div class="col-md-6"><h6>Gold Data:</h6><pre class="small">';
+        sampleData.gold.slice(0, 5).forEach(item => {
+            html += `${item.kod}: ${item.aciklama}\n`;
+        });
+        if (sampleData.gold.length > 5) {
+            html += `... ve ${sampleData.gold.length - 5} adet daha`;
+        }
+        html += '</pre></div>';
+    }
+    
+    html += '</div>';
+    
+    if (!sampleData.currency && !sampleData.gold) {
+        html = '<div class="alert alert-warning">Örnek veri bulunamadı</div>';
+    }
+    
+    sampleDataDiv.innerHTML = html;
+}
+
+function displayManualMappingInterface(sourceName) {
+    const sampleDataDiv = document.getElementById('sampleData');
+    
+    sampleDataDiv.innerHTML = `
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i>
+            <strong>${sourceName.toUpperCase()}</strong> kaynağı için manuel eşleştirme modu
+            <br><small>Aşağıdaki tabloda her sistem birimi için kaynak alanını manuel olarak giriniz.</small>
+        </div>
+    `;
+    
+    loadManualMappingOptions(sourceName);
+}
+
+function loadManualMappingOptions(sourceName) {
+    const mappingTableBody = document.getElementById('mappingTableBody');
+    
+    // System currencies verisini admin/api/currencies endpoint'inden al
+    fetch('/admin/api/currencies')
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+    })
+    .then(currencies => {
+        let mappingHtml = '';
+        
+        currencies.forEach(currency => {
+            if (!currency.isActive) return;
+            
+            const existingMapping = currency.sourceMapping && currency.sourceMapping[sourceName] ? currency.sourceMapping[sourceName] : '';
+            
+            mappingHtml += `
+                <tr>
+                    <td>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="map_${currency._id}" 
+                                   data-currency-id="${currency._id}" data-symbol="${currency.symbol}">
+                            <label class="form-check-label" for="map_${currency._id}">
+                                <strong>${currency.symbol}</strong><br>
+                                <small class="text-muted">${currency.name}</small>
+                            </label>
+                        </div>
+                    </td>
+                    <td>
+                        <input type="text" class="form-control form-control-sm" 
+                               placeholder="Kaynak alanını girin (ör: USD/TRY, GRAM_ALTIN)" 
+                               value="${existingMapping}"
+                               data-currency-id="${currency._id}">
+                        <small class="form-text text-muted">
+                            ${sourceName === 'hakangold' ? 'Örnek: USD/TRY, EUR/TRY, GRAM_ALTIN' : 'Örnek: USDTRY, EURTRY, XAU'}
+                        </small>
+                    </td>
+                    <td>
+                        <input type="number" class="form-control form-control-sm" 
+                               value="${currency.priority || 1}" min="1" max="100" 
+                               data-currency-id="${currency._id}">
+                    </td>
+                    <td>
+                        <span class="badge bg-secondary" id="status_${currency._id}">
+                            ${existingMapping ? 'Mevcut' : 'Yeni'}
+                        </span>
+                    </td>
+                </tr>
+            `;
+        });
+        
+        mappingTableBody.innerHTML = mappingHtml;
+    })
+    .catch(error => {
+        console.error('Currencies fetch error:', error);
+        mappingTableBody.innerHTML = `<tr><td colspan="4" class="text-center text-danger">Hata: ${error.message}</td></tr>`;
+    });
+}
+
+function loadMappingOptions(sourceName, sampleData) {
+    const mappingTableBody = document.getElementById('mappingTableBody');
+    
+    // System currencies verisini al
+    fetch('/admin/api/currencies')
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+    })
+    .then(currencies => {
+        let mappingHtml = '';
+        
+        currencies.forEach(currency => {
+            if (!currency.isActive) return;
+            
+            mappingHtml += `
+                <tr>
+                    <td>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="map_${currency._id}" 
+                                   data-currency-id="${currency._id}" data-symbol="${currency.symbol}">
+                            <label class="form-check-label" for="map_${currency._id}">
+                                <strong>${currency.symbol}</strong><br>
+                                <small class="text-muted">${currency.name}</small>
+                            </label>
+                        </div>
+                    </td>
+                    <td>
+                        <select class="form-select form-select-sm" data-currency-id="${currency._id}">
+                            <option value="">Seçiniz...</option>
+            `;
+            
+            // Currency verilerinden seçenekleri ekle
+            if (sampleData.currency) {
+                sampleData.currency.forEach(item => {
+                    const currencyWithoutSlash = currency.symbol.replace('/', '');
+                    const itemCodeWithoutSlash = item.kod.replace('/', '');
+                    
+                    const isSelected = (
+                        item.symbol === currency.symbol ||
+                        item.kod === currency.code ||
+                        item.kod === currency.symbol ||
+                        item.kod === currencyWithoutSlash ||
+                        itemCodeWithoutSlash === currencyWithoutSlash ||
+                        (currency.sourceMapping && currency.sourceMapping[sourceName] === item.kod)
+                    );
+                    
+                    mappingHtml += `<option value="${item.kod}" ${isSelected ? 'selected' : ''}>${item.kod} - ${item.aciklama || item.symbol || ''}</option>`;
+                });
+            }
+            
+            // Gold verilerinden seçenekleri ekle
+            if (sampleData.gold) {
+                sampleData.gold.forEach(item => {
+                    const currencyWithoutSlash = currency.symbol.replace('/', '');
+                    const itemCodeWithoutSlash = item.kod.replace('/', '');
+                    
+                    const isSelected = (
+                        item.symbol === currency.symbol ||
+                        item.kod === currency.code ||
+                        item.kod === currency.symbol ||
+                        item.kod === currencyWithoutSlash ||
+                        itemCodeWithoutSlash === currencyWithoutSlash ||
+                        (currency.sourceMapping && currency.sourceMapping[sourceName] === item.kod)
+                    );
+                    
+                    mappingHtml += `<option value="${item.kod}" ${isSelected ? 'selected' : ''}>${item.kod} - ${item.aciklama}</option>`;
+                });
+            }
+            
+            mappingHtml += `
+                        </select>
+                    </td>
+                    <td>
+                        <input type="number" class="form-control form-control-sm" 
+                               value="${currency.priority || 1}" min="1" max="100" 
+                               data-currency-id="${currency._id}">
+                    </td>
+                    <td>
+                        <span class="badge bg-secondary" id="status_${currency._id}">Yeni</span>
+                    </td>
+                </tr>
+            `;
+        });
+        
+        mappingTableBody.innerHTML = mappingHtml;
+    })
+    .catch(error => {
+        console.error('Currencies fetch error:', error);
+        mappingTableBody.innerHTML = `<tr><td colspan="4" class="text-center text-danger">Hata: ${error.message}</td></tr>`;
+    });
+}
+
+async function saveBulkMapping() {
+    const sourceSelect = document.getElementById('sourceSelect');
+    const sourceName = sourceSelect.value;
+    
+    if (!sourceName) {
+        alert('Önce kaynak seçin');
+        return;
+    }
+    
+    const mappings = [];
+    const checkboxes = document.querySelectorAll('#mappingTableBody input[type="checkbox"]:checked');
+    
+    checkboxes.forEach(checkbox => {
+        const currencyId = checkbox.dataset.currencyId;
+        const symbol = checkbox.dataset.symbol;
+        
+        let sourceField = '';
+        let priority = 1;
+        
+        // Manuel mod (hakangold/haremgold) için text input'tan al
+        if (sourceName === 'hakangold' || sourceName === 'haremgold') {
+            const textInput = document.querySelector(`#mappingTableBody input[type="text"][data-currency-id="${currencyId}"]`);
+            sourceField = textInput ? textInput.value.trim() : '';
+        } else {
+            // Normal mod için select'ten al
+            const selectElement = document.querySelector(`#mappingTableBody select[data-currency-id="${currencyId}"]`);
+            sourceField = selectElement ? selectElement.value : '';
+        }
+        
+        const priorityInput = document.querySelector(`#mappingTableBody input[type="number"][data-currency-id="${currencyId}"]`);
+        priority = priorityInput ? parseInt(priorityInput.value) : 1;
+        
+        if (sourceField) {
+            mappings.push({
+                currencyId,
+                symbol,
+                sourceName,
+                sourceField,
+                priority,
+                isActive: true
+            });
+        }
+    });
+    
+    if (mappings.length === 0) {
+        const isManualMode = sourceName === 'hakangold' || sourceName === 'haremgold';
+        const message = isManualMode 
+            ? 'Eşleştirilecek para birimlerini seçin ve kaynak alanlarını manuel olarak girin' 
+            : 'Eşleştirilecek para birimi seçin ve kaynak alanını belirtin';
+        alert(message);
+        return;
+    }
+    
+    // Loading state
+    const saveButton = document.querySelector('#bulkMappingModal .btn-success');
+    const originalText = saveButton.innerHTML;
+    saveButton.disabled = true;
+    saveButton.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Kaydediliyor...';
+    
+    try {
+        const response = await fetch('/admin/api/mappings/bulk-create', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 
+                mappings,
+                operation: 'bulk-mapping',
+                timestamp: new Date().toISOString()
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert(`✅ ${result.createdCount || mappings.length} adet eşleştirme başarıyla oluşturuldu!`);
+            bootstrap.Modal.getInstance(document.getElementById('bulkMappingModal')).hide();
+            setTimeout(() => window.location.reload(), 500);
+        } else {
+            alert('❌ Eşleştirme kaydedilemedi: ' + (result.error || 'Bilinmeyen hata'));
+        }
+        
+    } catch (error) {
+        console.error('Toplu eşleştirme hatası:', error);
+        alert('❌ Ağ hatası: ' + error.message);
+    } finally {
+        saveButton.disabled = false;
+        saveButton.innerHTML = originalText;
+    }
+}
+</script>
+
+<!-- Toplu Eşleştirme Modal -->
+<div class="modal fade" id="bulkMappingModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Toplu Eşleştirme Yönetimi</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Kaynak Seçin</label>
+                        <select class="form-select" id="sourceSelect">
+                            <option value="">Kaynak seçiniz...</option>
+                            {{#each sources}}
+                            <option value="{{this.name}}">{{this.displayName}}</option>
+                            {{/each}}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">&nbsp;</label>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-info" onclick="fetchSampleData()">
+                                <i class="bi bi-download"></i>
+                                Örnek Veri Çek
+                            </button>
+                            <button type="button" class="btn btn-success" onclick="saveBulkMapping()">
+                                <i class="bi bi-check"></i>
+                                Kaydet
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Sample Data Display -->
+                <div class="mb-3">
+                    <h6>Örnek Veri</h6>
+                    <div id="sampleData" class="border p-2 bg-light rounded">
+                        <div class="text-center text-muted py-2">
+                            Önce bir kaynak seçin ve örnek veri çekin
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Mapping Table -->
+                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                    <table class="table table-sm">
+                        <thead class="sticky-top bg-light">
+                            <tr>
+                                <th width="25%">Sistem Birimi</th>
+                                <th width="40%">Kaynak Alanı</th>
+                                <th width="15%">Öncelik</th>
+                                <th width="20%">Durum</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mappingTableBody">
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-3">
+                                    Önce kaynak seçin ve örnek veri çekin
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

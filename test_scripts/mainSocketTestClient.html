@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ana Socket Test Client - Port 6701</title>
+    <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f0f0f0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .server-info {
+            background-color: #2196F3;
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .connection-status {
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .connected {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .disconnected {
+            background-color: #f44336;
+            color: white;
+        }
+        .messages {
+            background-color: white;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .message {
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: #f9f9f9;
+            border-left: 3px solid #2196F3;
+            border-radius: 3px;
+        }
+        .message-header {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .message-time {
+            color: #666;
+            font-size: 0.9em;
+        }
+        .message-data {
+            margin-top: 5px;
+            font-family: monospace;
+            font-size: 0.9em;
+            white-space: pre-wrap;
+        }
+        .controls {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .controls button {
+            margin: 5px;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            background-color: #2196F3;
+            color: white;
+        }
+        .controls button:hover {
+            background-color: #1976D2;
+        }
+        .clear-button {
+            background-color: #ff5722;
+        }
+        .clear-button:hover {
+            background-color: #e64a19;
+        }
+        input[type="text"] {
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            width: 300px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Ana Socket Test Client</h1>
+        
+        <div class="server-info">
+            <h2>Ana Sunucu - Port 6701</h2>
+            <p>Express + Socket.io + MongoDB</p>
+        </div>
+        
+        <div id="status" class="connection-status disconnected">
+            Bağlantı Bekleniyor...
+        </div>
+
+        <div class="controls">
+            <h3>Test Kontrolleri</h3>
+            <div>
+                <input type="text" id="messageInput" placeholder="Mesaj yazın..." />
+                <button onclick="sendMessage()">Mesaj Gönder</button>
+                <button onclick="requestServerInfo()">Sunucu Bilgisi İste</button>
+                <button class="clear-button" onclick="clearMessages()">Mesajları Temizle</button>
+            </div>
+        </div>
+
+        <h2>Gelen Mesajlar</h2>
+        <div id="messages" class="messages"></div>
+    </div>
+
+    <script>
+        // Ana sunucuya bağlan (Port 6701)
+        const socket = io('http://localhost:6701');
+
+        // Bağlantı durumu
+        socket.on('connect', () => {
+            document.getElementById('status').className = 'connection-status connected';
+            document.getElementById('status').textContent = 'Ana Sunucuya Bağlandı - ID: ' + socket.id;
+            addMessage('Sistem', 'Ana socket sunucusuna bağlandı', { 
+                id: socket.id,
+                port: 6701,
+                server: 'Ana Sunucu'
+            });
+        });
+
+        socket.on('disconnect', () => {
+            document.getElementById('status').className = 'connection-status disconnected';
+            document.getElementById('status').textContent = 'Bağlantı Kesildi';
+            addMessage('Sistem', 'Ana sunucu bağlantısı kesildi', {});
+        });
+
+        // Socket.io error eventi
+        socket.on('connect_error', (error) => {
+            addMessage('Hata', 'Bağlantı hatası', { 
+                message: error.message,
+                type: error.type 
+            });
+        });
+
+        // Özel event dinleyicileri ekleyebilirsiniz
+        socket.on('welcome', (data) => {
+            addMessage('Karşılama', 'Sunucudan hoş geldiniz mesajı', data);
+        });
+
+        socket.on('server-info', (data) => {
+            addMessage('Sunucu Bilgisi', 'Sunucu durumu', data);
+        });
+
+        socket.on('broadcast', (data) => {
+            addMessage('Yayın', 'Genel yayın mesajı', data);
+        });
+
+        // Mesaj gönder
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (message) {
+                socket.emit('client-message', {
+                    message: message,
+                    timestamp: new Date()
+                });
+                
+                addMessage('Giden', 'Mesaj gönderildi', { message: message });
+                input.value = '';
+            }
+        }
+
+        // Sunucu bilgisi iste
+        function requestServerInfo() {
+            socket.emit('request-server-info');
+            addMessage('İstek', 'Sunucu bilgisi istendi', {});
+        }
+
+        // Enter tuşu ile mesaj gönder
+        document.getElementById('messageInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Mesaj ekleme
+        function addMessage(type, title, data) {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message';
+            
+            const time = new Date().toLocaleTimeString('tr-TR');
+            
+            messageDiv.innerHTML = `
+                <div class="message-header">
+                    ${type} - ${title}
+                    <span class="message-time">${time}</span>
+                </div>
+                <div class="message-data">${JSON.stringify(data, null, 2)}</div>
+            `;
+            
+            messagesDiv.insertBefore(messageDiv, messagesDiv.firstChild);
+            
+            // En fazla 50 mesaj tut
+            while (messagesDiv.children.length > 50) {
+                messagesDiv.removeChild(messagesDiv.lastChild);
+            }
+        }
+
+        // Mesajları temizle
+        function clearMessages() {
+            document.getElementById('messages').innerHTML = '';
+        }
+    </script>
+</body>
+</html>

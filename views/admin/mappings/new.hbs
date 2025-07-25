@@ -1,0 +1,231 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Yeni Fiyat Eşleştirmesi</h2>
+    <a href="/admin/mappings" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i>
+        Geri Dön
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST" action="/admin/mappings">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="sourceId" class="form-label">Veri Kaynağı *</label>
+                        <select class="form-select" id="sourceId" name="sourceId" required>
+                            <option value="">Kaynak seçin</option>
+                            {{#each sources}}
+                            <option value="{{this._id}}" {{#if (eq this._id ../formData.sourceId)}}selected{{/if}}>
+                                {{this.displayName}} ({{this.name}})
+                            </option>
+                            {{/each}}
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="sourceField" class="form-label">Kaynak Alanı *</label>
+                        <input type="text" class="form-control" id="sourceField" name="sourceField" 
+                               value="{{formData.sourceField}}" placeholder="usd, gold_price, 114" required>
+                        <div class="form-text">API'deki alan adı veya CSS seçici</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="sourceDescription" class="form-label">Kaynak Alan Açıklaması</label>
+                <input type="text" class="form-control" id="sourceDescription" name="sourceDescription" 
+                       value="{{formData.sourceDescription}}" placeholder="USD kuru, Gram altın fiyatı vb.">
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="targetSymbol" class="form-label">Hedef Sembol *</label>
+                        <select class="form-select" id="targetSymbol" name="targetSymbol" required>
+                            <option value="">Sembol seçin</option>
+                            <optgroup label="Forex">
+                                <option value="USD/TRY" {{#if (eq formData.targetSymbol 'USD/TRY')}}selected{{/if}}>USD/TRY</option>
+                                <option value="EUR/TRY" {{#if (eq formData.targetSymbol 'EUR/TRY')}}selected{{/if}}>EUR/TRY</option>
+                                <option value="GBP/TRY" {{#if (eq formData.targetSymbol 'GBP/TRY')}}selected{{/if}}>GBP/TRY</option>
+                                <option value="CHF/TRY" {{#if (eq formData.targetSymbol 'CHF/TRY')}}selected{{/if}}>CHF/TRY</option>
+                                <option value="RUB/TRY" {{#if (eq formData.targetSymbol 'RUB/TRY')}}selected{{/if}}>RUB/TRY</option>
+                                <option value="SAR/TRY" {{#if (eq formData.targetSymbol 'SAR/TRY')}}selected{{/if}}>SAR/TRY</option>
+                            </optgroup>
+                            <optgroup label="Altın">
+                                <option value="HAS/TRY" {{#if (eq formData.targetSymbol 'HAS/TRY')}}selected{{/if}}>HAS/TRY (Gram Altın)</option>
+                                <option value="QUARTER_GOLD/TRY" {{#if (eq formData.targetSymbol 'QUARTER_GOLD/TRY')}}selected{{/if}}>QUARTER_GOLD/TRY (Çeyrek Altın)</option>
+                                <option value="HALF_GOLD/TRY" {{#if (eq formData.targetSymbol 'HALF_GOLD/TRY')}}selected{{/if}}>HALF_GOLD/TRY (Yarım Altın)</option>
+                                <option value="FULL_GOLD/TRY" {{#if (eq formData.targetSymbol 'FULL_GOLD/TRY')}}selected{{/if}}>FULL_GOLD/TRY (Tam Altın)</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="targetType" class="form-label">Hedef Tip *</label>
+                        <select class="form-select" id="targetType" name="targetType" required>
+                            <option value="">Tip seçin</option>
+                            <option value="forex" {{#if (eq formData.targetType 'forex')}}selected{{/if}}>Forex</option>
+                            <option value="gold" {{#if (eq formData.targetType 'gold')}}selected{{/if}}>Altın</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label for="priority" class="form-label">Öncelik *</label>
+                        <select class="form-select" id="priority" name="priority" required>
+                            <option value="1" {{#if (eq formData.priority '1')}}selected{{/if}}>1 (En Yüksek)</option>
+                            <option value="2" {{#if (eq formData.priority '2')}}selected{{/if}}>2 (Yüksek)</option>
+                            <option value="3" {{#if (eq formData.priority '3')}}selected{{/if}}>3 (Normal)</option>
+                            <option value="4" {{#if (eq formData.priority '4')}}selected{{/if}}>4 (Düşük)</option>
+                            <option value="5" {{#if (eq formData.priority '5')}}selected{{/if}}>5 (En Düşük)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label for="multiplier" class="form-label">Çarpan</label>
+                        <input type="number" class="form-control" id="multiplier" name="multiplier" 
+                               value="{{formData.multiplier}}" step="0.0001" placeholder="1.0000">
+                        <div class="form-text">Değeri çarpmak için (varsayılan: 1)</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label for="offset" class="form-label">Ofset</label>
+                        <input type="number" class="form-control" id="offset" name="offset" 
+                               value="{{formData.offset}}" step="0.0001" placeholder="0.0000">
+                        <div class="form-text">Değere eklenecek/çıkarılacak miktar</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="formula" class="form-label">Özel Formül</label>
+                <input type="text" class="form-control" id="formula" name="formula" 
+                       value="{{formData.formula}}" placeholder="value * 1.05 + 10">
+                <div class="form-text">JavaScript formülü (value değişkenini kullanın). Örnek: value * 1.18</div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="validationMin" class="form-label">Minimum Değer</label>
+                        <input type="number" class="form-control" id="validationMin" name="validation.min" 
+                               value="{{formData.validation.min}}" step="0.01" placeholder="0.01">
+                        <div class="form-text">Bu değerin altındaki veriler reddedilir</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="validationMax" class="form-label">Maksimum Değer</label>
+                        <input type="number" class="form-control" id="validationMax" name="validation.max" 
+                               value="{{formData.validation.max}}" step="0.01" placeholder="100000">
+                        <div class="form-text">Bu değerin üstündeki veriler reddedilir</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="enableValidation" name="enableValidation" 
+                               {{#if formData.enableValidation}}checked{{/if}}>
+                        <label class="form-check-label" for="enableValidation">
+                            Değer doğrulamasını etkinleştir
+                        </label>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="logChanges" name="logChanges" checked>
+                        <label class="form-check-label" for="logChanges">
+                            Değişiklikleri logla
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" id="isActive" name="isActive" checked>
+                <label class="form-check-label" for="isActive">
+                    Eşleştirme aktif olsun
+                </label>
+            </div>
+            
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check"></i>
+                    Eşleştirme Oluştur
+                </button>
+                <a href="/admin/mappings" class="btn btn-secondary">
+                    <i class="bi bi-x"></i>
+                    İptal
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Hedef sembol değiştiğinde tipi otomatik ayarla
+document.getElementById('targetSymbol').addEventListener('change', function() {
+    const symbol = this.value;
+    const typeSelect = document.getElementById('targetType');
+    
+    if (symbol.includes('/')) {
+        // Forex sembolü
+        typeSelect.value = 'forex';
+    } else if (symbol.includes('GOLD') || symbol.includes('HAS')) {
+        // Altın sembolü
+        typeSelect.value = 'gold';
+    }
+});
+
+// Kaynak değiştiğinde örnek alanları göster
+document.getElementById('sourceId').addEventListener('change', function() {
+    const sourceId = this.value;
+    // Burada AJAX ile kaynağın örnek alanlarını getirilebilir
+    // Şimdilik basit bir öneri sistemi
+    
+    const sourceField = document.getElementById('sourceField');
+    const placeholder = sourceField.getAttribute('placeholder');
+    
+    if (this.selectedOptions[0] && this.selectedOptions[0].text.includes('TCMB')) {
+        sourceField.setAttribute('placeholder', 'USD, EUR, GBP (XML alanları)');
+    } else if (this.selectedOptions[0] && this.selectedOptions[0].text.includes('Hakan')) {
+        sourceField.setAttribute('placeholder', '114, gold_price (sayısal alanlar)');
+    } else if (this.selectedOptions[0] && this.selectedOptions[0].text.includes('Harem')) {
+        sourceField.setAttribute('placeholder', 'usd, gold_gram, quarter_gold (JSON alanları)');
+    } else {
+        sourceField.setAttribute('placeholder', placeholder);
+    }
+});
+
+// Test butonu ekle
+document.querySelector('form').addEventListener('submit', function(e) {
+    const formula = document.getElementById('formula').value;
+    if (formula) {
+        // Formül test et
+        try {
+            const testValue = 100;
+            const value = testValue;
+            const result = eval(formula);
+            if (isNaN(result) || !isFinite(result)) {
+                alert('Formül geçersiz sonuç veriyor. Lütfen kontrol edin.');
+                e.preventDefault();
+                return;
+            }
+        } catch (error) {
+            alert('Formül söz dizimi hatası: ' + error.message);
+            e.preventDefault();
+            return;
+        }
+    }
+});
+</script>

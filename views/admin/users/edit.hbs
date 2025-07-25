@@ -1,0 +1,215 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Kullanıcı Düzenle</h2>
+    <a href="/admin/users" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i>
+        Geri Dön
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST" action="/admin/users/{{editUser._id}}">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="firstName" class="form-label">Ad *</label>
+                        <input type="text" class="form-control" id="firstName" name="firstName" 
+                               value="{{editUser.firstName}}" required>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="lastName" class="form-label">Soyad *</label>
+                        <input type="text" class="form-control" id="lastName" name="lastName" 
+                               value="{{editUser.lastName}}" required>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email *</label>
+                        <input type="email" class="form-control" id="email" name="email" 
+                               value="{{editUser.email}}" readonly>
+                        <div class="form-text">Email adresi değiştirilemez</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="phone" class="form-label">Telefon</label>
+                        <input type="tel" class="form-control" id="phone" name="phone" 
+                               value="{{editUser.phone}}" placeholder="+90 555 000 0000">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="role" class="form-label">Rol *</label>
+                        <select class="form-select" id="role" name="role" required>
+                            <option value="user" {{#if (eq editUser.role 'user')}}selected{{/if}}>User</option>
+                            <option value="manager" {{#if (eq editUser.role 'manager')}}selected{{/if}}>Manager</option>
+                            {{#if (eq user.role 'admin')}}
+                            <option value="admin" {{#if (eq editUser.role 'admin')}}selected{{/if}}>Admin</option>
+                            {{/if}}
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="department" class="form-label">Departman</label>
+                        <input type="text" class="form-control" id="department" name="department" 
+                               value="{{editUser.department}}" placeholder="IT, Finans, Operasyon vb.">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="title" class="form-label">Ünvan</label>
+                <input type="text" class="form-control" id="title" name="title" 
+                       value="{{editUser.title}}" placeholder="Sistem Yöneticisi, Analisti vb.">
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label">İzinler</label>
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="perm_read" name="permissions" value="read" 
+                                   {{#if (contains editUser.permissions 'read')}}checked{{/if}}>
+                            <label class="form-check-label" for="perm_read">Okuma</label>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="perm_write" name="permissions" value="write"
+                                   {{#if (contains editUser.permissions 'write')}}checked{{/if}}>
+                            <label class="form-check-label" for="perm_write">Yazma</label>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="perm_delete" name="permissions" value="delete"
+                                   {{#if (contains editUser.permissions 'delete')}}checked{{/if}}>
+                            <label class="form-check-label" for="perm_delete">Silme</label>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="perm_manage_users" name="permissions" value="manage_users"
+                                   {{#if (contains editUser.permissions 'manage_users')}}checked{{/if}}>
+                            <label class="form-check-label" for="perm_manage_users">Kullanıcı Yönetimi</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-md-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="perm_manage_sources" name="permissions" value="manage_sources"
+                                   {{#if (contains editUser.permissions 'manage_sources')}}checked{{/if}}>
+                            <label class="form-check-label" for="perm_manage_sources">Kaynak Yönetimi</label>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="perm_manage_mappings" name="permissions" value="manage_mappings"
+                                   {{#if (contains editUser.permissions 'manage_mappings')}}checked{{/if}}>
+                            <label class="form-check-label" for="perm_manage_mappings">Eşleştirme Yönetimi</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" id="isActive" name="isActive" 
+                       {{#if editUser.isActive}}checked{{/if}}>
+                <label class="form-check-label" for="isActive">
+                    Kullanıcı aktif olsun
+                </label>
+            </div>
+            
+            <hr>
+            
+            <h6>Hesap Bilgileri</h6>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label">Oluşturulma Tarihi</label>
+                        <div class="form-control-plaintext">{{formatDate editUser.createdAt}}</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label">Son Giriş</label>
+                        <div class="form-control-plaintext">
+                            {{#if editUser.lastLogin}}
+                            {{formatDate editUser.lastLogin}}
+                            {{else}}
+                            Hiç giriş yapmadı
+                            {{/if}}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label">Toplam Giriş</label>
+                        <div class="form-control-plaintext">{{editUser.loginCount}} kez</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check"></i>
+                    Kullanıcıyı Güncelle
+                </button>
+                <a href="/admin/users" class="btn btn-secondary">
+                    <i class="bi bi-x"></i>
+                    İptal
+                </a>
+                {{#unless (eq editUser._id user._id)}}
+                <button type="button" class="btn btn-outline-danger ms-auto" onclick="confirmDelete()">
+                    <i class="bi bi-trash"></i>
+                    Kullanıcıyı Sil
+                </button>
+                {{/unless}}
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Rol değişikliğinde izinleri otomatik ayarla
+document.getElementById('role').addEventListener('change', function() {
+    const role = this.value;
+    const checkboxes = document.querySelectorAll('input[name="permissions"]');
+    
+    // Tüm izinleri temizle
+    checkboxes.forEach(cb => cb.checked = false);
+    
+    // Rolle bağlı izinleri ayarla
+    if (role === 'admin') {
+        checkboxes.forEach(cb => cb.checked = true);
+    } else if (role === 'manager') {
+        ['read', 'write', 'manage_sources', 'manage_mappings'].forEach(perm => {
+            const cb = document.querySelector(`input[value="${perm}"]`);
+            if (cb) cb.checked = true;
+        });
+    } else if (role === 'user') {
+        const readCb = document.querySelector('input[value="read"]');
+        if (readCb) readCb.checked = true;
+    }
+});
+
+function confirmDelete() {
+    if (confirm('Bu kullanıcıyı silmek istediğinizden emin misiniz?')) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/admin/users/{{editUser._id}}/delete';
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>

@@ -1,0 +1,514 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>API Token Detayları</h2>
+    <div class="d-flex gap-2">
+        <a href="/admin/tokens" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i>
+            Token Listesi
+        </a>
+    </div>
+</div>
+
+{{#if error}}
+<div class="alert alert-danger" role="alert">
+    <i class="bi bi-exclamation-triangle"></i>
+    {{error}}
+</div>
+{{/if}}
+
+{{#if success}}
+<div class="alert alert-success" role="alert">
+    <i class="bi bi-check-circle"></i>
+    {{success}}
+</div>
+{{/if}}
+
+{{#if showToken}}
+<div class="alert alert-warning" role="alert">
+    <h5 class="alert-heading">
+        <i class="bi bi-exclamation-triangle"></i>
+        Token Oluşturuldu!
+    </h5>
+    <p class="mb-3">Yeni token'ınız aşağıdadır. <strong>Bu token sadece bir kez gösterilecektir.</strong> Lütfen güvenli bir yerde saklayın.</p>
+    <div class="bg-dark p-3 rounded">
+        <code class="text-warning fs-6">{{token.token}}</code>
+        <button class="btn btn-sm btn-outline-light ms-2" onclick="copyToClipboard('{{token.token}}')">
+            <i class="bi bi-clipboard"></i>
+        </button>
+    </div>
+</div>
+{{/if}}
+
+<form method="POST" action="/admin/tokens/{{token._id}}" class="needs-validation" novalidate>
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between">
+                    <h5 class="mb-0">Token Bilgileri</h5>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="editMode">
+                        <label class="form-check-label" for="editMode">
+                            Düzenleme Modu
+                        </label>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="name" class="form-label">Token Adı</label>
+                                <input type="text" class="form-control" id="name" name="name" 
+                                       value="{{token.name}}" readonly required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="domain" class="form-label">Domain</label>
+                                <input type="text" class="form-control" id="domain" name="domain" 
+                                       value="{{token.domain}}" readonly>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Açıklama</label>
+                        <textarea class="form-control" id="description" name="description" rows="3" readonly>{{token.description}}</textarea>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Token</label>
+                                <div class="input-group">
+                                    <input type="password" class="form-control font-monospace" id="tokenValue" value="{{#if token.token}}{{token.token}}{{else}}{{token.maskedToken}}{{/if}}" readonly>
+                                    <button class="btn btn-outline-secondary" type="button" id="toggleTokenBtn" title="Token'ı göster/gizle">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                    <button class="btn btn-outline-secondary" type="button" onclick="copyFullToken()" title="Token'ı kopyala">
+                                        <i class="bi bi-clipboard"></i>
+                                    </button>
+                                </div>
+                                <div class="form-text">
+                                    <small class="text-warning">
+                                        <i class="bi bi-exclamation-triangle"></i>
+                                        Bu token'ı güvenli bir yerde saklayın. Başkalarıyla paylaşmayın.
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="expiresAt" class="form-label">Son Kullanma Tarihi</label>
+                                <input type="datetime-local" class="form-control" id="expiresAt" name="expiresAt" 
+                                       value="" disabled>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="mb-0">Kullanım İstatistikleri</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h4 class="text-primary">{{token.usageCount}}</h4>
+                                <small class="text-muted">Toplam Kullanım</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h4 class="{{#if token.isActive}}text-success{{else}}text-danger{{/if}}">
+                                    {{#if token.isActive}}Aktif{{else}}Pasif{{/if}}
+                                </h4>
+                                <small class="text-muted">Durum</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h6 class="text-muted">
+                                    {{#if token.lastUsedAt}}
+                                        {{formatDateTimeLong token.lastUsedAt}}
+                                    {{else}}
+                                        Hiç kullanılmamış
+                                    {{/if}}
+                                </h6>
+                                <small class="text-muted">Son Kullanım</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h6 class="text-muted">{{formatDateTimeLong token.createdAt}}</h6>
+                                <small class="text-muted">Oluşturma Tarihi</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">İzinler</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">API İzinleri</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="perm_read" name="permissions" value="read" 
+                                   {{#if (includes token.permissions 'read')}}checked{{/if}} disabled>
+                            <label class="form-check-label" for="perm_read">
+                                <strong>Okuma</strong>
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="perm_write" name="permissions" value="write"
+                                   {{#if (includes token.permissions 'write')}}checked{{/if}} disabled>
+                            <label class="form-check-label" for="perm_write">
+                                <strong>Yazma</strong>
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="perm_subscribe" name="permissions" value="subscribe"
+                                   {{#if (includes token.permissions 'subscribe')}}checked{{/if}} disabled>
+                            <label class="form-check-label" for="perm_subscribe">
+                                <strong>Abonelik</strong>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="allowedChannels" class="form-label">İzinli Kanallar</label>
+                        <input type="text" class="form-control" id="allowedChannels" name="allowedChannels" 
+                               value="{{#each token.allowedChannels}}{{this}}{{#unless @last}},{{/unless}}{{/each}}" readonly>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="mb-0">Rate Limiting</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="rateLimit_requests" class="form-label">İstek Limiti</label>
+                        <input type="number" class="form-control" id="rateLimit_requests" name="rateLimit_requests" 
+                               value="{{token.rateLimit.requests}}" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label for="rateLimit_window" class="form-label">Zaman Penceresi (saniye)</label>
+                        <input type="number" class="form-control" id="rateLimit_window" name="rateLimit_window" 
+                               value="{{token.rateLimit.window}}" readonly>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="mb-0">İşlemler</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="/admin/tokens/logs?token={{token._id}}" class="btn btn-outline-info">
+                            <i class="bi bi-activity"></i>
+                            Bu Token'ın Logları
+                        </a>
+                        
+                        <button type="button" class="btn btn-{{#if token.isActive}}warning{{else}}success{{/if}}" 
+                                onclick="toggleTokenStatus('/admin/api/tokens/{{token._id}}/toggle')">
+                            <i class="bi bi-{{#if token.isActive}}pause{{else}}play{{/if}}"></i>
+                            {{#if token.isActive}}Deaktif Et{{else}}Aktif Et{{/if}}
+                        </button>
+                        
+                        <button type="submit" class="btn btn-primary d-none" id="saveBtn">
+                            <i class="bi bi-check-circle"></i>
+                            Değişiklikleri Kaydet
+                        </button>
+                        
+                        <button type="button" class="btn btn-danger" 
+                                onclick="confirmTokenDelete('/admin/tokens/{{token._id}}')">
+                            <i class="bi bi-trash"></i>
+                            Token'ı Sil
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<script>
+// Token görünürlük toggle - Event listener ile
+document.addEventListener('DOMContentLoaded', function() {
+    const toggleTokenBtn = document.getElementById('toggleTokenBtn');
+    if (toggleTokenBtn) {
+        toggleTokenBtn.addEventListener('click', function() {
+            const tokenInput = document.getElementById('tokenValue');
+            const icon = this.querySelector('i');
+            
+            if (tokenInput.type === 'password') {
+                tokenInput.type = 'text';
+                icon.className = 'bi bi-eye-slash';
+                this.title = 'Token\'ı gizle';
+            } else {
+                tokenInput.type = 'password';
+                icon.className = 'bi bi-eye';
+                this.title = 'Token\'ı göster';
+            }
+        });
+    }
+    
+    // ExpiresAt tarihini datetime-local formatına dönüştür
+    const expiresAtInput = document.getElementById('expiresAt');
+    const tokenExpiresAt = '{{token.expiresAt}}';
+    
+    if (expiresAtInput && tokenExpiresAt && tokenExpiresAt !== '') {
+        // ISO string'i datetime-local formatına dönüştür
+        const date = new Date(tokenExpiresAt);
+        if (!isNaN(date.getTime())) {
+            // YYYY-MM-DDTHH:mm formatına dönüştür
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            
+            const formattedDate = `${year}-${month}-${day}T${hours}:${minutes}`;
+            expiresAtInput.value = formattedDate;
+            
+            console.log('ExpiresAt formatted:', formattedDate);
+        }
+    }
+});
+
+// Düzenleme modu toggle
+document.getElementById('editMode').addEventListener('change', function(e) {
+    const isEdit = e.target.checked;
+    const saveBtn = document.getElementById('saveBtn');
+    
+    console.log('Düzenleme modu:', isEdit ? 'Aktif' : 'Pasif');
+    
+    // Token Bilgileri - Text alanları
+    const textFields = ['name', 'domain', 'description'];
+    textFields.forEach(fieldId => {
+        const field = document.getElementById(fieldId);
+        if (field) {
+            field.readOnly = !isEdit;
+            console.log(`${fieldId}: readOnly=${!isEdit}`);
+        }
+    });
+    
+    // Son Kullanma Tarihi
+    const expiresAt = document.getElementById('expiresAt');
+    if (expiresAt) {
+        expiresAt.disabled = !isEdit;
+        console.log('expiresAt: disabled=', !isEdit);
+    }
+    
+    // API İzinleri - Checkbox'lar
+    const permissions = ['perm_read', 'perm_write', 'perm_subscribe'];
+    permissions.forEach(permId => {
+        const checkbox = document.getElementById(permId);
+        if (checkbox) {
+            checkbox.disabled = !isEdit;
+            console.log(`${permId}: disabled=${!isEdit}`);
+        }
+    });
+    
+    // İzinli Kanallar
+    const allowedChannels = document.getElementById('allowedChannels');
+    if (allowedChannels) {
+        allowedChannels.readOnly = !isEdit;
+        console.log('allowedChannels: readOnly=', !isEdit);
+    }
+    
+    // Rate Limiting
+    const rateLimit_requests = document.getElementById('rateLimit_requests');
+    const rateLimit_window = document.getElementById('rateLimit_window');
+    
+    if (rateLimit_requests) {
+        rateLimit_requests.readOnly = !isEdit;
+        console.log('rateLimit_requests: readOnly=', !isEdit);
+    }
+    
+    if (rateLimit_window) {
+        rateLimit_window.readOnly = !isEdit;
+        console.log('rateLimit_window: readOnly=', !isEdit);
+    }
+    
+    // Kaydet butonu
+    if (isEdit) {
+        saveBtn.classList.remove('d-none');
+    } else {
+        saveBtn.classList.add('d-none');
+    }
+});
+
+// Token durumu değiştir
+function toggleTokenStatus(url) {
+    fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Durum değiştirilemedi: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Hata: ' + error.message);
+    });
+}
+
+function confirmTokenDelete(url) {
+    if (confirm('Bu API token\'ı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.')) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = url + '/delete';
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+// toggleTokenVisibility fonksiyonu artık event listener içinde tanımlı
+
+function copyFullToken() {
+    const tokenInput = document.getElementById('tokenValue');
+    const tokenValue = tokenInput.value;
+    const button = event.target.closest('button');
+    
+    // Clipboard API kullanılabilir mi kontrol et
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(tokenValue).then(function() {
+            copySuccessFeedback(button, 'Token başarıyla kopyalandı!');
+        }).catch(err => {
+            console.error('Clipboard API hatası:', err);
+            // Fallback yöntemini dene
+            fallbackCopyTextToClipboard(tokenValue, button);
+        });
+    } else {
+        // Fallback yöntemini kullan
+        fallbackCopyTextToClipboard(tokenValue, button);
+    }
+}
+
+function copyToClipboard(text) {
+    const button = event.target.closest('button');
+    
+    // Clipboard API kullanılabilir mi kontrol et
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(function() {
+            copySuccessFeedback(button, 'Token başarıyla kopyalandı!');
+        }).catch(err => {
+            console.error('Clipboard API hatası:', err);
+            // Fallback yöntemini dene
+            fallbackCopyTextToClipboard(text, button);
+        });
+    } else {
+        // Fallback yöntemini kullan
+        fallbackCopyTextToClipboard(text, button);
+    }
+}
+
+// Kopyalama başarı feedback'i
+function copySuccessFeedback(button, message) {
+    const originalIcon = button.innerHTML;
+    button.innerHTML = '<i class="bi bi-check"></i>';
+    button.classList.add('btn-success');
+    button.classList.remove('btn-outline-secondary');
+    
+    setTimeout(() => {
+        button.innerHTML = originalIcon;
+        button.classList.remove('btn-success');
+        button.classList.add('btn-outline-secondary');
+    }, 2000);
+    
+    showToast(message, 'success');
+}
+
+// Fallback kopyalama yöntemi (eski tarayıcılar için)
+function fallbackCopyTextToClipboard(text, button) {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    
+    // Textarea'yı görünmez yap
+    textArea.style.position = 'fixed';
+    textArea.style.top = '0';
+    textArea.style.left = '0';
+    textArea.style.width = '2em';
+    textArea.style.height = '2em';
+    textArea.style.padding = '0';
+    textArea.style.border = 'none';
+    textArea.style.outline = 'none';
+    textArea.style.boxShadow = 'none';
+    textArea.style.background = 'transparent';
+    textArea.style.opacity = '0';
+    
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+            copySuccessFeedback(button, 'Token başarıyla kopyalandı!');
+        } else {
+            showToast('Kopyalama başarısız! Lütfen manuel olarak kopyalayın.', 'error');
+        }
+    } catch (err) {
+        console.error('Fallback kopyalama hatası:', err);
+        showToast('Kopyalama desteklenmiyor! Lütfen manuel olarak kopyalayın.', 'error');
+    }
+    
+    document.body.removeChild(textArea);
+}
+
+function showToast(message, type = 'info') {
+    // Toast container oluştur (yoksa)
+    let toastContainer = document.getElementById('toastContainer');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'toastContainer';
+        toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+        toastContainer.style.zIndex = '9999';
+        document.body.appendChild(toastContainer);
+    }
+    
+    // Toast element oluştur
+    const toastEl = document.createElement('div');
+    toastEl.className = `toast align-items-center text-white bg-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'primary'} border-0`;
+    toastEl.setAttribute('role', 'alert');
+    toastEl.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">${message}</div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    `;
+    
+    toastContainer.appendChild(toastEl);
+    
+    // Bootstrap Toast kontrolü
+    if (typeof bootstrap !== 'undefined' && bootstrap.Toast) {
+        const toast = new bootstrap.Toast(toastEl, { delay: 3000 });
+        toast.show();
+        
+        // Toast kapandıktan sonra element'i kaldır
+        toastEl.addEventListener('hidden.bs.toast', () => {
+            toastEl.remove();
+        });
+    } else {
+        // Bootstrap yoksa basit gösterim
+        toastEl.style.display = 'block';
+        setTimeout(() => {
+            toastEl.style.opacity = '0';
+            setTimeout(() => toastEl.remove(), 300);
+        }, 3000);
+    }
+}
+</script>

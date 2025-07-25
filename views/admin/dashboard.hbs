@@ -1,0 +1,681 @@
+<!-- System Status Cards -->
+<div class="row mb-4">
+    <div class="col-xl-12 mb-4">
+        <div class="alert alert-info" role="alert" id="system-status">
+            <div class="d-flex align-items-center">
+                <div class="spinner-border spinner-border-sm me-2" role="status" id="loading-spinner">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <strong>Sistem Durumu Yükleniyor...</strong>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Services Status Cards -->
+<div class="row mb-4" id="services-status">
+    <!-- System Services -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card card-stats">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col">
+                        <h5 class="card-title text-uppercase text-muted mb-0">Sistem Servisleri</h5>
+                        <span class="h2 font-weight-bold mb-0" id="system-services-count">-</span>
+                    </div>
+                    <div class="col-auto">
+                        <div class="stat-icon bg-dark-light">
+                            <i class="fas fa-server"></i>
+                        </div>
+                    </div>
+                </div>
+                <p class="mt-3 mb-0 text-muted text-sm">
+                    <span class="text-success mr-2" id="system-services-active">-</span>
+                    aktif servis
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Services -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card card-stats">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col">
+                        <h5 class="card-title text-uppercase text-muted mb-0">Veri Servisleri</h5>
+                        <span class="h2 font-weight-bold mb-0" id="data-services-count">-</span>
+                    </div>
+                    <div class="col-auto">
+                        <div class="stat-icon bg-primary-light">
+                            <i class="fas fa-database"></i>
+                        </div>
+                    </div>
+                </div>
+                <p class="mt-3 mb-0 text-muted text-sm">
+                    <span class="text-success mr-2" id="data-services-active">-</span>
+                    çalışan /
+                    <span class="text-info mr-2" id="data-services-connected">-</span>
+                    bağlı
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cron Services -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card card-stats">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col">
+                        <h5 class="card-title text-uppercase text-muted mb-0">Zamanlanmış Görevler</h5>
+                        <span class="h2 font-weight-bold mb-0" id="cron-services-count">-</span>
+                    </div>
+                    <div class="col-auto">
+                        <div class="stat-icon bg-secondary-light">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                    </div>
+                </div>
+                <p class="mt-3 mb-0 text-muted text-sm">
+                    <span class="text-success mr-2" id="cron-services-active">-</span>
+                    aktif görev
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Database Size -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card card-stats">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col">
+                        <h5 class="card-title text-uppercase text-muted mb-0">Veritabanı</h5>
+                        <span class="h2 font-weight-bold mb-0" id="database-size">-</span>
+                    </div>
+                    <div class="col-auto">
+                        <div class="stat-icon bg-warning-light">
+                            <i class="fas fa-database"></i>
+                        </div>
+                    </div>
+                </div>
+                <p class="mt-3 mb-0 text-muted text-sm">
+                    <span class="text-info mr-2" id="database-collections">-</span>
+                    koleksiyon
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mb-4">
+    <div class="col-12">
+        <h5 class="mb-3">
+            <i class="fas fa-bolt me-2"></i>
+            Hızlı İşlemler
+        </h5>
+    </div>
+    
+    <!-- Data Management Actions -->
+    <div class="col-xl-3 col-md-6 mb-3">
+        <a href="/admin/prices" class="text-decoration-none">
+            <div class="card h-100 quick-action-card">
+                <div class="card-body text-center">
+                    <div class="icon-wrapper mb-3">
+                        <i class="fas fa-coins fa-3x text-primary"></i>
+                    </div>
+                    <h6 class="card-title">Güncel Fiyatlar</h6>
+                    <p class="card-text text-muted small">Anlık fiyat görüntüleme</p>
+                </div>
+            </div>
+        </a>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-3">
+        <a href="/admin/rates" class="text-decoration-none">
+            <div class="card h-100 quick-action-card">
+                <div class="card-body text-center">
+                    <div class="icon-wrapper mb-3">
+                        <i class="fas fa-chart-line fa-3x text-info"></i>
+                    </div>
+                    <h6 class="card-title">Eski Kurlar</h6>
+                    <p class="card-text text-muted small">Fiyat geçmişi</p>
+                </div>
+            </div>
+        </a>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-3">
+        <a href="/admin/sources" class="text-decoration-none">
+            <div class="card h-100 quick-action-card">
+                <div class="card-body text-center">
+                    <div class="icon-wrapper mb-3">
+                        <i class="fas fa-plug fa-3x text-success"></i>
+                    </div>
+                    <h6 class="card-title">Veri Kaynakları</h6>
+                    <p class="card-text text-muted small">Kaynak yönetimi</p>
+                </div>
+            </div>
+        </a>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-3">
+        <a href="/admin/mappings" class="text-decoration-none">
+            <div class="card h-100 quick-action-card">
+                <div class="card-body text-center">
+                    <div class="icon-wrapper mb-3">
+                        <i class="fas fa-exchange-alt fa-3x text-warning"></i>
+                    </div>
+                    <h6 class="card-title">Fiyat Eşleştirmeleri</h6>
+                    <p class="card-text text-muted small">Sembol eşleştirme</p>
+                </div>
+            </div>
+        </a>
+    </div>
+    
+    <!-- System Management Actions -->
+    <div class="col-xl-3 col-md-6 mb-3">
+        <a href="/admin/services" class="text-decoration-none">
+            <div class="card h-100 quick-action-card">
+                <div class="card-body text-center">
+                    <div class="icon-wrapper mb-3">
+                        <i class="fas fa-server fa-3x text-dark"></i>
+                    </div>
+                    <h6 class="card-title">Servis Yönetimi</h6>
+                    <p class="card-text text-muted small">Servis kontrol</p>
+                </div>
+            </div>
+        </a>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-3">
+        <a href="/admin/users" class="text-decoration-none">
+            <div class="card h-100 quick-action-card">
+                <div class="card-body text-center">
+                    <div class="icon-wrapper mb-3">
+                        <i class="fas fa-users fa-3x text-secondary"></i>
+                    </div>
+                    <h6 class="card-title">Kullanıcı Yönetimi</h6>
+                    <p class="card-text text-muted small">Kullanıcı işlemleri</p>
+                </div>
+            </div>
+        </a>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-3">
+        <a href="/admin/tokens" class="text-decoration-none">
+            <div class="card h-100 quick-action-card">
+                <div class="card-body text-center">
+                    <div class="icon-wrapper mb-3">
+                        <i class="fas fa-key fa-3x text-primary"></i>
+                    </div>
+                    <h6 class="card-title">API Token Yönetimi</h6>
+                    <p class="card-text text-muted small">Token işlemleri</p>
+                </div>
+            </div>
+        </a>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-3">
+        <a href="/admin/logs" class="text-decoration-none">
+            <div class="card h-100 quick-action-card">
+                <div class="card-body text-center">
+                    <div class="icon-wrapper mb-3">
+                        <i class="fas fa-file-alt fa-3x text-danger"></i>
+                    </div>
+                    <h6 class="card-title">Log Dosyaları</h6>
+                    <p class="card-text text-muted small">Sistem logları</p>
+                </div>
+            </div>
+        </a>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-3">
+        <a href="/admin/settings" class="text-decoration-none">
+            <div class="card h-100 quick-action-card">
+                <div class="card-body text-center">
+                    <div class="icon-wrapper mb-3">
+                        <i class="fas fa-cog fa-3x text-info"></i>
+                    </div>
+                    <h6 class="card-title">Sistem Ayarları</h6>
+                    <p class="card-text text-muted small">Genel ayarlar</p>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<style>
+.quick-action-card {
+    transition: all 0.3s ease;
+    border: 1px solid #e0e0e0;
+}
+
+.quick-action-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    border-color: #007bff;
+}
+
+.quick-action-card .icon-wrapper {
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.quick-action-card .card-title {
+    margin-bottom: 0.5rem;
+    color: #333;
+}
+
+.quick-action-card:hover .card-title {
+    color: #007bff;
+}
+</style>
+
+<!-- Main Content -->
+<div class="row">
+    <!-- Services Overview -->
+    <div class="col-xl-8 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-server me-2"></i>
+                    Servis Durumu
+                </h5>
+                <a href="/admin/services" class="btn btn-sm btn-outline-primary">Tüm Servisleri Görüntüle</a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Servis</th>
+                                <th>Durum</th>
+                                <th>Son Güncelleme</th>
+                                <th>İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody id="services-table">
+                            <tr>
+                                <td colspan="4" class="text-center">
+                                    <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                                    Servis bilgileri yükleniyor...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Information -->
+    <div class="col-xl-4 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Sistem Bilgileri
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6 mb-3">
+                        <div class="p-3 bg-light rounded">
+                            <h6 class="mb-1">Çalışma Süresi</h6>
+                            <span class="h5 text-success" id="system-uptime">-</span>
+                        </div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="p-3 bg-light rounded">
+                            <h6 class="mb-1">Bellek Kullanımı</h6>
+                            <span class="h5 text-info" id="memory-usage">-</span>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-3 bg-light rounded">
+                            <h6 class="mb-1">Socket Bağlantıları</h6>
+                            <span class="h5 text-warning" id="socket-connections">-</span>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-3 bg-light rounded">
+                            <h6 class="mb-1">API Bağlantıları</h6>
+                            <span class="h5 text-primary" id="api-connections">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Performance Charts -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-area me-2"></i>
+                    Sistem Performansı
+                    <small class="text-muted">(Son 10 dakika)</small>
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="performanceChart" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{{{clientDateHelperScript}}}
+<script>
+let performanceChart;
+let refreshInterval;
+const performanceData = {
+    labels: [],
+    datasets: [
+        {
+            label: 'Memory Usage (MB)',
+            data: [],
+            borderColor: 'rgb(75, 192, 192)',
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            tension: 0.1
+        },
+        {
+            label: 'Active Services',
+            data: [],
+            borderColor: 'rgb(255, 99, 132)',
+            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+            tension: 0.1,
+            yAxisID: 'y1'
+        }
+    ]
+};
+
+// Initialize performance chart
+function initPerformanceChart() {
+    const ctx = document.getElementById('performanceChart').getContext('2d');
+    performanceChart = new Chart(ctx, {
+        type: 'line',
+        data: performanceData,
+        options: {
+            responsive: true,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            scales: {
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    title: {
+                        display: true,
+                        text: 'Memory (MB)'
+                    }
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    title: {
+                        display: true,
+                        text: 'Active Services'
+                    },
+                    grid: {
+                        drawOnChartArea: false,
+                    },
+                }
+            }
+        }
+    });
+}
+
+// Format bytes helper
+function formatBytes(bytes) {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+// Format uptime helper
+function formatUptime(seconds) {
+    const days = Math.floor(seconds / 86400);
+    const hours = Math.floor((seconds % 86400) / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    
+    if (days > 0) {
+        return `${days}g ${hours}s`;
+    } else if (hours > 0) {
+        return `${hours}s ${minutes}d`;
+    } else {
+        return `${minutes}d`;
+    }
+}
+
+// Load dashboard data
+async function loadDashboardData() {
+    try {
+        const [servicesResponse, metricsResponse] = await Promise.all([
+            fetch('/admin/api/services/status'),
+            fetch('/admin/api/system/metrics')
+        ]);
+        
+        const servicesData = await servicesResponse.json();
+        const metricsData = await metricsResponse.json();
+        
+        if (servicesData.success) {
+            updateServiceStats(servicesData.services);
+            updateServicesTable(servicesData.services);
+            updateSystemInfo(servicesData.services);
+            
+            document.getElementById('system-status').innerHTML = `
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-check-circle text-success me-2"></i>
+                    <strong>Tüm Sistemler Normal Çalışıyor</strong>
+                    <small class="ms-auto text-muted">Son güncelleme: ${window.ClientDateHelper.toTimeString()}</small>
+                </div>
+            `;
+        }
+        
+        if (metricsData.success && metricsData.metrics.length > 0) {
+            updatePerformanceChartWithData(metricsData.metrics);
+        } else {
+            // If no historical data, use current data
+            updatePerformanceChart(servicesData.services);
+        }
+    } catch (error) {
+        document.getElementById('system-status').innerHTML = `
+            <div class="d-flex align-items-center">
+                <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                <strong>Veri alınamadı: ${error.message}</strong>
+            </div>
+        `;
+    }
+}
+
+// Update service statistics
+function updateServiceStats(services) {
+    let systemServicesCount = 0, systemServicesActive = 0;
+    let dataServicesCount = 0, dataServicesActive = 0, dataServicesConnected = 0;
+    let cronServicesCount = 0, cronServicesActive = 0;
+    let databaseSize = 0, databaseCollections = 0;
+    
+    Object.values(services).forEach(service => {
+        if (service.type === 'system') {
+            systemServicesCount++;
+            if (service.status?.isRunning) systemServicesActive++;
+            
+            if (service.name?.includes('MongoDB') && service.status?.details) {
+                databaseSize = service.status.details.dataSize;
+                databaseCollections = service.status.details.collections;
+            }
+        } else if (service.type === 'data') {
+            dataServicesCount++;
+            if (service.status?.isRunning) dataServicesActive++;
+            if (service.status?.isConnected) dataServicesConnected++;
+        } else if (service.type === 'cron') {
+            cronServicesCount++;
+            if (service.status?.scheduleActive) cronServicesActive++;
+        }
+    });
+    
+    document.getElementById('system-services-count').textContent = systemServicesCount;
+    document.getElementById('system-services-active').textContent = systemServicesActive;
+    document.getElementById('data-services-count').textContent = dataServicesCount;
+    document.getElementById('data-services-active').textContent = dataServicesActive;
+    document.getElementById('data-services-connected').textContent = dataServicesConnected;
+    document.getElementById('cron-services-count').textContent = cronServicesCount;
+    document.getElementById('cron-services-active').textContent = cronServicesActive;
+    document.getElementById('database-size').textContent = formatBytes(databaseSize);
+    document.getElementById('database-collections').textContent = databaseCollections;
+}
+
+// Update services table
+function updateServicesTable(services) {
+    const tbody = document.getElementById('services-table');
+    tbody.innerHTML = '';
+    
+    Object.entries(services).forEach(([key, service]) => {
+        const isRunning = service.status?.isRunning || service.status?.scheduleActive;
+        const lastUpdate = service.status?.lastUpdateTime;
+        
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>
+                <strong>${service.name}</strong>
+                <br><small class="text-muted">${service.type}</small>
+            </td>
+            <td>
+                ${isRunning 
+                    ? '<span class="badge bg-success">Aktif</span>' 
+                    : '<span class="badge bg-danger">Pasif</span>'
+                }
+                ${service.status?.isConnected ? '<span class="badge bg-info ms-1">Bağlı</span>' : ''}
+            </td>
+            <td>
+                <small>${lastUpdate ? window.ClientDateHelper.toLocaleString(lastUpdate) : '-'}</small>
+            </td>
+            <td>
+                ${service.type !== 'system' ? `
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-${isRunning ? 'danger' : 'success'}" 
+                                onclick="controlService('${key}', '${isRunning ? 'stop' : 'start'}')">
+                            ${isRunning ? 'Durdur' : 'Başlat'}
+                        </button>
+                    </div>
+                ` : '-'}
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+// Update system info
+function updateSystemInfo(services) {
+    Object.values(services).forEach(service => {
+        if (service.name?.includes('Node.js') && service.status?.details) {
+            document.getElementById('system-uptime').textContent = formatUptime(service.status.details.uptime);
+            document.getElementById('memory-usage').textContent = formatBytes(service.status.details.memoryUsage.heapUsed);
+        }
+        if (service.name?.includes('Socket.IO') && service.status?.details) {
+            document.getElementById('socket-connections').textContent = service.status.details.connectedClients;
+            document.getElementById('api-connections').textContent = service.status.details.tokenAuthClients;
+        }
+    });
+}
+
+// Update performance chart with historical data
+function updatePerformanceChartWithData(metrics) {
+    if (!performanceChart) return;
+    
+    // Clear existing data
+    performanceData.labels = [];
+    performanceData.datasets[0].data = [];
+    performanceData.datasets[1].data = [];
+    
+    // Add historical data
+    metrics.forEach(metric => {
+        const time = window.ClientDateHelper.toLocaleString(metric.timestamp).split(' ')[1];
+        performanceData.labels.push(time);
+        performanceData.datasets[0].data.push(metric.memoryUsageMB);
+        performanceData.datasets[1].data.push(metric.activeServices);
+    });
+    
+    performanceChart.update('none');
+}
+
+// Update performance chart with current data
+function updatePerformanceChart(services) {
+    if (!performanceChart) return;
+    
+    const now = window.ClientDateHelper.toTimeString();
+    let memoryUsage = 0;
+    let activeServices = 0;
+    
+    Object.values(services).forEach(service => {
+        if (service.name?.includes('Node.js') && service.status?.details) {
+            memoryUsage = Math.round(service.status.details.memoryUsage.heapUsed / 1024 / 1024);
+        }
+        if (service.status?.isRunning || service.status?.scheduleActive) {
+            activeServices++;
+        }
+    });
+    
+    performanceData.labels.push(now);
+    performanceData.datasets[0].data.push(memoryUsage);
+    performanceData.datasets[1].data.push(activeServices);
+    
+    // Keep only last 20 data points
+    if (performanceData.labels.length > 20) {
+        performanceData.labels.shift();
+        performanceData.datasets[0].data.shift();
+        performanceData.datasets[1].data.shift();
+    }
+    
+    performanceChart.update('none');
+}
+
+// Service control function
+async function controlService(serviceName, action) {
+    try {
+        const response = await fetch(`/admin/api/services/${serviceName}/${action}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            // Refresh data after a short delay
+            setTimeout(loadDashboardData, 1500);
+        }
+    } catch (error) {
+        console.error('Service control error:', error);
+    }
+}
+
+// Initialize everything when page loads
+document.addEventListener('DOMContentLoaded', () => {
+    initPerformanceChart();
+    loadDashboardData();
+    
+    // Auto refresh every minute
+    refreshInterval = setInterval(loadDashboardData, 60000);
+});
+
+// Clean up on page unload
+window.addEventListener('beforeunload', () => {
+    if (refreshInterval) {
+        clearInterval(refreshInterval);
+    }
+});
+</script>

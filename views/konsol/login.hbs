@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="tr" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Konsol Giriş</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Alpine.js -->
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <!-- Dark Mode Script -->
+    <script>
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        }
+        
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            200: '#bfdbfe',
+                            300: '#93c5fd',
+                            400: '#60a5fa',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="h-full bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800" x-data="{ darkMode: localStorage.theme === 'dark', showPassword: false }">
+    <div class="flex min-h-full items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div class="w-full max-w-md space-y-8">
+            <!-- Dark Mode Toggle -->
+            <div class="flex justify-end">
+                <button @click="darkMode = !darkMode; localStorage.theme = darkMode ? 'dark' : 'light'; document.documentElement.classList.toggle('dark')"
+                        class="p-2 rounded-lg bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 shadow-lg">
+                    <i class="fas" :class="darkMode ? 'fa-sun' : 'fa-moon'"></i>
+                </button>
+            </div>
+            
+            <!-- Login Card -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-8">
+                <!-- Header -->
+                <div class="text-center">
+                    <div class="mx-auto h-16 w-16 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
+                        <i class="fas fa-chart-line text-white text-2xl"></i>
+                    </div>
+                    <h2 class="mt-4 text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
+                        Konsol Paneli
+                    </h2>
+                    <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                        Hesabınıza giriş yapın
+                    </p>
+                </div>
+                
+                <!-- Alerts -->
+                {{#if error}}
+                <div class="mt-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                    <div class="flex">
+                        <i class="fas fa-exclamation-circle text-red-400 mr-2"></i>
+                        <div class="text-sm text-red-800 dark:text-red-300">
+                            {{#if (eq error 'missing')}}
+                                Kullanıcı adı ve şifre gerekli
+                            {{else if (eq error 'invalid')}}
+                                Kullanıcı adı veya şifre hatalı
+                            {{else if (eq error 'system')}}
+                                Sistem hatası, lütfen tekrar deneyin
+                            {{else}}
+                                Giriş başarısız
+                            {{/if}}
+                        </div>
+                    </div>
+                </div>
+                {{/if}}
+                
+                {{#if expired}}
+                <div class="mt-4 p-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg">
+                    <div class="flex">
+                        <i class="fas fa-clock text-orange-400 mr-2"></i>
+                        <div class="text-sm text-orange-800 dark:text-orange-300">
+                            Oturumunuz süresi dolmuş, lütfen tekrar giriş yapın
+                        </div>
+                    </div>
+                </div>
+                {{/if}}
+                
+                <!-- Login Form -->
+                <form class="mt-8 space-y-6" action="/konsol/login" method="POST">
+                    <div class="space-y-4">
+                        <!-- Username -->
+                        <div>
+                            <label for="username" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                Kullanıcı Adı / Email
+                            </label>
+                            <div class="mt-1 relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-user text-gray-400"></i>
+                                </div>
+                                <input id="username" name="username" type="text" required
+                                       class="appearance-none block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                       placeholder="username veya email@example.com">
+                            </div>
+                        </div>
+                        
+                        <!-- Password -->
+                        <div>
+                            <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                Şifre
+                            </label>
+                            <div class="mt-1 relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-lock text-gray-400"></i>
+                                </div>
+                                <input id="password" name="password" :type="showPassword ? 'text' : 'password'" required
+                                       class="appearance-none block w-full pl-10 pr-10 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                       placeholder="••••••••">
+                                <button type="button" @click="showPassword = !showPassword"
+                                        class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                                    <i class="fas text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                                       :class="showPassword ? 'fa-eye-slash' : 'fa-eye'"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Submit Button -->
+                    <div>
+                        <button type="submit"
+                                class="group relative flex w-full justify-center rounded-lg bg-gradient-to-r from-blue-500 to-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:from-blue-600 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-all duration-200">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                                <i class="fas fa-sign-in-alt text-blue-200 group-hover:text-blue-100"></i>
+                            </span>
+                            Giriş Yap
+                        </button>
+                    </div>
+                </form>
+                
+                <!-- Footer -->
+                <div class="mt-6 text-center">
+                    <p class="text-xs text-gray-500 dark:text-gray-400">
+                        Gold Dashboard Konsol v1.0
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

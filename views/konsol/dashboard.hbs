@@ -1,0 +1,275 @@
+<!-- Dashboard Statistics -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <!-- Sections Card -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <div class="flex items-center">
+            <div class="flex-shrink-0 bg-blue-500 rounded-lg p-3">
+                <i class="fas fa-layer-group text-white text-xl"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Sectionlar</p>
+                <p class="text-2xl font-bold text-gray-900 dark:text-white">{{stats.sections}}</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Products Card -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <div class="flex items-center">
+            <div class="flex-shrink-0 bg-green-500 rounded-lg p-3">
+                <i class="fas fa-box text-white text-xl"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Ürünler</p>
+                <p class="text-2xl font-bold text-gray-900 dark:text-white">{{stats.products}}</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Widgets Card -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <div class="flex items-center">
+            <div class="flex-shrink-0 bg-purple-500 rounded-lg p-3">
+                <i class="fas fa-th text-white text-xl"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Widget'lar</p>
+                <p class="text-2xl font-bold text-gray-900 dark:text-white">{{stats.widgets}}</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Dashboards Card -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <div class="flex items-center">
+            <div class="flex-shrink-0 bg-orange-500 rounded-lg p-3">
+                <i class="fas fa-dashboard text-white text-xl"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Dashboard'lar</p>
+                <p class="text-2xl font-bold text-gray-900 dark:text-white">{{stats.dashboards}}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- User Info & Settings -->
+    <div class="lg:col-span-1 space-y-6">
+        <!-- User Info Card -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                <i class="fas fa-user-circle mr-2"></i>Hesap Bilgileri
+            </h3>
+            <div class="space-y-3">
+                <div>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Kullanıcı Adı</p>
+                    <p class="text-sm font-medium text-gray-900 dark:text-white">{{user.username}}</p>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Email</p>
+                    <p class="text-sm font-medium text-gray-900 dark:text-white">{{user.email}}</p>
+                </div>
+                {{#if user.domain}}
+                <div>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Domain</p>
+                    <p class="text-sm font-medium text-gray-900 dark:text-white">{{user.domain}}</p>
+                </div>
+                {{/if}}
+                {{#if user.expiresAt}}
+                <div>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Son Kullanım Tarihi</p>
+                    <p class="text-sm font-medium text-orange-600 dark:text-orange-400">
+                        <i class="fas fa-clock mr-1"></i>{{user.expiresAt}}
+                    </p>
+                </div>
+                {{/if}}
+                <div>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Son Giriş</p>
+                    <p class="text-sm font-medium text-gray-900 dark:text-white">{{user.lastLogin}}</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Settings -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                <i class="fas fa-cog mr-2"></i>Hızlı Ayarlar
+            </h3>
+            <div class="space-y-3">
+                {{#if settings.api.source}}
+                <div>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Veri Kaynağı</p>
+                    <p class="text-sm font-medium text-gray-900 dark:text-white">{{settings.api.source}}</p>
+                </div>
+                {{/if}}
+                {{#if settings.general.theme}}
+                <div>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Tema</p>
+                    <p class="text-sm font-medium text-gray-900 dark:text-white">{{settings.general.theme}}</p>
+                </div>
+                {{/if}}
+                {{#if settings.general.language}}
+                <div>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Dil</p>
+                    <p class="text-sm font-medium text-gray-900 dark:text-white">{{settings.general.language}}</p>
+                </div>
+                {{/if}}
+            </div>
+            <a href="/konsol/settings" class="mt-4 inline-flex items-center text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300">
+                Tüm Ayarlar <i class="fas fa-arrow-right ml-1"></i>
+            </a>
+        </div>
+    </div>
+    
+    <!-- Live Prices Preview -->
+    <div class="lg:col-span-2">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                    <i class="fas fa-chart-line mr-2"></i>Canlı Fiyatlar
+                </h3>
+                <a href="/konsol/prices" class="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300">
+                    Tümünü Gör <i class="fas fa-arrow-right ml-1"></i>
+                </a>
+            </div>
+            
+            <!-- Price Display Container -->
+            <div id="livePricesContainer" class="space-y-2">
+                <div class="text-center py-8 text-gray-500 dark:text-gray-400">
+                    <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                    <p>Fiyatlar yükleniyor...</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent API Usage -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mt-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                    <i class="fas fa-code mr-2"></i>Son API Kullanımları
+                </h3>
+                <a href="/konsol/api-usage" class="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300">
+                    Detaylar <i class="fas fa-arrow-right ml-1"></i>
+                </a>
+            </div>
+            
+            {{#if recentApiCalls.length}}
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <thead>
+                        <tr>
+                            <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Endpoint</th>
+                            <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Method</th>
+                            <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Durum</th>
+                            <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Zaman</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                        {{#each recentApiCalls}}
+                        <tr>
+                            <td class="px-2 py-2 text-sm text-gray-900 dark:text-white">{{this.endpoint}}</td>
+                            <td class="px-2 py-2 text-sm text-gray-600 dark:text-gray-400">{{this.method}}</td>
+                            <td class="px-2 py-2">
+                                <span class="px-2 py-1 text-xs rounded-full {{#if (eq this.statusCode 200)}}bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400{{else}}bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400{{/if}}">
+                                    {{this.statusCode}}
+                                </span>
+                            </td>
+                            <td class="px-2 py-2 text-xs text-gray-500 dark:text-gray-400">{{this.timestamp}}</td>
+                        </tr>
+                        {{/each}}
+                    </tbody>
+                </table>
+            </div>
+            {{else}}
+            <p class="text-sm text-gray-500 dark:text-gray-400">Henüz API kullanımı yok</p>
+            {{/if}}
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript for Live Prices -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Load live prices
+    loadLivePrices();
+    
+    // Refresh every 30 seconds
+    setInterval(loadLivePrices, 30000);
+    
+    function loadLivePrices() {
+        fetch('/konsol/api/prices')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    displayPrices(data.data.products);
+                }
+            })
+            .catch(error => {
+                console.error('Error loading prices:', error);
+                document.getElementById('livePricesContainer').innerHTML = `
+                    <div class="text-center py-4 text-red-500">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p class="text-sm mt-1">Fiyatlar yüklenemedi</p>
+                    </div>
+                `;
+            });
+    }
+    
+    function displayPrices(products) {
+        const container = document.getElementById('livePricesContainer');
+        
+        if (!products || products.length === 0) {
+            container.innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400">Ürün bulunamadı</p>';
+            return;
+        }
+        
+        // Group by section
+        const grouped = {};
+        products.forEach(product => {
+            const sectionName = product.section ? product.section.name : 'Diğer';
+            if (!grouped[sectionName]) {
+                grouped[sectionName] = [];
+            }
+            grouped[sectionName].push(product);
+        });
+        
+        // Display first 5 products
+        let html = '<div class="space-y-2">';
+        let count = 0;
+        
+        for (const [section, items] of Object.entries(grouped)) {
+            if (count >= 5) break;
+            
+            items.slice(0, 5 - count).forEach(product => {
+                if (count >= 5) return;
+                
+                const buyPrice = product.calculatedPrices?.buying 
+                    ? product.calculatedPrices.buying.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                    : '-';
+                const sellPrice = product.calculatedPrices?.selling
+                    ? product.calculatedPrices.selling.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                    : '-';
+                
+                html += `
+                    <div class="flex items-center justify-between p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700">
+                        <div>
+                            <p class="text-sm font-medium text-gray-900 dark:text-white">${product.name}</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">${section}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-sm text-green-600 dark:text-green-400">A: ${buyPrice} ₺</p>
+                            <p class="text-sm text-red-600 dark:text-red-400">S: ${sellPrice} ₺</p>
+                        </div>
+                    </div>
+                `;
+                count++;
+            });
+        }
+        
+        html += '</div>';
+        container.innerHTML = html;
+    }
+});
+</script>

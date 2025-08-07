@@ -30,10 +30,22 @@ app.engine('hbs', engine({
   layoutsDir: path.join(__dirname, 'views/layouts'),
   partialsDir: path.join(__dirname, 'views/partials'),
   helpers: {
-    eq: (a, b) => a === b,
+    eq: (a, b) => {
+      // Handle MongoDB ObjectId comparison
+      if (a && b) {
+        const aStr = a.toString ? a.toString() : String(a);
+        const bStr = b.toString ? b.toString() : String(b);
+        return aStr === bStr;
+      }
+      return a === b;
+    },
     or: (a, b) => a || b,
     gt: (a, b) => a > b,
     lt: (a, b) => a < b,
+    typeof: (value) => typeof value,
+    json: (obj) => JSON.stringify(obj),
+    jsonP: (obj) => JSON.stringify(obj, null, 2),
+    len: (array) => Array.isArray(array) ? array.length : 0,
     formatBytes: (bytes) => {
       if (bytes === 0) return '0 B';
       const k = 1024;
@@ -55,6 +67,26 @@ app.engine('hbs', engine({
     includes: (array, value) => {
       if (!Array.isArray(array)) return false;
       return array.includes(value);
+    },
+    formatDateTR: (date) => {
+      if (!date) return '-';
+      const dateObj = new Date(date);
+      return dateObj.toLocaleString('tr-TR', {
+        timeZone: 'Europe/Istanbul',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+    },
+    formatTimeTR: (date) => {
+      if (!date) return '-';
+      const dateObj = new Date(date);
+      return dateObj.toLocaleTimeString('tr-TR', {
+        timeZone: 'Europe/Istanbul'
+      });
     },
     countActive: (items) => {
       if (!Array.isArray(items)) return 0;
@@ -494,6 +526,32 @@ function setupSocketHandlers() {
     });
   });
 
+  // Console connection handler
+  socket.on('console-connected', (data) => {
+    devLogger.debug('SocketServer', 'Konsol bağlandı:', { socketId: socket.id, data });
+    socket.isConsole = true;
+    socket.consoleData = data;
+    
+    // Send welcome message to console
+    socket.emit('welcome', {
+      message: 'Konsol başarıyla bağlandı',
+      socketId: socket.id,
+      serverTime: DateHelper.createDate(),
+      features: ['price_updates', 'source_filtering', 'real_time_data']
+    });
+  });
+
+  // Ping test handler
+  socket.on('ping-test', (data) => {
+    devLogger.debug('SocketServer', 'Ping test alındı:', data);
+    socket.emit('test-message', {
+      type: 'pong',
+      originalData: data,
+      serverTime: DateHelper.createDate(),
+      message: 'Pong! Socket bağlantısı çalışıyor'
+    });
+  });
+
   // Sunucu bilgisi isteği
   socket.on('request-server-info', () => {
     socket.emit('server-info', {
@@ -766,6 +824,31 @@ async function startServer() {
           type: 'test',
           message: 'Test sistem mesajı'
         });
+        
+        // Test price updates to 'price' channel
+        io.to('price').emit('price_update', {
+          timestamp: DateHelper.createDate(),
+          channel: 'price',
+          data: {
+            symbol: 'TEST/TRY',
+            buyPrice: 999.99,
+            sellPrice: 1000.01,
+            currency: 'TRY',
+            change: 0.01,
+            source: 'test-server'
+          }
+        });
+        
+        // Send test message to all console connections
+        const consoleSockets = Array.from(io.sockets.sockets.values()).filter(s => s.isConsole);
+        consoleSockets.forEach(socket => {
+          socket.emit('test-message', {
+            type: 'server-test',
+            message: 'Test mesajı sunucudan konsola',
+            socketId: socket.id,
+            timestamp: DateHelper.createDate()
+          });
+        });
       }
       
       res.json({
@@ -773,12 +856,20 @@ async function startServer() {
         message: 'Socket test mesajları gönderildi',
         timestamp: new Date().toISOString(),
         socketServer: !!io,
+        connectedSockets: io ? io.engine.clientsCount : 0,
+        consoleSockets: io ? Array.from(io.sockets.sockets.values()).filter(s => s.isConsole).length : 0,
         serviceSocketStatus: {
           altinKaynak: !!(global.altinKaynakService && global.altinKaynakService.socketServer),
           hakanAltin: !!(global.hakanAltinService && global.hakanAltinService.socketServer),
           tcmb: !!(global.tcmbService && global.tcmbService.socketServer),
           haremAltin: !!(global.haremAltinService && global.haremAltinService.socketServer)
-        }
+        },
+        testMessages: [
+          'price_update sent to price channel',
+          'test-message sent to console connections',
+          'anomaly_alert sent to alerts channel',
+          'system_command sent to system channel'
+        ]
       });
     } catch (error) {
       res.status(500).json({
@@ -792,6 +883,12 @@ async function startServer() {
   app.use('/api', require('./routes/tokenRoutes')(db));
   app.use('/admin', require('./routes/authRoutes')(db));
   app.use('/admin', require('./routes/adminRoutes')(db));
+  
+  // Konsol Routes (User Dashboard)
+  app.use('/konsol', require('./routes/konsolRoutes'));
+  
+  // Web API Routes (Dashboard System)
+  app.use('/web-api', require('./routes/webApiRoutes')(db));
   
   // API model'lerini başlat
   const ApiToken = require('./models/ApiToken');

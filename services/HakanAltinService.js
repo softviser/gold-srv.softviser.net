@@ -2,6 +2,7 @@ const WebSocket = require('ws');
 const { ObjectId } = require('mongodb');
 const LoggerHelper = require('../utils/logger');
 const DateHelper = require('../utils/dateHelper');
+const settingsService = require('../utils/settingsService');
 
 class HakanAltinService {
   constructor(db) {
@@ -26,6 +27,7 @@ class HakanAltinService {
       116: 'AUD/TRY',    // AUD
       117: 'CAD/TRY',    // CAD
       127: 'GUMUS/TRY',  // GUMUS
+      129: 'ONS',       // ONS
     };
     
     this.sourceInfo = {
@@ -94,7 +96,9 @@ class HakanAltinService {
 
   async start() {
     if (this.isRunning) {
-      console.log('🟡 Hakan Altın servisi zaten çalışıyor');
+      if (settingsService.shouldShowConsoleDebug()) {
+        console.log('🟡 Hakan Altın servisi zaten çalışıyor');
+      }
       return;
     }
 
@@ -104,7 +108,9 @@ class HakanAltinService {
       await this.loadDatabaseMappings(); // Veritabanından mapping'leri yükle
       this.connect();
       this.isRunning = true;
-      console.log('✅ Hakan Altın WebSocket servisi başlatıldı');
+      if (settingsService.shouldShowConsoleDebug()) {
+        console.log('✅ Hakan Altın WebSocket servisi başlatıldı');
+      }
     } catch (error) {
       console.error('❌ Hakan Altın servisi başlatma hatası:', error);
       throw error;
@@ -118,7 +124,9 @@ class HakanAltinService {
       }).toArray();
       
       this.allowedSymbols = new Set(systemCurrencies.map(curr => curr.symbol));
-      console.log(`✅ ${this.allowedSymbols.size} adet sistem currency yüklendi`);
+      if (settingsService.shouldShowConsoleDebug()) {
+        console.log(`✅ ${this.allowedSymbols.size} adet sistem currency yüklendi`);
+      }
     } catch (error) {
       console.error('❌ Sistem currencies yükleme hatası:', error);
       this.allowedSymbols = new Set();
@@ -148,11 +156,15 @@ class HakanAltinService {
         this.currencyMapping[mapping.sourceField] = mapping.targetSymbol;
       });
 
-      console.log(`✅ ${mappings.length} adet mapping veritabanından yüklendi:`, this.currencyMapping);
+      if (settingsService.shouldShowConsoleDebug()) {
+        console.log(`✅ ${mappings.length} adet mapping veritabanından yüklendi:`, this.currencyMapping);
+      }
     } catch (error) {
       console.error('❌ Database mappings yükleme hatası:', error);
       // Hata durumunda varsayılan mapping'leri kullan
-      console.log('⚠️ Varsayılan mapping\'ler kullanılacak');
+      if (settingsService.shouldShowConsoleDebug()) {
+        console.log('⚠️ Varsayılan mapping\'ler kullanılacak');
+      }
     }
   }
 
@@ -165,12 +177,16 @@ class HakanAltinService {
     }
     
     this.clearTimers();
-    console.log('🛑 Hakan Altın servisi durduruldu');
+    if (settingsService.shouldShowConsoleDebug()) {
+      console.log('🛑 Hakan Altın servisi durduruldu');
+    }
   }
 
   connect() {
     try {
-      console.log('🔌 Hakan Altın WebSocket\'e bağlanıyor...');
+      if (settingsService.shouldShowConsoleDebug()) {
+        console.log('🔌 Hakan Altın WebSocket\'e bağlanıyor...');
+      }
       
       this.ws = new WebSocket('wss://websocket.hakanaltin.com/');
       
@@ -189,7 +205,9 @@ class HakanAltinService {
         this.clearTimers();
         
         if (this.isRunning) {
-          console.log('🔄 5 saniye sonra yeniden bağlanılacak...');
+          if (settingsService.shouldShowConsoleDebug()) {
+            console.log('🔄 5 saniye sonra yeniden bağlanılacak...');
+          }
           setTimeout(() => {
             if (this.isRunning) {
               this.connect();
@@ -391,9 +409,13 @@ class HakanAltinService {
         };
 
         const result = await this.db.collection('sources').insertOne(sourceDoc);
-        console.log(`✅ Hakan Altın kaynağı oluşturuldu: ${result.insertedId}`);
+        if (settingsService.shouldShowConsoleDebug()) {
+          console.log(`✅ Hakan Altın kaynağı oluşturuldu: ${result.insertedId}`);
+        }
       } else {
-        console.log('✅ Hakan Altın kaynağı mevcut');
+        if (settingsService.shouldShowConsoleDebug()) {
+          console.log('✅ Hakan Altın kaynağı mevcut');
+        }
       }
     } catch (error) {
       console.error('❌ Hakan Altın kaynağı oluşturma hatası:', error);
@@ -403,7 +425,9 @@ class HakanAltinService {
 
   startMessageTimeout() {
     this.messageTimeout = setTimeout(() => {
-      console.log('⚠️ 30 saniyedir mesaj alınmadı, yeniden bağlanılıyor...');
+      if (settingsService.shouldShowConsoleDebug()) {
+        console.log('⚠️ 30 saniyedir mesaj alınmadı, yeniden bağlanılıyor...');
+      }
       
       // Data disruption alert
       if (!this.dataDisruption) {

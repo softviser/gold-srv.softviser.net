@@ -112,10 +112,12 @@ class AltinKaynakService {
       this.sourceId = source._id;
       await this.loadMappings();
       
-      devLogger.info('AltinKaynakService', 'Servis başlatıldı', {
-        sourceId: this.sourceId,
-        mappingCount: this.mappings.size
-      });
+      if (settingsService.shouldShowConsoleDebug()) {
+        devLogger.info('AltinKaynakService', 'Servis başlatıldı', {
+          sourceId: this.sourceId,
+          mappingCount: this.mappings.size
+        });
+      }
       
       return true;
     } catch (error) {
@@ -133,7 +135,9 @@ class AltinKaynakService {
         this.mappings.set(mapping.sourceField, mapping);
       });
       
-      devLogger.debug('AltinKaynakService', `${mappings.length} eşleştirme yüklendi`);
+      if (settingsService.shouldShowConsoleDebug()) {
+        devLogger.debug('AltinKaynakService', `${mappings.length} eşleştirme yüklendi`);
+      }
     } catch (error) {
       devLogger.error('AltinKaynakService', 'AltinKaynak eşleştirme yükleme hatası:', error);
     }
@@ -152,7 +156,9 @@ class AltinKaynakService {
         throw new Error('Geçersiz currency veri formatı');
       }
 
-      devLogger.debug('AltinKaynakService', `AltinKaynak Currency API'den ${response.data.length} kayıt alındı`);
+      if (settingsService.shouldShowConsoleDebug()) {
+        devLogger.debug('AltinKaynakService', `AltinKaynak Currency API'den ${response.data.length} kayıt alındı`);
+      }
       return response.data;
     } catch (error) {
       devLogger.error('AltinKaynakService', 'AltinKaynak Currency API hatası:', error);
@@ -173,7 +179,9 @@ class AltinKaynakService {
         throw new Error('Geçersiz gold veri formatı');
       }
 
-      devLogger.debug('AltinKaynakService', `AltinKaynak Gold API'den ${response.data.length} kayıt alındı`);
+      if (settingsService.shouldShowConsoleDebug()) {
+        devLogger.debug('AltinKaynakService', `AltinKaynak Gold API'den ${response.data.length} kayıt alındı`);
+      }
       return response.data;
     } catch (error) {
       devLogger.error('AltinKaynakService', 'AltinKaynak Gold API hatası:', error);
@@ -256,7 +264,9 @@ class AltinKaynakService {
       }
     }
 
-    devLogger.debug('AltinKaynakService', `Currency verileri işlendi: ${processedCount} başarılı, ${errorCount} hata`);
+    if (settingsService.shouldShowConsoleDebug()) {
+      devLogger.debug('AltinKaynakService', `Currency verileri işlendi: ${processedCount} başarılı, ${errorCount} hata`);
+    }
     return { processedCount, errorCount };
   }
 
@@ -335,7 +345,9 @@ class AltinKaynakService {
       }
     }
 
-    devLogger.debug('AltinKaynakService', `Gold verileri işlendi: ${processedCount} başarılı, ${errorCount} hata`);
+    if (settingsService.shouldShowConsoleDebug()) {
+      devLogger.debug('AltinKaynakService', `Gold verileri işlendi: ${processedCount} başarılı, ${errorCount} hata`);
+    }
     return { processedCount, errorCount };
   }
 
@@ -378,7 +390,9 @@ class AltinKaynakService {
 
   async updateData() {
     if (this.isRunning) {
-      devLogger.debug('AltinKaynakService', 'AltinKaynak güncelleme zaten çalışıyor, atlaniyor');
+      if (settingsService.shouldShowConsoleDebug()) {
+        devLogger.debug('AltinKaynakService', 'AltinKaynak güncelleme zaten çalışıyor, atlaniyor');
+      }
       return;
     }
 
@@ -386,7 +400,9 @@ class AltinKaynakService {
     const startTime = Date.now();
 
     try {
-      devLogger.debug('AltinKaynakService', 'AltinKaynak veri güncelleme başladı');
+      if (settingsService.shouldShowConsoleDebug()) {
+        devLogger.debug('AltinKaynakService', 'AltinKaynak veri güncelleme başladı');
+      }
       
       // Eşleştirmeleri yeniden yükle
       await this.loadMappings();
@@ -469,7 +485,9 @@ class AltinKaynakService {
 
   async start() {
     if (this.intervalId) {
-      devLogger.debug('AltinKaynakService', 'AltinKaynak servisi zaten çalışıyor');
+      if (settingsService.shouldShowConsoleDebug()) {
+        devLogger.debug('AltinKaynakService', 'AltinKaynak servisi zaten çalışıyor');
+      }
       return;
     }
 
@@ -497,7 +515,9 @@ class AltinKaynakService {
     if (this.intervalId) {
       clearInterval(this.intervalId);
       this.intervalId = null;
-      devLogger.debug('AltinKaynakService', 'AltinKaynak servisi durduruldu');
+      if (settingsService.shouldShowConsoleDebug()) {
+        devLogger.debug('AltinKaynakService', 'AltinKaynak servisi durduruldu');
+      }
     }
   }
 

@@ -1,0 +1,302 @@
+<!-- Page Header -->
+<div class="mb-6">
+    <h2 class="text-2xl font-bold text-gray-900 dark:text-white">API Kullanımı</h2>
+    <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Token'larınız ve API kullanım istatistikleriniz</p>
+</div>
+
+<!-- API Tokens -->
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow mb-6">
+    <div class="px-6 py-4 border-b dark:border-gray-700">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">API Token'ları</h3>
+    </div>
+    <div class="p-6">
+        {{#if tokens.length}}
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead>
+                    <tr>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Token Adı</th>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Token</th>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Durum</th>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Son Kullanım</th>
+                        <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                    {{#each tokens}}
+                    <tr>
+                        <td class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">
+                            {{this.name}}
+                            {{#if this.description}}
+                            <div class="text-xs text-gray-500 dark:text-gray-400">{{this.description}}</div>
+                            {{/if}}
+                        </td>
+                        <td class="px-4 py-3">
+                            <div class="flex items-center">
+                                <code class="text-xs font-mono bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
+                                    {{this.token}}
+                                </code>
+                                <button onclick="copyToken('{{this.token}}')" class="ml-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                        </td>
+                        <td class="px-4 py-3">
+                            {{#if this.isActive}}
+                            <span class="px-2 py-1 text-xs bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 rounded-full">Aktif</span>
+                            {{else}}
+                            <span class="px-2 py-1 text-xs bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400 rounded-full">Pasif</span>
+                            {{/if}}
+                            
+                            {{#if this.expiresAt}}
+                            <div class="text-xs text-orange-600 dark:text-orange-400 mt-1">
+                                Son: {{this.expiresAt}}
+                            </div>
+                            {{/if}}
+                        </td>
+                        <td class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+                            {{#if this.lastUsed}}
+                            {{this.lastUsed}}
+                            {{else}}
+                            Hiç kullanılmadı
+                            {{/if}}
+                        </td>
+                        <td class="px-4 py-3 text-right">
+                            <button onclick="viewTokenStats('{{this._id}}')" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 mr-2">
+                                <i class="fas fa-chart-bar"></i>
+                            </button>
+                            <button onclick="toggleToken('{{this._id}}')" class="text-orange-600 dark:text-orange-400 hover:text-orange-800 dark:hover:text-orange-300">
+                                <i class="fas {{#if this.isActive}}fa-pause{{else}}fa-play{{/if}}"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {{/each}}
+                </tbody>
+            </table>
+        </div>
+        {{else}}
+        <div class="text-center py-8">
+            <i class="fas fa-key text-4xl text-gray-400 mb-4"></i>
+            <p class="text-gray-600 dark:text-gray-400">API token bulunamadı</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Yöneticinizle iletişime geçin</p>
+        </div>
+        {{/if}}
+    </div>
+</div>
+
+<!-- Usage Statistics -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    <!-- Daily Usage Chart -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
+        <div class="px-6 py-4 border-b dark:border-gray-700">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Günlük Kullanım</h3>
+        </div>
+        <div class="p-6">
+            <canvas id="dailyUsageChart" height="200"></canvas>
+        </div>
+    </div>
+    
+    <!-- Endpoint Usage -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
+        <div class="px-6 py-4 border-b dark:border-gray-700">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Endpoint Kullanımı</h3>
+        </div>
+        <div class="p-6">
+            <canvas id="endpointChart" height="200"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Recent API Calls -->
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow">
+    <div class="px-6 py-4 border-b dark:border-gray-700">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Son API Çağrıları</h3>
+    </div>
+    <div class="p-6">
+        {{#if apiLogs.length}}
+        <div class="space-y-3">
+            {{#each apiLogs}}
+            <div class="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-700">
+                <div class="flex items-center space-x-3">
+                    <div class="flex-shrink-0">
+                        <span class="px-2 py-1 text-xs rounded {{#if (gt this.count 100)}}bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400{{else if (gt this.count 50)}}bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400{{else}}bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400{{/if}}">
+                            {{this.count}} çağrı
+                        </span>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-900 dark:text-white">{{this._id.endpoint}}</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">{{this._id.day}}</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <p class="text-sm text-gray-900 dark:text-white">
+                        Ort. {{this.avgResponseTime}} ms
+                    </p>
+                </div>
+            </div>
+            {{/each}}
+        </div>
+        {{else}}
+        <div class="text-center py-8">
+            <i class="fas fa-chart-line text-4xl text-gray-400 mb-4"></i>
+            <p class="text-gray-600 dark:text-gray-400">Henüz API çağrısı yok</p>
+        </div>
+        {{/if}}
+    </div>
+</div>
+
+<!-- Token Details Modal -->
+<div id="tokenModal" class="fixed inset-0 bg-gray-600 bg-opacity-75 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                        Token İstatistikleri
+                    </h3>
+                    <button onclick="closeTokenModal()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div id="tokenStatsContent">
+                    <!-- Content will be loaded dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Copy token to clipboard
+function copyToken(token) {
+    navigator.clipboard.writeText(token).then(() => {
+        // Show success message
+        const button = event.target.closest('button');
+        const originalHtml = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-check text-green-600"></i>';
+        setTimeout(() => {
+            button.innerHTML = originalHtml;
+        }, 2000);
+    });
+}
+
+// View token statistics
+function viewTokenStats(tokenId) {
+    // TODO: Fetch and display token statistics
+    document.getElementById('tokenStatsContent').innerHTML = `
+        <div class="text-center py-8">
+            <i class="fas fa-spinner fa-spin text-2xl text-gray-400 mb-2"></i>
+            <p class="text-gray-600 dark:text-gray-400">İstatistikler yükleniyor...</p>
+        </div>
+    `;
+    
+    document.getElementById('tokenModal').classList.remove('hidden');
+}
+
+// Close token modal
+function closeTokenModal() {
+    document.getElementById('tokenModal').classList.add('hidden');
+}
+
+// Toggle token active/inactive
+function toggleToken(tokenId) {
+    if (confirm('Bu token\'ın durumunu değiştirmek istediğinize emin misiniz?')) {
+        // TODO: Toggle token status via API
+        console.log('Toggle token:', tokenId);
+    }
+}
+
+// Initialize charts
+document.addEventListener('DOMContentLoaded', function() {
+    initializeCharts();
+});
+
+function initializeCharts() {
+    const apiLogs = {{{json apiLogs}}};
+    
+    // Prepare daily usage data
+    const dailyData = {};
+    const endpointData = {};
+    
+    apiLogs.forEach(log => {
+        // Daily data
+        if (!dailyData[log._id.day]) {
+            dailyData[log._id.day] = 0;
+        }
+        dailyData[log._id.day] += log.count;
+        
+        // Endpoint data
+        if (!endpointData[log._id.endpoint]) {
+            endpointData[log._id.endpoint] = 0;
+        }
+        endpointData[log._id.endpoint] += log.count;
+    });
+    
+    // Daily Usage Chart
+    const dailyCtx = document.getElementById('dailyUsageChart').getContext('2d');
+    new Chart(dailyCtx, {
+        type: 'line',
+        data: {
+            labels: Object.keys(dailyData).sort(),
+            datasets: [{
+                label: 'API Çağrıları',
+                data: Object.keys(dailyData).sort().map(day => dailyData[day]),
+                borderColor: '#3B82F6',
+                backgroundColor: '#3B82F620',
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+    
+    // Endpoint Chart
+    const endpointCtx = document.getElementById('endpointChart').getContext('2d');
+    new Chart(endpointCtx, {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(endpointData),
+            datasets: [{
+                data: Object.values(endpointData),
+                backgroundColor: [
+                    '#3B82F6',
+                    '#10B981',
+                    '#F59E0B',
+                    '#EF4444',
+                    '#8B5CF6',
+                    '#06B6D4'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+}
+
+// Close modal on backdrop click
+document.getElementById('tokenModal').addEventListener('click', (e) => {
+    if (e.target.id === 'tokenModal') {
+        closeTokenModal();
+    }
+});
+</script>

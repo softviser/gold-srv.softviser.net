@@ -1,0 +1,2426 @@
+{
+  "info": {
+    "name": "Gold Dashboard Web API",
+    "description": "Multi-user dashboard system with custom product calculations and real-time price integration",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{jwt_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:6701/web-api",
+      "type": "string"
+    },
+    {
+      "key": "jwt_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "dashboard_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "widget_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "product_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "media_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "section_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "api_token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health & Info",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            },
+            "description": "Check API health status"
+          },
+          "response": []
+        },
+        {
+          "name": "API Info",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/info",
+              "host": ["{{base_url}}"],
+              "path": ["info"]
+            },
+            "description": "Get API information and features"
+          },
+          "response": []
+        },
+        {
+          "name": "API Documentation",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/docs",
+              "host": ["{{base_url}}"],
+              "path": ["docs"]
+            },
+            "description": "Get complete API documentation"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.success && response.data.token) {",
+                  "        pm.collectionVariables.set('jwt_token', response.data.token);",
+                  "        console.log('JWT token saved:', response.data.token.substring(0, 20) + '...');",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"demo_user\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Login with username and password to get JWT token"
+          },
+          "response": []
+        },
+        {
+          "name": "Validate Token",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/validate",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "validate"]
+            },
+            "description": "Validate current JWT token"
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/refresh",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "refresh"]
+            },
+            "description": "Refresh JWT token"
+          },
+          "response": []
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"password123\",\n  \"newPassword\": \"newpassword123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/change-password",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "change-password"]
+            },
+            "description": "Change user password"
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/logout",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "logout"]
+            },
+            "description": "Logout user"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "User Management",
+      "item": [
+        {
+          "name": "Dashboards",
+          "item": [
+            {
+              "name": "Get User Dashboards",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/user/dashboards?includeInactive=false&sortBy=updatedAt&sortOrder=-1",
+                  "host": ["{{base_url}}"],
+                  "path": ["user", "dashboards"],
+                  "query": [
+                    {
+                      "key": "includeInactive",
+                      "value": "false"
+                    },
+                    {
+                      "key": "sortBy",
+                      "value": "updatedAt"
+                    },
+                    {
+                      "key": "sortOrder",
+                      "value": "-1"
+                    }
+                  ]
+                },
+                "description": "Get all user dashboards"
+              },
+              "response": []
+            },
+            {
+              "name": "Get Default Dashboard",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "if (pm.response.code === 200) {",
+                      "    const response = pm.response.json();",
+                      "    if (response.success && response.data._id) {",
+                      "        pm.collectionVariables.set('dashboard_id', response.data._id);",
+                      "        console.log('Dashboard ID saved:', response.data._id);",
+                      "    }",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/user/dashboards/default",
+                  "host": ["{{base_url}}"],
+                  "path": ["user", "dashboards", "default"]
+                },
+                "description": "Get user's default dashboard"
+              },
+              "response": []
+            },
+            {
+              "name": "Get Specific Dashboard",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/user/dashboards/{{dashboard_id}}",
+                  "host": ["{{base_url}}"],
+                  "path": ["user", "dashboards", "{{dashboard_id}}"]
+                },
+                "description": "Get specific dashboard by ID"
+              },
+              "response": []
+            },
+            {
+              "name": "Create Dashboard",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "if (pm.response.code === 200) {",
+                      "    const response = pm.response.json();",
+                      "    if (response.success && response.data._id) {",
+                      "        pm.collectionVariables.set('dashboard_id', response.data._id);",
+                      "        console.log('New Dashboard ID saved:', response.data._id);",
+                      "    }",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Ana Dashboard\",\n  \"description\": \"Birincil dashboard\",\n  \"isDefault\": true,\n  \"gridConfig\": {\n    \"cols\": 12,\n    \"breakpoints\": {\n      \"lg\": 1200,\n      \"md\": 996,\n      \"sm\": 768,\n      \"xs\": 480,\n      \"xxs\": 0\n    }\n  },\n  \"themeConfig\": {\n    \"darkMode\": false,\n    \"primaryColor\": \"#1976d2\",\n    \"backgroundColor\": \"#ffffff\"\n  },\n  \"settings\": {\n    \"autoRefresh\": true,\n    \"refreshInterval\": 30000\n  }\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/user/dashboards",
+                  "host": ["{{base_url}}"],
+                  "path": ["user", "dashboards"]
+                },
+                "description": "Create new dashboard"
+              },
+              "response": []
+            },
+            {
+              "name": "Update Dashboard",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Güncellenmiş Dashboard\",\n  \"description\": \"Dashboard açıklaması güncellendi\",\n  \"themeConfig\": {\n    \"darkMode\": true,\n    \"primaryColor\": \"#2196f3\"\n  }\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/user/dashboards/{{dashboard_id}}",
+                  "host": ["{{base_url}}"],
+                  "path": ["user", "dashboards", "{{dashboard_id}}"]
+                },
+                "description": "Update existing dashboard"
+              },
+              "response": []
+            },
+            {
+              "name": "Clone Dashboard",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"newName\": \"Klonlanmış Dashboard\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/user/dashboards/{{dashboard_id}}/clone",
+                  "host": ["{{base_url}}"],
+                  "path": ["user", "dashboards", "{{dashboard_id}}", "clone"]
+                },
+                "description": "Clone existing dashboard"
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Dashboard",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/user/dashboards/{{dashboard_id}}",
+                  "host": ["{{base_url}}"],
+                  "path": ["user", "dashboards", "{{dashboard_id}}"]
+                },
+                "description": "Delete dashboard"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "User Profile",
+          "item": [
+            {
+              "name": "Get User Profile",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/user/profile",
+                  "host": ["{{base_url}}"],
+                  "path": ["user", "profile"]
+                },
+                "description": "Get current user profile"
+              },
+              "response": []
+            },
+            {
+              "name": "Update User Profile",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"updated@example.com\",\n  \"dashboardPreferences\": {\n    \"theme\": \"dark\",\n    \"language\": \"tr\",\n    \"timezone\": \"Europe/Istanbul\"\n  }\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/user/profile",
+                  "host": ["{{base_url}}"],
+                  "path": ["user", "profile"]
+                },
+                "description": "Update user profile"
+              },
+              "response": []
+            },
+            {
+              "name": "Get User Preferences",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/user/preferences",
+                  "host": ["{{base_url}}"],
+                  "path": ["user", "preferences"]
+                },
+                "description": "Get user preferences"
+              },
+              "response": []
+            },
+            {
+              "name": "Update User Preferences",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"dashboardPreferences\": {\n    \"theme\": \"light\",\n    \"language\": \"en\",\n    \"timezone\": \"UTC\",\n    \"autoRefresh\": true,\n    \"refreshInterval\": 60000\n  }\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/user/preferences",
+                  "host": ["{{base_url}}"],
+                  "path": ["user", "preferences"]
+                },
+                "description": "Update user preferences"
+              },
+              "response": []
+            },
+            {
+              "name": "Get User Stats",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/user/stats",
+                  "host": ["{{base_url}}"],
+                  "path": ["user", "stats"]
+                },
+                "description": "Get user statistics"
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Widget Management",
+      "item": [
+        {
+          "name": "Get Dashboard Widgets",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/widgets/dashboards/{{dashboard_id}}/widgets",
+              "host": ["{{base_url}}"],
+              "path": ["widgets", "dashboards", "{{dashboard_id}}", "widgets"]
+            },
+            "description": "Get all widgets for a dashboard"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Widget Templates",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/widgets/widget-templates",
+              "host": ["{{base_url}}"],
+              "path": ["widgets", "widget-templates"]
+            },
+            "description": "Get available widget templates"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Widget",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.success && response.data._id) {",
+                  "        pm.collectionVariables.set('widget_id', response.data._id);",
+                  "        console.log('Widget ID saved:', response.data._id);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dashboardId\": \"{{dashboard_id}}\",\n  \"widgetType\": \"price-list\",\n  \"positionConfig\": {\n    \"x\": 0,\n    \"y\": 0,\n    \"w\": 6,\n    \"h\": 4\n  },\n  \"widgetConfig\": {\n    \"title\": \"Fiyat Listesi\",\n    \"symbols\": [\"HAS/TRY\", \"USD/TRY\", \"EUR/TRY\"],\n    \"showChange\": true,\n    \"updateInterval\": 5000\n  },\n  \"styleConfig\": {\n    \"backgroundColor\": \"#ffffff\",\n    \"borderColor\": \"#e0e0e0\",\n    \"textColor\": \"#333333\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/widgets",
+              "host": ["{{base_url}}"],
+              "path": ["widgets"]
+            },
+            "description": "Create new widget"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Specific Widget",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/widgets/{{widget_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["widgets", "{{widget_id}}"]
+            },
+            "description": "Get specific widget by ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Widget",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"widgetConfig\": {\n    \"title\": \"Güncellenmiş Fiyat Listesi\",\n    \"symbols\": [\"HAS/TRY\", \"USD/TRY\", \"EUR/TRY\", \"GBP/TRY\"],\n    \"showChange\": true,\n    \"updateInterval\": 3000\n  },\n  \"styleConfig\": {\n    \"backgroundColor\": \"#f5f5f5\",\n    \"borderColor\": \"#d0d0d0\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/widgets/{{widget_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["widgets", "{{widget_id}}"]
+            },
+            "description": "Update widget configuration"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Widget Positions",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"positions\": [\n    {\n      \"widgetId\": \"{{widget_id}}\",\n      \"positionConfig\": {\n        \"x\": 6,\n        \"y\": 0,\n        \"w\": 6,\n        \"h\": 4\n      }\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/widgets/dashboards/{{dashboard_id}}/widgets/positions",
+              "host": ["{{base_url}}"],
+              "path": ["widgets", "dashboards", "{{dashboard_id}}", "widgets", "positions"]
+            },
+            "description": "Update widget positions in dashboard"
+          },
+          "response": []
+        },
+        {
+          "name": "Clone Widget",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"targetDashboardId\": \"{{dashboard_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/widgets/{{widget_id}}/clone",
+              "host": ["{{base_url}}"],
+              "path": ["widgets", "{{widget_id}}", "clone"]
+            },
+            "description": "Clone widget"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Widget from Template",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"templateName\": \"price-list-template\",\n  \"dashboardId\": \"{{dashboard_id}}\",\n  \"customConfig\": {\n    \"title\": \"Şablondan Oluşturulan Widget\",\n    \"symbols\": [\"HAS/TRY\", \"GUMUS/TRY\"]\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/widgets/from-template",
+              "host": ["{{base_url}}"],
+              "path": ["widgets", "from-template"]
+            },
+            "description": "Create widget from template"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Widget",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/widgets/{{widget_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["widgets", "{{widget_id}}"]
+            },
+            "description": "Delete widget"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Widget Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/widgets/stats",
+              "host": ["{{base_url}}"],
+              "path": ["widgets", "stats"]
+            },
+            "description": "Get widget statistics"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Product Management",
+      "item": [
+        {
+          "name": "Get User Products",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/products?category=precious-metals&tags=gold,silver&isPublic=false",
+              "host": ["{{base_url}}"],
+              "path": ["products"],
+              "query": [
+                {
+                  "key": "category",
+                  "value": "precious-metals"
+                },
+                {
+                  "key": "tags",
+                  "value": "gold,silver"
+                },
+                {
+                  "key": "isPublic",
+                  "value": "false"
+                }
+              ]
+            },
+            "description": "Get user's custom products"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Public Products",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/products/public",
+              "host": ["{{base_url}}"],
+              "path": ["products", "public"]
+            },
+            "description": "Get public products"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Custom Product",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.success && response.data._id) {",
+                  "        pm.collectionVariables.set('product_id', response.data._id);",
+                  "        console.log('Product ID saved:', response.data._id);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"22 Ayar Altın\",\n  \"productCode\": \"AU22K\",\n  \"buyingFormula\": \"HAS_alis * 0.916\",\n  \"sellingFormula\": \"HAS_satis * 0.916\",\n  \"baseSymbol\": \"HAS/TRY\",\n  \"sectionId\": \"{{section_id}}\",\n  \"displayConfig\": {\n    \"decimalPlaces\": 2,\n    \"prefix\": \"\",\n    \"suffix\": \" ₺\",\n    \"showChange\": true,\n    \"showPercentage\": true\n  },\n  \"calculationConfig\": {\n    \"updateInterval\": 5000,\n    \"minValue\": 0,\n    \"maxValue\": null\n  },\n  \"roundingConfig\": {\n    \"method\": \"nearest\",\n    \"precision\": 5,\n    \"decimalPlaces\": 2\n  },\n  \"category\": \"precious-metals\",\n  \"tags\": [\"gold\", \"22k\", \"jewelry\"],\n  \"description\": \"22 ayar altın hesaplama formülleri\",\n  \"isPublic\": false\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/products",
+              "host": ["{{base_url}}"],
+              "path": ["products"]
+            },
+            "description": "Create new custom product with formula"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Specific Product",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/products/{{product_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["products", "{{product_id}}"]
+            },
+            "description": "Get specific product by ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Product",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"22 Ayar Altın (Güncellenmiş)\",\n  \"buyingFormula\": \"HAS_alis * 0.92\",\n  \"sellingFormula\": \"HAS_satis * 0.92\",\n  \"displayConfig\": {\n    \"decimalPlaces\": 3,\n    \"suffix\": \" TL\"\n  },\n  \"roundingConfig\": {\n    \"method\": \"up\",\n    \"precision\": 10,\n    \"decimalPlaces\": 2\n  },\n  \"tags\": [\"gold\", \"22k\", \"jewelry\", \"updated\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/products/{{product_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["products", "{{product_id}}"]
+            },
+            "description": "Update existing product"
+          },
+          "response": []
+        },
+        {
+          "name": "Calculate Product Value",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"variables\": {\n    \"HAS_alis\": 4350.25,\n    \"HAS_satis\": 4375.50\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/products/{{product_id}}/calculate",
+              "host": ["{{base_url}}"],
+              "path": ["products", "{{product_id}}", "calculate"]
+            },
+            "description": "Calculate product value with current prices"
+          },
+          "response": []
+        },
+        {
+          "name": "Calculate Multiple Products",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productIds\": [\"{{product_id}}\"],\n  \"variables\": {\n    \"HAS_alis\": 4350.25,\n    \"HAS_satis\": 4375.50,\n    \"USD_alis\": 34.25,\n    \"EUR_alis\": 37.85\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/products/calculate-batch",
+              "host": ["{{base_url}}"],
+              "path": ["products", "calculate-batch"]
+            },
+            "description": "Calculate multiple products at once"
+          },
+          "response": []
+        },
+        {
+          "name": "Validate Formulas",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"buyingFormula\": \"HAS_alis * 0.916 + USD_alis * 0.1\",\n  \"sellingFormula\": \"HAS_satis * 0.916 + USD_satis * 0.1\",\n  \"baseSymbol\": \"HAS/TRY\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/products/validate-formulas",
+              "host": ["{{base_url}}"],
+              "path": ["products", "validate-formulas"]
+            },
+            "description": "Validate product formulas syntax"
+          },
+          "response": []
+        },
+        {
+          "name": "Clone Product",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"newName\": \"22 Ayar Altın (Kopya)\",\n  \"newProductCode\": \"AU22K_COPY\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/products/{{product_id}}/clone",
+              "host": ["{{base_url}}"],
+              "path": ["products", "{{product_id}}", "clone"]
+            },
+            "description": "Clone existing product"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Product Categories",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/products/categories",
+              "host": ["{{base_url}}"],
+              "path": ["products", "categories"]
+            },
+            "description": "Get available product categories"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Product Tags",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/products/tags",
+              "host": ["{{base_url}}"],
+              "path": ["products", "tags"]
+            },
+            "description": "Get available product tags"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Product",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/products/{{product_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["products", "{{product_id}}"]
+            },
+            "description": "Delete product"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Product Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/products/stats",
+              "host": ["{{base_url}}"],
+              "path": ["products", "stats"]
+            },
+            "description": "Get product statistics"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Media Management",
+      "item": [
+        {
+          "name": "Upload Single File",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.success && response.data._id) {",
+                  "        pm.collectionVariables.set('media_id', response.data._id);",
+                  "        console.log('Media ID saved:', response.data._id);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "",
+                  "description": "Select a file to upload"
+                },
+                {
+                  "key": "title",
+                  "value": "Test Image",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "Test image upload",
+                  "type": "text"
+                },
+                {
+                  "key": "tags",
+                  "value": "test,image,dashboard",
+                  "type": "text"
+                },
+                {
+                  "key": "isPublic",
+                  "value": "false",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/media/upload",
+              "host": ["{{base_url}}"],
+              "path": ["media", "upload"]
+            },
+            "description": "Upload single file"
+          },
+          "response": []
+        },
+        {
+          "name": "Upload Multiple Files",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": [],
+                  "description": "Select multiple files to upload"
+                },
+                {
+                  "key": "tags",
+                  "value": "batch,upload,test",
+                  "type": "text"
+                },
+                {
+                  "key": "isPublic",
+                  "value": "false",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/media/upload-multiple",
+              "host": ["{{base_url}}"],
+              "path": ["media", "upload-multiple"]
+            },
+            "description": "Upload multiple files"
+          },
+          "response": []
+        },
+        {
+          "name": "Get User Media Files",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/media/files?fileType=image&tags=test&limit=20&skip=0",
+              "host": ["{{base_url}}"],
+              "path": ["media", "files"],
+              "query": [
+                {
+                  "key": "fileType",
+                  "value": "image"
+                },
+                {
+                  "key": "tags",
+                  "value": "test"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "skip",
+                  "value": "0"
+                }
+              ]
+            },
+            "description": "Get user's media files"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Media File Info",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/media/files/{{media_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["media", "files", "{{media_id}}"]
+            },
+            "description": "Get specific media file information"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Media File Info",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated Image Title\",\n  \"description\": \"Updated image description\",\n  \"tags\": [\"updated\", \"image\", \"dashboard\"],\n  \"isPublic\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/media/files/{{media_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["media", "files", "{{media_id}}"]
+            },
+            "description": "Update media file information"
+          },
+          "response": []
+        },
+        {
+          "name": "Download Media File",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/media/download/{{media_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["media", "download", "{{media_id}}"]
+            },
+            "description": "Download media file"
+          },
+          "response": []
+        },
+        {
+          "name": "Serve Media File",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/media/serve/{{user_id}}/filename.jpg",
+              "host": ["{{base_url}}"],
+              "path": ["media", "serve", "{{user_id}}", "filename.jpg"]
+            },
+            "description": "Serve media file directly (no auth required for public files)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Supported File Types",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/media/file-types",
+              "host": ["{{base_url}}"],
+              "path": ["media", "file-types"]
+            },
+            "description": "Get supported file types"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Media Tags",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/media/tags",
+              "host": ["{{base_url}}"],
+              "path": ["media", "tags"]
+            },
+            "description": "Get available media tags"
+          },
+          "response": []
+        },
+        {
+          "name": "Cleanup Unused Files",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/media/cleanup",
+              "host": ["{{base_url}}"],
+              "path": ["media", "cleanup"]
+            },
+            "description": "Cleanup unused media files"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Media File",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/media/files/{{media_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["media", "files", "{{media_id}}"]
+            },
+            "description": "Delete media file"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Media Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/media/stats",
+              "host": ["{{base_url}}"],
+              "path": ["media", "stats"]
+            },
+            "description": "Get media statistics"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Settings Management",
+      "item": [
+        {
+          "name": "Get All Settings",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/settings?category=general",
+              "host": ["{{base_url}}"],
+              "path": ["settings"],
+              "query": [
+                {
+                  "key": "category",
+                  "value": "general",
+                  "description": "Optional: Filter by category"
+                }
+              ]
+            },
+            "description": "Get all user settings, optionally filtered by category (simple format)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Settings - Detailed",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/settings?detailed=true&category=general",
+              "host": ["{{base_url}}"],
+              "path": ["settings"],
+              "query": [
+                {
+                  "key": "detailed",
+                  "value": "true",
+                  "description": "Return full setting objects with description, isActive, and timestamps"
+                },
+                {
+                  "key": "category",
+                  "value": "general",
+                  "description": "Optional: Filter by category"
+                }
+              ]
+            },
+            "description": "Get all user settings with detailed information including description, isActive, and timestamps"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Specific Setting",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/settings/theme",
+              "host": ["{{base_url}}"],
+              "path": ["settings", "theme"]
+            },
+            "description": "Get a specific setting by key"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Single Setting",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"value\": \"dark\",\n  \"category\": \"general\",\n  \"description\": \"UI theme preference\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/settings/theme",
+              "host": ["{{base_url}}"],
+              "path": ["settings", "theme"]
+            },
+            "description": "Update or create a single setting"
+          },
+          "response": []
+        },
+        {
+          "name": "Bulk Update Settings",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"settings\": {\n    \"general\": {\n      \"theme\": \"dark\",\n      \"language\": \"tr\",\n      \"timezone\": \"Europe/Istanbul\"\n    },\n    \"dashboard\": {\n      \"autoRefresh\": true,\n      \"refreshInterval\": 30000\n    },\n    \"notifications\": {\n      \"enabled\": true,\n      \"sound\": false,\n      \"email\": true\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/settings/bulk",
+              "host": ["{{base_url}}"],
+              "path": ["settings", "bulk"]
+            },
+            "description": "Update multiple settings at once"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Setting",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/settings/customSetting",
+              "host": ["{{base_url}}"],
+              "path": ["settings", "customSetting"]
+            },
+            "description": "Delete a specific setting (marks as inactive)"
+          },
+          "response": []
+        },
+        {
+          "name": "Reset Settings to Defaults",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": \"general\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/settings/reset",
+              "host": ["{{base_url}}"],
+              "path": ["settings", "reset"]
+            },
+            "description": "Reset settings to default values. If category is provided, only resets that category"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Setting Categories",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/settings/meta/categories",
+              "host": ["{{base_url}}"],
+              "path": ["settings", "meta", "categories"]
+            },
+            "description": "Get available setting categories with metadata"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Section Management",
+      "item": [
+        {
+          "name": "Get User Sections",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/sections?category=gold&includeInactive=false",
+              "host": ["{{base_url}}"],
+              "path": ["sections"],
+              "query": [
+                {
+                  "key": "category",
+                  "value": "gold",
+                  "description": "Filter by category"
+                },
+                {
+                  "key": "includeInactive",
+                  "value": "false",
+                  "description": "Include inactive sections"
+                }
+              ]
+            },
+            "description": "Get all user sections (price categories)"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Section",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.success && response.section._id) {",
+                  "        pm.collectionVariables.set('section_id', response.section._id);",
+                  "        console.log('Section ID saved:', response.section._id);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Altın Ürünleri\",\n  \"description\": \"Altın fiyatları ve hesaplamaları\",\n  \"sectionCode\": \"SEC_GOLD01\",\n  \"displayConfig\": {\n    \"icon\": \"gold\",\n    \"color\": \"#FFD700\",\n    \"backgroundColor\": \"#FFF8DC\",\n    \"showProductCount\": true,\n    \"showLastUpdate\": true\n  },\n  \"displayOrder\": 1,\n  \"category\": \"gold\",\n  \"isDefault\": false\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/sections",
+              "host": ["{{base_url}}"],
+              "path": ["sections"]
+            },
+            "description": "Create new section (price category)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Specific Section",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/sections/{{section_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["sections", "{{section_id}}"]
+            },
+            "description": "Get specific section by ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Section",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Güncellenmiş Altın Ürünleri\",\n  \"description\": \"Güncellenmiş altın fiyatları\",\n  \"displayConfig\": {\n    \"icon\": \"gold_bars\",\n    \"color\": \"#DAA520\",\n    \"showProductCount\": true\n  },\n  \"displayOrder\": 2\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/sections/{{section_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["sections", "{{section_id}}"]
+            },
+            "description": "Update existing section"
+          },
+          "response": []
+        },
+        {
+          "name": "Set Default Section",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/sections/{{section_id}}/set-default",
+              "host": ["{{base_url}}"],
+              "path": ["sections", "{{section_id}}", "set-default"]
+            },
+            "description": "Set section as default"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Section Statistics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/sections/stats",
+              "host": ["{{base_url}}"],
+              "path": ["sections", "stats"]
+            },
+            "description": "Get section statistics and categories"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Section",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/sections/{{section_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["sections", "{{section_id}}"]
+            },
+            "description": "Delete section"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "System Resources",
+      "item": [
+        {
+          "name": "Get System Currencies",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/system/currencies?type=gold&active=true&hasSource=true",
+              "host": ["{{base_url}}"],
+              "path": ["system", "currencies"],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "gold",
+                  "description": "Filter by currency type (forex, gold, crypto)"
+                },
+                {
+                  "key": "active",
+                  "value": "true",
+                  "description": "Filter by active status"
+                },
+                {
+                  "key": "hasSource",
+                  "value": "true",
+                  "description": "Filter by source availability"
+                }
+              ]
+            },
+            "description": "Get all system currencies for formula usage"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Currency by Code",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/system/currencies/HAS",
+              "host": ["{{base_url}}"],
+              "path": ["system", "currencies", "HAS"]
+            },
+            "description": "Get specific currency by code"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Currency Types",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/system/currencies/types",
+              "host": ["{{base_url}}"],
+              "path": ["system", "currencies", "types"]
+            },
+            "description": "Get available currency types with statistics"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Rounding Options",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/system/rounding-options",
+              "host": ["{{base_url}}"],
+              "path": ["system", "rounding-options"]
+            },
+            "description": "Get available rounding methods and precision values"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Live Prices",
+      "item": [
+        {
+          "name": "Get Live Prices (Header Auth)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_token}}",
+                "description": "API Token for authentication"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/prices/live?format=grouped&includeInactive=false&cache=30",
+              "host": ["{{base_url}}"],
+              "path": ["prices", "live"],
+              "query": [
+                {
+                  "key": "format",
+                  "value": "grouped",
+                  "description": "Response format (grouped, flat)"
+                },
+                {
+                  "key": "includeInactive",
+                  "value": "false",
+                  "description": "Include inactive products"
+                },
+                {
+                  "key": "cache",
+                  "value": "30",
+                  "description": "Cache TTL in seconds"
+                }
+              ]
+            },
+            "description": "Get live prices for all products grouped by sections (API Key in header)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Live Prices (Query Auth)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/prices/live?token={{api_token}}&format=grouped&sectionId={{section_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["prices", "live"],
+              "query": [
+                {
+                  "key": "token",
+                  "value": "{{api_token}}",
+                  "description": "API Token for authentication"
+                },
+                {
+                  "key": "format",
+                  "value": "grouped",
+                  "description": "Response format"
+                },
+                {
+                  "key": "sectionId",
+                  "value": "{{section_id}}",
+                  "description": "Filter by specific section"
+                }
+              ]
+            },
+            "description": "Get live prices with API token as query parameter"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Live Prices - Flat Format",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/prices/live?format=flat&category=gold",
+              "host": ["{{base_url}}"],
+              "path": ["prices", "live"],
+              "query": [
+                {
+                  "key": "format",
+                  "value": "flat",
+                  "description": "Flat list format"
+                },
+                {
+                  "key": "category",
+                  "value": "gold",
+                  "description": "Filter by category"
+                }
+              ]
+            },
+            "description": "Get prices in flat list format filtered by category"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Price Summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/prices/summary",
+              "host": ["{{base_url}}"],
+              "path": ["prices", "summary"]
+            },
+            "description": "Get summary statistics about available prices and sections"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin Management",
+      "item": [
+        {
+          "name": "User Management",
+          "item": [
+            {
+              "name": "Get All Users (Admin)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/admin/users?isActive=true&limit=50&skip=0",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "users"],
+                  "query": [
+                    {
+                      "key": "isActive",
+                      "value": "true"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "50"
+                    },
+                    {
+                      "key": "skip",
+                      "value": "0"
+                    }
+                  ]
+                },
+                "description": "Get all users (Admin only)"
+              },
+              "response": []
+            },
+            {
+              "name": "Create User (Admin)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "if (pm.response.code === 200) {",
+                      "    const response = pm.response.json();",
+                      "    if (response.success && response.data._id) {",
+                      "        pm.collectionVariables.set('user_id', response.data._id);",
+                      "        console.log('User ID saved:', response.data._id);",
+                      "    }",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"new_user\",\n  \"password\": \"password123\",\n  \"email\": \"newuser@example.com\",\n  \"domain\": \"example.com\",\n  \"permissions\": [\"read\", \"write\"],\n  \"allowedChannels\": [\"*\"],\n  \"rateLimit\": {\n    \"requests\": 1000,\n    \"window\": 60\n  },\n  \"expiresAt\": null,\n  \"dashboardPreferences\": {\n    \"theme\": \"light\",\n    \"language\": \"tr\",\n    \"timezone\": \"Europe/Istanbul\"\n  }\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/admin/users",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "users"]
+                },
+                "description": "Create new user (Admin only)"
+              },
+              "response": []
+            },
+            {
+              "name": "Get User Details (Admin)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/admin/users/{{user_id}}",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "users", "{{user_id}}"]
+                },
+                "description": "Get specific user details (Admin only)"
+              },
+              "response": []
+            },
+            {
+              "name": "Update User (Admin)",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"updated@example.com\",\n  \"permissions\": [\"read\", \"write\", \"subscribe\"],\n  \"isActive\": true,\n  \"rateLimit\": {\n    \"requests\": 2000,\n    \"window\": 60\n  }\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/admin/users/{{user_id}}",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "users", "{{user_id}}"]
+                },
+                "description": "Update user (Admin only)"
+              },
+              "response": []
+            },
+            {
+              "name": "Toggle User Status (Admin)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/admin/users/{{user_id}}/toggle",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "users", "{{user_id}}", "toggle"]
+                },
+                "description": "Toggle user active/inactive status (Admin only)"
+              },
+              "response": []
+            },
+            {
+              "name": "Reset User Password (Admin)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"newPassword\": \"newpassword123\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/admin/users/{{user_id}}/reset-password",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "users", "{{user_id}}", "reset-password"]
+                },
+                "description": "Reset user password (Admin only)"
+              },
+              "response": []
+            },
+            {
+              "name": "Delete User (Admin)",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/admin/users/{{user_id}}",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "users", "{{user_id}}"]
+                },
+                "description": "Delete user (Admin only)"
+              },
+              "response": []
+            },
+            {
+              "name": "Bulk User Operations (Admin)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"operation\": \"activate\",\n  \"userIds\": [\"{{user_id}}\"],\n  \"filters\": {\n    \"domain\": \"example.com\",\n    \"isActive\": false\n  }\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/admin/users/bulk",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "users", "bulk"]
+                },
+                "description": "Bulk operations on users (Admin only)"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "System Management",
+          "item": [
+            {
+              "name": "Get System Stats (Admin)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/admin/stats",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "stats"]
+                },
+                "description": "Get system statistics (Admin only)"
+              },
+              "response": []
+            },
+            {
+              "name": "Get Recent Activity (Admin)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/admin/activity?limit=50&hours=24",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "activity"],
+                  "query": [
+                    {
+                      "key": "limit",
+                      "value": "50"
+                    },
+                    {
+                      "key": "hours",
+                      "value": "24"
+                    }
+                  ]
+                },
+                "description": "Get recent system activity (Admin only)"
+              },
+              "response": []
+            },
+            {
+              "name": "System Health Check (Admin)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/admin/health",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "health"]
+                },
+                "description": "Detailed system health check (Admin only)"
+              },
+              "response": []
+            },
+            {
+              "name": "Cleanup Expired Users (Admin)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/admin/maintenance/cleanup-expired",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "maintenance", "cleanup-expired"]
+                },
+                "description": "Cleanup expired users (Admin only)"
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Check if JWT token is set and not expired",
+          "const token = pm.collectionVariables.get('jwt_token');",
+          "if (token && token !== '') {",
+          "    try {",
+          "        // Decode JWT token (basic check)",
+          "        const payload = JSON.parse(atob(token.split('.')[1]));",
+          "        const currentTime = Math.floor(Date.now() / 1000);",
+          "        ",
+          "        if (payload.exp && payload.exp < currentTime) {",
+          "            console.log('JWT token expired, clearing token');",
+          "            pm.collectionVariables.set('jwt_token', '');",
+          "        } else {",
+          "            console.log('JWT token is valid');",
+          "        }",
+          "    } catch (e) {",
+          "        console.log('Invalid JWT token format, clearing token');",
+          "        pm.collectionVariables.set('jwt_token', '');",
+          "    }",
+          "}"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Global test script for all requests",
+          "pm.test('Response time is reasonable', function () {",
+          "    pm.expect(pm.response.responseTime).to.be.below(5000);",
+          "});",
+          "",
+          "pm.test('Response has success field', function () {",
+          "    if (pm.response.code === 200) {",
+          "        const response = pm.response.json();",
+          "        pm.expect(response).to.have.property('success');",
+          "    }",
+          "});",
+          "",
+          "// Log response for debugging",
+          "if (pm.response.code >= 400) {",
+          "    console.log('Request failed:', pm.request.url.toString());",
+          "    console.log('Response:', pm.response.text());",
+          "}"
+        ]
+      }
+    }
+  ]
+}

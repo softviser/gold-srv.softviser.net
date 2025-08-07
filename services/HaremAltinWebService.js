@@ -4,6 +4,7 @@ const LoggerHelper = require('../utils/logger');
 const devLogger = require('../utils/devLogger');
 const cronLogger = require('../utils/cronLogger');
 const DateHelper = require('../utils/dateHelper');
+const settingsService = require('../utils/settingsService');
 
 class HaremAltinWebService {
   constructor(db) {
@@ -23,6 +24,7 @@ class HaremAltinWebService {
     // Harem Altın Web API'sinde para birimleri '/' işareti olmadan gelir
     this.currencyMapping = {
       'ALTIN': 'HAS/TRY',     // Has Altın
+      'ONS': 'ONS',     // Has Altın
       'USDTRY': 'USD/TRY',    // USD
       'EURTRY': 'EUR/TRY',    // EUR
       'GBPTRY': 'GBP/TRY',    // GBP
@@ -76,7 +78,9 @@ class HaremAltinWebService {
 
   async start() {
     if (this.isRunning) {
-      devLogger.info('HaremAltinWebService', '🟡 Harem Altın Web servisi zaten çalışıyor');
+      if (settingsService.shouldShowConsoleDebug()) {
+        devLogger.info('HaremAltinWebService', '🟡 Harem Altın Web servisi zaten çalışıyor');
+      }
       return;
     }
 
@@ -117,7 +121,9 @@ class HaremAltinWebService {
       this.updateInterval = null;
     }
     
-    devLogger.info('HaremAltinWebService', '🛑 Harem Altın Web servisi durduruldu');
+    if (settingsService.shouldShowConsoleDebug()) {
+      devLogger.info('HaremAltinWebService', '🛑 Harem Altın Web servisi durduruldu');
+    }
     cronLogger.endJob('HaremAltinWebService', 'success', { message: 'Service stopped' });
   }
 
@@ -128,7 +134,9 @@ class HaremAltinWebService {
       }).toArray();
       
       this.allowedSymbols = new Set(systemCurrencies.map(curr => curr.symbol));
-      devLogger.info('HaremAltinWebService', `✅ ${this.allowedSymbols.size} adet sistem currency yüklendi`);
+      if (settingsService.shouldShowConsoleDebug()) {
+        devLogger.info('HaremAltinWebService', `✅ ${this.allowedSymbols.size} adet sistem currency yüklendi`);
+      }
     } catch (error) {
       devLogger.error('HaremAltinWebService', '❌ Sistem currencies yükleme hatası:', error);
       this.allowedSymbols = new Set();
@@ -158,17 +166,23 @@ class HaremAltinWebService {
         this.currencyMapping[mapping.sourceField] = mapping.targetSymbol;
       });
 
-      devLogger.info('HaremAltinWebService', `✅ ${mappings.length} adet mapping veritabanından yüklendi:`, this.currencyMapping);
+      if (settingsService.shouldShowConsoleDebug()) {
+        devLogger.info('HaremAltinWebService', `✅ ${mappings.length} adet mapping veritabanından yüklendi:`, this.currencyMapping);
+      }
     } catch (error) {
       devLogger.error('HaremAltinWebService', '❌ Database mappings yükleme hatası:', error);
       // Hata durumunda varsayılan mapping'leri kullan
-      devLogger.info('HaremAltinWebService', '⚠️ Varsayılan mapping\'ler kullanılacak');
+      if (settingsService.shouldShowConsoleDebug()) {
+        devLogger.info('HaremAltinWebService', '⚠️ Varsayılan mapping\'ler kullanılacak');
+      }
     }
   }
 
   async updatePrices() {
     const startTime = Date.now();
-    devLogger.info('HaremAltinWebService', '🔄 Harem Altın Web veri güncellemesi başladı...');
+    if (settingsService.shouldShowConsoleDebug()) {
+      devLogger.info('HaremAltinWebService', '🔄 Harem Altın Web veri güncellemesi başladı...');
+    }
 
     try {
       // Her iki endpoint'ten veri çek
@@ -192,7 +206,9 @@ class HaremAltinWebService {
         if (combinedData[haremCode]) {
           // Sistem currency'de tanımlı olup olmadığını kontrol et
           if (!this.allowedSymbols || !this.allowedSymbols.has(systemSymbol)) {
-            devLogger.info('HaremAltinWebService', `⚠️ ${systemSymbol} sistem currency'de tanımlı değil, atlanıyor`);
+            if (settingsService.shouldShowConsoleDebug()) {
+              devLogger.info('HaremAltinWebService', `⚠️ ${systemSymbol} sistem currency'de tanımlı değil, atlanıyor`);
+            }
             skippedCount++;
             continue;
           }
@@ -241,7 +257,9 @@ class HaremAltinWebService {
 
       // Geçersiz fiyatları kontrol et
       if (buyPrice === 0 || sellPrice === 0) {
-        devLogger.info('HaremAltinWebService', `⚠️ ${systemSymbol} için geçersiz fiyat, atlanıyor`);
+        if (settingsService.shouldShowConsoleDebug()) {
+          devLogger.info('HaremAltinWebService', `⚠️ ${systemSymbol} için geçersiz fiyat, atlanıyor`);
+        }
         return;
       }
 
@@ -455,9 +473,13 @@ class HaremAltinWebService {
         };
 
         const result = await this.db.collection('sources').insertOne(sourceDoc);
-        devLogger.info('HaremAltinWebService', `✅ Harem Altın Web kaynağı oluşturuldu: ${result.insertedId}`);
+        if (settingsService.shouldShowConsoleDebug()) {
+          devLogger.info('HaremAltinWebService', `✅ Harem Altın Web kaynağı oluşturuldu: ${result.insertedId}`);
+        }
       } else {
-        devLogger.info('HaremAltinWebService', '✅ Harem Altın Web kaynağı mevcut');
+        if (settingsService.shouldShowConsoleDebug()) {
+          devLogger.info('HaremAltinWebService', '✅ Harem Altın Web kaynağı mevcut');
+        }
       }
     } catch (error) {
       devLogger.error('HaremAltinWebService', '❌ Harem Altın Web kaynağı oluşturma hatası:', error);
@@ -475,15 +497,18 @@ class HaremAltinWebService {
 
       const combinedData = { ...altinResponse.data.data, ...dovizResponse.data.data };
       
+      // Tüm verileri eski formatta göster
+      const allCurrencies = Object.entries(combinedData).map(([code, data]) => ({
+        kod: code,
+        aciklama: this.currencyMapping[code] ? `${this.currencyMapping[code]} - Harem Altın Web API` : `${code} - Mapping yok`,
+        symbol: this.currencyMapping[code] || code,
+        currentData: data
+      }));
+      
       return {
         success: true,
         sampleData: {
-          currency: Object.entries(this.currencyMapping).map(([code, symbol]) => ({
-            kod: code,
-            aciklama: `${symbol} - Harem Altın Web API`,
-            symbol: symbol,
-            currentData: combinedData[code] || null
-          }))
+          currency: allCurrencies
         }
       };
     } catch (error) {

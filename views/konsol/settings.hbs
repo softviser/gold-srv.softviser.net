@@ -1,0 +1,363 @@
+<!-- Page Header -->
+<div class="mb-6">
+    <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Ayarlar</h2>
+    <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Hesap ve uygulama ayarlarını yönetin</p>
+</div>
+
+<!-- Settings Categories -->
+<div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+    {{#each settings}}
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
+        <div class="px-6 py-4 border-b dark:border-gray-700">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white capitalize flex items-center">
+                {{#if (eq @key 'general')}}
+                <i class="fas fa-cog mr-2"></i>Genel Ayarlar
+                {{else if (eq @key 'dashboard')}}
+                <i class="fas fa-dashboard mr-2"></i>Dashboard
+                {{else if (eq @key 'notifications')}}
+                <i class="fas fa-bell mr-2"></i>Bildirimler
+                {{else if (eq @key 'api')}}
+                <i class="fas fa-code mr-2"></i>API Ayarları
+                {{else if (eq @key 'widgets')}}
+                <i class="fas fa-th mr-2"></i>Widget'lar
+                {{else if (eq @key 'products')}}
+                <i class="fas fa-box mr-2"></i>Ürünler
+                {{else}}
+                <i class="fas fa-folder mr-2"></i>{{@key}}
+                {{/if}}
+            </h3>
+        </div>
+        <div class="p-6">
+            <div class="space-y-4">
+                {{#each this}}
+                <div class="setting-item" data-category="{{@../key}}" data-key="{{this.settingKey}}">
+                    <div class="flex items-center justify-between">
+                        <div class="flex-1">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                {{this.settingKey}}
+                            </label>
+                            {{#if this.description}}
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{this.description}}</p>
+                            {{/if}}
+                        </div>
+                        <div class="ml-4">
+                            {{#if this.isActive}}
+                            <span class="inline-block w-2 h-2 bg-green-500 rounded-full" title="Aktif"></span>
+                            {{else}}
+                            <span class="inline-block w-2 h-2 bg-gray-400 rounded-full" title="Pasif"></span>
+                            {{/if}}
+                        </div>
+                    </div>
+                    
+                    <div class="mt-2">
+                        <!-- Dynamic input based on value type -->
+                        {{#if (eq (typeof this.settingValue) 'boolean')}}
+                        <label class="flex items-center">
+                            <input type="checkbox" {{#if this.settingValue}}checked{{/if}}
+                                   onchange="updateSetting('{{@../key}}', '{{this.settingKey}}', this.checked)"
+                                   class="rounded border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500">
+                            <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                                {{#if this.settingValue}}Etkin{{else}}Pasif{{/if}}
+                            </span>
+                        </label>
+                        {{else if (or (eq this.settingKey 'source') (eq this.settingKey 'priceSource'))}}
+                        <select onchange="updateSetting('{{@../key}}', '{{this.settingKey}}', this.value)"
+                                class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                            <option value="">Kaynak Seçin</option>
+                            {{#each ../../sources}}
+                            <option value="{{this._id}}" {{#if (eq this._id ../settingValue)}}selected{{/if}}>
+                                {{this.displayName}} {{#if this.name}}({{this.name}}){{/if}}
+                            </option>
+                            {{/each}}
+                        </select>
+                        {{else if (eq this.settingKey 'theme')}}
+                        <select onchange="updateSetting('{{@../key}}', '{{this.settingKey}}', this.value)"
+                                class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                            <option value="light" {{#if (eq this.settingValue 'light')}}selected{{/if}}>Açık</option>
+                            <option value="dark" {{#if (eq this.settingValue 'dark')}}selected{{/if}}>Koyu</option>
+                            <option value="auto" {{#if (eq this.settingValue 'auto')}}selected{{/if}}>Otomatik</option>
+                        </select>
+                        {{else if (eq this.settingKey 'language')}}
+                        <select onchange="updateSetting('{{@../key}}', '{{this.settingKey}}', this.value)"
+                                class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                            <option value="tr" {{#if (eq this.settingValue 'tr')}}selected{{/if}}>Türkçe</option>
+                            <option value="en" {{#if (eq this.settingValue 'en')}}selected{{/if}}>English</option>
+                        </select>
+                        {{else if (includes this.settingKey 'Interval')}}
+                        <input type="number" value="{{this.settingValue}}" min="1000" step="1000"
+                               onchange="updateSetting('{{@../key}}', '{{this.settingKey}}', parseInt(this.value))"
+                               class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                        {{else}}
+                        <input type="text" value="{{this.settingValue}}"
+                               onchange="updateSetting('{{@../key}}', '{{this.settingKey}}', this.value)"
+                               class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                        {{/if}}
+                    </div>
+                    
+                    {{#if this.updatedAt}}
+                    <div class="mt-2 text-xs text-gray-400 dark:text-gray-500">
+                        Son güncelleme: {{formatDateTR this.updatedAt}}
+                    </div>
+                    {{/if}}
+                </div>
+                {{/each}}
+            </div>
+            
+            <!-- Add New Setting Button -->
+            <div class="mt-6 pt-4 border-t dark:border-gray-700">
+                <button onclick="openAddSettingModal('{{@key}}')"
+                        class="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300">
+                    <i class="fas fa-plus mr-1"></i>Yeni Ayar Ekle
+                </button>
+            </div>
+        </div>
+    </div>
+    {{/each}}
+</div>
+
+{{#unless (gt (len settings) 0)}}
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow p-8 text-center">
+    <i class="fas fa-cog text-4xl text-gray-400 mb-4"></i>
+    <p class="text-gray-600 dark:text-gray-400">Henüz ayar bulunamadı</p>
+    <button onclick="openAddSettingModal('general')" class="mt-4 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
+        <i class="fas fa-plus mr-2"></i>İlk Ayarı Ekle
+    </button>
+</div>
+{{/unless}}
+
+<!-- Add Setting Modal -->
+<div id="settingModal" class="fixed inset-0 bg-gray-600 bg-opacity-75 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full">
+            <div class="p-6">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                    Yeni Ayar Ekle
+                </h3>
+                
+                <form id="settingForm" class="space-y-4">
+                    <input type="hidden" id="settingCategory" name="category">
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Ayar Adı *
+                        </label>
+                        <input type="text" id="settingKey" name="settingKey" required
+                               class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Değer *
+                        </label>
+                        <input type="text" id="settingValue" name="settingValue" required
+                               class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Açıklama
+                        </label>
+                        <textarea id="settingDescription" name="description" rows="2"
+                                  class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"></textarea>
+                    </div>
+                    
+                    <div class="flex items-center">
+                        <input type="checkbox" id="settingIsActive" name="isActive" checked
+                               class="rounded border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500">
+                        <label for="settingIsActive" class="ml-2 text-sm text-gray-700 dark:text-gray-300">Aktif</label>
+                    </div>
+                    
+                    <div class="flex justify-end space-x-2 pt-4 border-t dark:border-gray-700">
+                        <button type="button" onclick="closeSettingModal()"
+                                class="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600">
+                            İptal
+                        </button>
+                        <button type="submit"
+                                class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700">
+                            <i class="fas fa-save mr-2"></i>Kaydet
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Export/Import Actions -->
+<div class="mt-6 bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+        <i class="fas fa-exchange-alt mr-2"></i>Ayarları Yönet
+    </h3>
+    
+    <div class="flex space-x-4">
+        <button onclick="exportSettings()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+            <i class="fas fa-download mr-2"></i>Dışa Aktar
+        </button>
+        <button onclick="importSettings()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+            <i class="fas fa-upload mr-2"></i>İçe Aktar
+        </button>
+        <button onclick="resetAllSettings()" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+            <i class="fas fa-trash mr-2"></i>Sıfırla
+        </button>
+    </div>
+</div>
+
+<script>
+async function updateSetting(category, key, value) {
+    try {
+        const response = await fetch(`/konsol/api/settings/${key}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                value: value,
+                category: category
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // Visual feedback
+            const settingItem = document.querySelector(`[data-category="${category}"][data-key="${key}"]`);
+            settingItem.classList.add('bg-green-50', 'dark:bg-green-900/20');
+            setTimeout(() => {
+                settingItem.classList.remove('bg-green-50', 'dark:bg-green-900/20');
+            }, 2000);
+        } else {
+            alert('Ayar güncellenirken hata oluştu');
+        }
+    } catch (error) {
+        console.error('Update setting error:', error);
+        alert('Ayar güncellenirken hata oluştu');
+    }
+}
+
+function openAddSettingModal(category) {
+    document.getElementById('settingModal').classList.remove('hidden');
+    document.getElementById('settingCategory').value = category;
+    document.getElementById('settingForm').reset();
+}
+
+function closeSettingModal() {
+    document.getElementById('settingModal').classList.add('hidden');
+}
+
+async function exportSettings() {
+    try {
+        const response = await fetch('/web-api/settings?detailed=true');
+        const result = await response.json();
+        
+        if (result.success) {
+            const dataStr = JSON.stringify(result.data, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(dataBlob);
+            link.download = 'settings-export.json';
+            link.click();
+        }
+    } catch (error) {
+        console.error('Export error:', error);
+        alert('Dışa aktarma sırasında hata oluştu');
+    }
+}
+
+function importSettings() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        try {
+            const text = await file.text();
+            const settings = JSON.parse(text);
+            
+            const response = await fetch('/web-api/settings/bulk', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ settings })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                location.reload();
+            } else {
+                alert('İçe aktarma sırasında hata oluştu');
+            }
+        } catch (error) {
+            console.error('Import error:', error);
+            alert('Geçersiz dosya formatı');
+        }
+    };
+    input.click();
+}
+
+async function resetAllSettings() {
+    if (confirm('Tüm ayarlar varsayılan değerlere dönecek. Devam etmek istediğinize emin misiniz?')) {
+        try {
+            const response = await fetch('/web-api/settings/reset', {
+                method: 'POST'
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                location.reload();
+            } else {
+                alert('Sıfırlama sırasında hata oluştu');
+            }
+        } catch (error) {
+            console.error('Reset error:', error);
+            alert('Sıfırlama sırasında hata oluştu');
+        }
+    }
+}
+
+// Form submit for new setting
+document.getElementById('settingForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData);
+    data.isActive = formData.has('isActive');
+    
+    try {
+        const response = await fetch(`/konsol/api/settings/${data.settingKey}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                value: data.settingValue,
+                category: data.category,
+                description: data.description
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            location.reload();
+        } else {
+            alert('Ayar kaydedilirken hata oluştu');
+        }
+    } catch (error) {
+        console.error('Save setting error:', error);
+        alert('Ayar kaydedilirken hata oluştu');
+    }
+});
+
+// Close modal on backdrop click
+document.getElementById('settingModal').addEventListener('click', (e) => {
+    if (e.target.id === 'settingModal') {
+        closeSettingModal();
+    }
+});
+</script>

@@ -1,0 +1,495 @@
+<!-- Page Header -->
+<div class="mb-6">
+    <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Formül Hesaplayıcı</h2>
+    <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Formüllerinizi canlı verilerle test edin</p>
+</div>
+
+<!-- Source Selection -->
+<div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 mb-6">
+    <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-4">
+            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Veri Kaynağı:</label>
+            <select id="sourceSelector" onchange="loadAvailablePrices()" class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                <option value="">Kaynak seçin...</option>
+            </select>
+        </div>
+        <button onclick="refreshPrices()" class="px-3 py-1 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+            <i class="fas fa-sync-alt mr-1"></i>Fiyatları Yenile
+        </button>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Formula Builder -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            <i class="fas fa-magic mr-2"></i>Formül Oluşturucu
+        </h3>
+        
+        <div class="space-y-4">
+            <!-- Quick Insert -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Hızlı Değişken Ekle
+                </label>
+                <div class="grid grid-cols-2 gap-2">
+                    <select id="priceSelector" class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                        <option value="">Kur seçin...</option>
+                    </select>
+                    <select id="priceType" class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                        <option value="_alis">Alış</option>
+                        <option value="_satis">Satış</option>
+                    </select>
+                </div>
+                <button onclick="insertVariable()" class="mt-2 w-full px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600">
+                    <i class="fas fa-plus mr-1"></i>Formüle Ekle
+                </button>
+            </div>
+
+            <!-- Formula Input -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Formül
+                </label>
+                <textarea id="formula" rows="3" placeholder="Örn: HAS_alis * 0.916"
+                          class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-mono focus:ring-2 focus:ring-primary-500"></textarea>
+            </div>
+            
+            <!-- Quick Templates -->
+            <div>
+                <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">Hazır Şablonlar:</p>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="setFormula('HAS_alis * 0.916')" class="px-3 py-1 text-xs bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600">
+                        22 Ayar Altın
+                    </button>
+                    <button onclick="setFormula('HAS_alis * 0.750')" class="px-3 py-1 text-xs bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600">
+                        18 Ayar Altın
+                    </button>
+                    <button onclick="setFormula('HAS_alis * 0.585')" class="px-3 py-1 text-xs bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600">
+                        14 Ayar Altın
+                    </button>
+                    <button onclick="setFormula('HAS_alis * 0.333')" class="px-3 py-1 text-xs bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600">
+                        8 Ayar Altın
+                    </button>
+                    <button onclick="setFormula('(HAS_alis * 0.916) * 7.5')" class="px-3 py-1 text-xs bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600">
+                        Çeyrek Altın
+                    </button>
+                    <button onclick="setFormula('USD_alis * EUR_alis')" class="px-3 py-1 text-xs bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600">
+                        USD x EUR
+                    </button>
+                </div>
+            </div>
+
+            <!-- Math Operations -->
+            <div>
+                <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">İşlemler:</p>
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="appendToFormula(' + ')" class="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600">+</button>
+                    <button onclick="appendToFormula(' - ')" class="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600">-</button>
+                    <button onclick="appendToFormula(' * ')" class="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600">×</button>
+                    <button onclick="appendToFormula(' / ')" class="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600">÷</button>
+                    <button onclick="appendToFormula('(')" class="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600">(</button>
+                    <button onclick="appendToFormula(')')" class="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600">)</button>
+                </div>
+            </div>
+            
+            <button onclick="calculate()" class="w-full px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
+                <i class="fas fa-calculator mr-2"></i>Hesapla
+            </button>
+        </div>
+    </div>
+    
+    <!-- Live Prices -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            <i class="fas fa-chart-line mr-2"></i>Canlı Fiyatlar
+        </h3>
+        
+        <div id="pricesContainer" class="space-y-2 max-h-96 overflow-y-auto">
+            <p class="text-sm text-gray-500 dark:text-gray-400">Kaynak seçin...</p>
+        </div>
+        
+        <div class="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+            <p class="text-xs text-yellow-800 dark:text-yellow-300">
+                <i class="fas fa-info-circle mr-1"></i>
+                Formülde kullanmak için değişken adını kopyalayın
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- Result -->
+<div class="mt-6 bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+        <i class="fas fa-equals mr-2"></i>Sonuç
+    </h3>
+    
+    <div id="resultContainer" class="text-center py-8">
+        <p class="text-gray-500 dark:text-gray-400">Hesaplamak için formül girin ve hesapla butonuna tıklayın</p>
+    </div>
+</div>
+
+<!-- History -->
+<div class="mt-6 bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+        <i class="fas fa-history mr-2"></i>Hesaplama Geçmişi
+    </h3>
+    
+    <div id="historyContainer" class="space-y-2">
+        <p class="text-sm text-gray-500 dark:text-gray-400">Henüz hesaplama yapılmadı</p>
+    </div>
+</div>
+
+<script>
+let history = [];
+let currentPrices = {};
+let selectedSourceId = null;
+let availableCurrencies = [];
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadSources();
+});
+
+async function loadSources() {
+    try {
+        // Get user's selected source from settings
+        const settingsResponse = await fetch('/konsol/settings');
+        const settingsText = await settingsResponse.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(settingsText, 'text/html');
+        const sourceSelects = doc.querySelectorAll('select option[selected]');
+        
+        for (let option of sourceSelects) {
+            const select = option.closest('select');
+            if (select && select.getAttribute('onchange')?.includes('source')) {
+                selectedSourceId = option.value;
+                break;
+            }
+        }
+
+        // Get available sources
+        const response = await fetch('/konsol/prices');
+        const html = await response.text();
+        const pricesDoc = parser.parseFromString(html, 'text/html');
+        const sourceOptions = pricesDoc.querySelectorAll('#sourceSelector option');
+        
+        const sourceSelector = document.getElementById('sourceSelector');
+        sourceSelector.innerHTML = '<option value="">Kaynak seçin...</option>';
+        
+        sourceOptions.forEach(option => {
+            if (option.value) {
+                const newOption = document.createElement('option');
+                newOption.value = option.value;
+                newOption.textContent = option.textContent;
+                if (option.value === selectedSourceId) {
+                    newOption.selected = true;
+                }
+                sourceSelector.appendChild(newOption);
+            }
+        });
+
+        if (selectedSourceId) {
+            loadAvailablePrices();
+        }
+    } catch (error) {
+        console.error('Error loading sources:', error);
+    }
+}
+
+async function loadAvailablePrices() {
+    const sourceId = document.getElementById('sourceSelector').value;
+    if (!sourceId) {
+        document.getElementById('pricesContainer').innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400">Kaynak seçin...</p>';
+        return;
+    }
+
+    try {
+        const response = await fetch(`/konsol/api/prices?sourceId=${sourceId}`);
+        const result = await response.json();
+        
+        if (result.success && result.data?.products) {
+            // Get raw price data from the API
+            displayPrices(result.data.products);
+        }
+
+        // Also get raw currency prices
+        const pricesResponse = await fetch('/web-api/prices/live');
+        const pricesResult = await pricesResponse.json();
+        
+        if (pricesResult.success && pricesResult.data) {
+            processPriceData(pricesResult.data);
+        }
+    } catch (error) {
+        console.error('Error loading prices:', error);
+        document.getElementById('pricesContainer').innerHTML = '<p class="text-sm text-red-500">Fiyatlar yüklenemedi</p>';
+    }
+}
+
+function processPriceData(prices) {
+    currentPrices = {};
+    availableCurrencies = [];
+    const priceSelector = document.getElementById('priceSelector');
+    priceSelector.innerHTML = '<option value="">Kur seçin...</option>';
+
+    prices.forEach(price => {
+        if (price.symbol) {
+            const currencyCode = price.symbol.split('/')[0];
+            
+            // Store prices in legacy format for formula compatibility
+            if (price.buyPrice) {
+                currentPrices[currencyCode + '_alis'] = price.buyPrice;
+            }
+            if (price.sellPrice) {
+                currentPrices[currencyCode + '_satis'] = price.sellPrice;
+            }
+
+            // Add to currency selector if not already there
+            if (!availableCurrencies.includes(currencyCode)) {
+                availableCurrencies.push(currencyCode);
+                const option = document.createElement('option');
+                option.value = currencyCode;
+                option.textContent = `${price.name || currencyCode} (${price.symbol})`;
+                priceSelector.appendChild(option);
+            }
+        }
+    });
+
+    displayPricesList();
+}
+
+function displayPricesList() {
+    const container = document.getElementById('pricesContainer');
+    
+    if (Object.keys(currentPrices).length === 0) {
+        container.innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400">Fiyat verisi bulunamadı</p>';
+        return;
+    }
+
+    // Group prices by currency
+    const grouped = {};
+    Object.entries(currentPrices).forEach(([key, value]) => {
+        const [currency, type] = key.split('_');
+        if (!grouped[currency]) {
+            grouped[currency] = {};
+        }
+        grouped[currency][type] = value;
+    });
+
+    let html = '';
+    Object.entries(grouped).forEach(([currency, prices]) => {
+        html += `
+            <div class="p-2 bg-gray-50 dark:bg-gray-700 rounded">
+                <div class="flex items-center justify-between">
+                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300">${currency}</span>
+                    <div class="text-xs space-x-2">
+                        ${prices.alis ? `
+                            <button onclick="copyToFormula('${currency}_alis')" class="px-2 py-1 bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded hover:bg-green-200 dark:hover:bg-green-800">
+                                A: ${prices.alis.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+                            </button>
+                        ` : ''}
+                        ${prices.satis ? `
+                            <button onclick="copyToFormula('${currency}_satis')" class="px-2 py-1 bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded hover:bg-red-200 dark:hover:bg-red-800">
+                                S: ${prices.satis.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    container.innerHTML = html;
+}
+
+function displayPrices(products) {
+    // This is for displaying calculated product prices if needed
+    console.log('Product prices loaded:', products.length);
+}
+
+function insertVariable() {
+    const currency = document.getElementById('priceSelector').value;
+    const type = document.getElementById('priceType').value;
+    
+    if (!currency) {
+        alert('Lütfen bir kur seçin');
+        return;
+    }
+    
+    const variable = currency + type;
+    appendToFormula(variable);
+}
+
+function copyToFormula(variable) {
+    const formula = document.getElementById('formula');
+    if (formula.value && !formula.value.endsWith(' ')) {
+        formula.value += ' ';
+    }
+    formula.value += variable;
+    formula.focus();
+}
+
+function appendToFormula(text) {
+    const formula = document.getElementById('formula');
+    formula.value += text;
+    formula.focus();
+}
+
+function setFormula(formula) {
+    document.getElementById('formula').value = formula;
+}
+
+async function refreshPrices() {
+    await loadAvailablePrices();
+    showToast('Fiyatlar güncellendi', 'success');
+}
+
+async function calculate() {
+    const formula = document.getElementById('formula').value;
+    
+    if (!formula) {
+        alert('Lütfen bir formül girin');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/konsol/api/calculate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                formula: formula,
+                variables: currentPrices
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            displayResult(data.result);
+            addToHistory(formula, currentPrices, data.result);
+        } else {
+            displayError(data.error);
+        }
+    } catch (error) {
+        console.error('Calculation error:', error);
+        displayError('Hesaplama sırasında hata oluştu');
+    }
+}
+
+function displayResult(result) {
+    const container = document.getElementById('resultContainer');
+    
+    container.innerHTML = `
+        <div class="space-y-4">
+            <div class="text-4xl font-bold text-primary-600 dark:text-primary-400">
+                ${result.value ? result.value.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0'} ₺
+            </div>
+            
+            ${result.roundedValue && result.roundedValue !== result.value ? `
+                <div class="text-sm text-gray-600 dark:text-gray-400">
+                    <p>Ham Değer: ${result.value.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                    <p>Yuvarlanmış: ${result.roundedValue.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                </div>
+            ` : ''}
+            
+            <div class="text-left mt-4 p-4 bg-gray-50 dark:bg-gray-700 rounded">
+                <p class="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">Kullanılan Değerler:</p>
+                <div class="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+                    ${Object.entries(currentPrices)
+                        .filter(([key]) => formula.includes(key))
+                        .map(([key, value]) => `<div>${key} = ${value.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</div>`)
+                        .join('')}
+                </div>
+            </div>
+            
+            ${result.steps ? `
+                <div class="text-left mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded">
+                    <p class="text-xs font-medium text-blue-700 dark:text-blue-300 mb-2">Hesaplama Adımları:</p>
+                    <div class="text-xs font-mono text-blue-600 dark:text-blue-400 space-y-1">
+                        ${result.steps.map(step => `<div>${step}</div>`).join('')}
+                    </div>
+                </div>
+            ` : ''}
+        </div>
+    `;
+}
+
+function displayError(error) {
+    const container = document.getElementById('resultContainer');
+    
+    container.innerHTML = `
+        <div class="p-4 bg-red-50 dark:bg-red-900/20 rounded">
+            <p class="text-red-800 dark:text-red-300">
+                <i class="fas fa-exclamation-circle mr-2"></i>
+                ${error}
+            </p>
+        </div>
+    `;
+}
+
+function addToHistory(formula, variables, result) {
+    const historyItem = {
+        formula: formula,
+        variables: variables,
+        result: result.value,
+        timestamp: new Date()
+    };
+    
+    history.unshift(historyItem);
+    history = history.slice(0, 10); // Keep last 10
+    
+    updateHistoryDisplay();
+}
+
+function updateHistoryDisplay() {
+    const container = document.getElementById('historyContainer');
+    
+    if (history.length === 0) {
+        container.innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400">Henüz hesaplama yapılmadı</p>';
+        return;
+    }
+    
+    container.innerHTML = history.map((item, index) => `
+        <div class="p-3 bg-gray-50 dark:bg-gray-700 rounded hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer"
+             onclick="loadFromHistory(${index})">
+            <div class="flex justify-between items-start">
+                <div class="flex-1">
+                    <p class="text-sm font-mono text-gray-900 dark:text-white">${item.formula}</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        = ${item.result.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺
+                    </p>
+                </div>
+                <span class="text-xs text-gray-400 dark:text-gray-500">
+                    ${item.timestamp.toLocaleTimeString('tr-TR')}
+                </span>
+            </div>
+        </div>
+    `).join('');
+}
+
+function loadFromHistory(index) {
+    const item = history[index];
+    if (!item) return;
+    
+    document.getElementById('formula').value = item.formula;
+    currentPrices = item.variables;
+    
+    calculate();
+}
+
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `fixed top-4 right-4 px-4 py-2 rounded-lg text-white z-50 ${
+        type === 'success' ? 'bg-green-600' : 
+        type === 'error' ? 'bg-red-600' : 'bg-blue-600'
+    }`;
+    toast.textContent = message;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+}
+</script>

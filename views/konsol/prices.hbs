@@ -1,0 +1,400 @@
+<!-- Page Header -->
+<div class="mb-6">
+    <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Canlı Fiyatlar</h2>
+    <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+        Socket.io ile gerçek zamanlı fiyat güncellemeleri
+    </p>
+</div>
+
+<!-- Source Selection -->
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow mb-4 p-4">
+    <div class="flex items-center justify-between">
+        <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Veri Kaynağı</label>
+            <select id="sourceSelector" class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                {{#each sources}}
+                <option value="{{this._id}}" {{#if (eq this._id ../selectedSourceId)}}selected{{/if}}>
+                    {{this.displayName}} ({{this.count}} fiyat)
+                </option>
+                {{/each}}
+            </select>
+        </div>
+        <div class="text-right">
+            <div class="flex items-center space-x-2">
+                <span class="text-sm text-green-600 dark:text-green-400">
+                    <i class="fas fa-wifi mr-1"></i>Canlı Fiyatlar
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Auto Refresh Control -->
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow mb-4 p-4">
+    <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-4">
+            <label class="flex items-center">
+                <input type="checkbox" id="autoRefresh" checked class="rounded border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500">
+                <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Otomatik Yenile</span>
+            </label>
+            
+            <select id="refreshInterval" class="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                <option value="5000">5 saniye</option>
+                <option value="10000">10 saniye</option>
+                <option value="30000" selected>30 saniye</option>
+                <option value="60000">1 dakika</option>
+            </select>
+        </div>
+        
+        <div class="flex items-center space-x-2">
+            <span class="text-sm text-gray-500 dark:text-gray-400">Son Güncelleme:</span>
+            <span id="lastUpdate" class="text-sm font-medium text-gray-900 dark:text-white">-</span>
+            <button onclick="refreshPrices()" class="px-3 py-1 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700">
+                <i class="fas fa-sync-alt mr-1"></i>Yenile
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Prices Grid -->
+<div id="pricesContainer" class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+    <!-- Loading State -->
+    <div class="col-span-full text-center py-12">
+        <i class="fas fa-spinner fa-spin text-4xl text-gray-400 mb-4"></i>
+        <p class="text-gray-600 dark:text-gray-400">Fiyatlar yükleniyor...</p>
+    </div>
+</div>
+
+<!-- Price Details Modal -->
+<div id="priceModal" class="fixed inset-0 bg-gray-600 bg-opacity-75 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-lg w-full">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                        <span id="modalProductName">Ürün Detayı</span>
+                    </h3>
+                    <button onclick="closePriceModal()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div id="modalContent" class="space-y-4">
+                    <!-- Content will be populated dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let refreshTimer;
+let pricesData = [];
+let selectedSourceId = '{{selectedSourceId}}';
+
+document.addEventListener('DOMContentLoaded', function() {
+    // If no source is selected from settings, select the first available source
+    if (!selectedSourceId || selectedSourceId === '') {
+        const firstOption = document.querySelector('#sourceSelector option');
+        if (firstOption) {
+            selectedSourceId = firstOption.value;
+            document.getElementById('sourceSelector').value = selectedSourceId;
+            
+            // Save the default selection
+            if (selectedSourceId) {
+                fetch('/konsol/api/price-source', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ sourceId: selectedSourceId })
+                }).catch(error => {
+                    console.error('Error saving default source:', error);
+                });
+            }
+        }
+    }
+    
+    // Source selector change
+    document.getElementById('sourceSelector').addEventListener('change', async function() {
+        const newSourceId = this.value;
+        selectedSourceId = newSourceId;
+        
+        // Save to settings
+        try {
+            await fetch('/konsol/api/price-source', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ sourceId: newSourceId })
+            });
+        } catch (error) {
+            console.error('Error saving source:', error);
+        }
+        
+        // Refresh prices with new source
+        refreshPrices();
+    });
+    
+    // Initial load
+    refreshPrices();
+    
+    // Setup auto refresh
+    setupAutoRefresh();
+    
+    // Auto refresh toggle
+    document.getElementById('autoRefresh').addEventListener('change', setupAutoRefresh);
+    document.getElementById('refreshInterval').addEventListener('change', setupAutoRefresh);
+});
+
+function setupAutoRefresh() {
+    clearInterval(refreshTimer);
+    
+    if (document.getElementById('autoRefresh').checked) {
+        const interval = parseInt(document.getElementById('refreshInterval').value);
+        refreshTimer = setInterval(refreshPrices, interval);
+    }
+}
+
+
+async function refreshPrices() {
+    try {
+        const url = selectedSourceId ? `/konsol/api/prices?sourceId=${selectedSourceId}` : '/konsol/api/prices';
+        
+        const response = await fetch(url);
+        const result = await response.json();
+        
+        if (result.success) {
+            pricesData = result.data.products;
+            displayPrices(result.data.products);
+            updateLastUpdate();
+        }
+    } catch (error) {
+        console.error('Error loading prices:', error);
+        document.getElementById('pricesContainer').innerHTML = `
+            <div class="col-span-full bg-red-50 dark:bg-red-900/20 rounded-lg p-4">
+                <div class="flex items-center text-red-800 dark:text-red-300">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                    <span>Fiyatlar yüklenirken hata oluştu</span>
+                </div>
+            </div>
+        `;
+    }
+}
+
+function displayPrices(products) {
+    if (!products || products.length === 0) {
+        document.getElementById('pricesContainer').innerHTML = `
+            <div class="col-span-full bg-gray-100 dark:bg-gray-700 rounded-lg p-8 text-center">
+                <i class="fas fa-box-open text-4xl text-gray-400 mb-4"></i>
+                <p class="text-gray-600 dark:text-gray-400">Gösterilecek ürün bulunamadı</p>
+            </div>
+        `;
+        return;
+    }
+    
+    console.log('Displaying products:', products.length, products);
+    
+    // Sort products by section displayOrder, then product displayOrder
+    products.sort((a, b) => {
+        const aSectionOrder = a.section?.displayOrder || 999;
+        const bSectionOrder = b.section?.displayOrder || 999;
+        
+        if (aSectionOrder !== bSectionOrder) {
+            return aSectionOrder - bSectionOrder;
+        }
+        
+        const aProductOrder = a.displayOrder || 999;
+        const bProductOrder = b.displayOrder || 999;
+        
+        if (aProductOrder !== bProductOrder) {
+            return aProductOrder - bProductOrder;
+        }
+        
+        return a.name.localeCompare(b.name, 'tr');
+    });
+    
+    // Group by section
+    const grouped = {};
+    products.forEach(product => {
+        const sectionName = product.section ? product.section.name : 'Diğer';
+        if (!grouped[sectionName]) {
+            grouped[sectionName] = {
+                section: product.section,
+                products: []
+            };
+        }
+        grouped[sectionName].products.push(product);
+    });
+    
+    // Sort sections by displayOrder
+    const sortedSections = Object.entries(grouped).sort((a, b) => {
+        const aSectionOrder = a[1].section?.displayOrder || 999;
+        const bSectionOrder = b[1].section?.displayOrder || 999;
+        
+        if (aSectionOrder !== bSectionOrder) {
+            return aSectionOrder - bSectionOrder;
+        }
+        
+        return a[0].localeCompare(b[0], 'tr');
+    });
+    
+    // Generate HTML
+    let html = '';
+    for (const [sectionName, data] of sortedSections) {
+        const sectionConfig = data.section?.displayConfig || {};
+        
+        html += `
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
+                <div class="p-4 border-b dark:border-gray-700" style="background-color: ${sectionConfig.backgroundColor || 'transparent'}20">
+                    <h3 class="font-semibold text-gray-900 dark:text-white flex items-center">
+                        ${sectionConfig.icon ? `<i class="fas fa-${sectionConfig.icon} mr-2" style="color: ${sectionConfig.color || '#3B82F6'}"></i>` : ''}
+                        ${sectionName}
+                    </h3>
+                </div>
+                <div class="p-4 space-y-3">
+        `;
+        
+        data.products.forEach(product => {
+            const buyPrice = product.buyingPrice;
+            const sellPrice = product.sellingPrice;
+            const hasError = product.error;
+            
+            html += `
+                <div class="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
+                     onclick="showPriceDetails('${product._id}')">
+                    <div>
+                        <p class="font-medium text-gray-900 dark:text-white">${product.name}</p>
+                        ${product.productCode ? `<p class="text-xs text-gray-500 dark:text-gray-400">${product.productCode}</p>` : ''}
+                        <p class="text-xs text-gray-400">Son güncelleme: ${new Date(product.lastUpdate).toLocaleTimeString('tr-TR', { timeZone: 'Europe/Istanbul' })}</p>
+                    </div>
+                    <div class="text-right">
+                        ${hasError ? 
+                            `<div class="text-sm">
+                                <p class="text-red-600 dark:text-red-400 mb-1">
+                                    <i class="fas fa-exclamation-triangle mr-1"></i>Hesaplanamadı
+                                </p>
+                                <p class="text-xs text-gray-500">Fiyat verisi eksik</p>
+                            </div>` :
+                            `
+                            <p class="text-sm">
+                                <span class="text-gray-500 dark:text-gray-400">A:</span>
+                                <span class="font-medium text-green-600 dark:text-green-400">
+                                    ${buyPrice ? buyPrice.toLocaleString('tr-TR', { 
+                                        minimumFractionDigits: product.buyingDecimalPlaces || 2, 
+                                        maximumFractionDigits: product.buyingDecimalPlaces || 2 
+                                    }) : '-'} ₺
+                                </span>
+                            </p>
+                            <p class="text-sm">
+                                <span class="text-gray-500 dark:text-gray-400">S:</span>
+                                <span class="font-medium text-red-600 dark:text-red-400">
+                                    ${sellPrice ? sellPrice.toLocaleString('tr-TR', { 
+                                        minimumFractionDigits: product.sellingDecimalPlaces || 2, 
+                                        maximumFractionDigits: product.sellingDecimalPlaces || 2 
+                                    }) : '-'} ₺
+                                </span>
+                            </p>
+                            `
+                        }
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += `
+                </div>
+            </div>
+        `;
+    }
+    
+    document.getElementById('pricesContainer').innerHTML = html;
+}
+
+function updateLastUpdate() {
+    const now = new Date();
+    const timeString = now.toLocaleTimeString('tr-TR', { timeZone: 'Europe/Istanbul' });
+    document.getElementById('lastUpdate').textContent = timeString;
+}
+
+function showPriceDetails(productId) {
+    const product = pricesData.find(p => p._id === productId);
+    if (!product) return;
+    
+    document.getElementById('modalProductName').textContent = product.name;
+    
+    let content = `
+        <div class="space-y-3">
+            <div>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Ürün Kodu</p>
+                <p class="text-sm font-medium text-gray-900 dark:text-white">${product.productCode || '-'}</p>
+            </div>
+            
+            ${product.section ? `
+            <div>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Kategori</p>
+                <p class="text-sm font-medium text-gray-900 dark:text-white">${product.section.name}</p>
+            </div>
+            ` : ''}
+            
+            <div class="grid grid-cols-2 gap-4 pt-3 border-t dark:border-gray-700">
+                <div>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Alış Fiyatı</p>
+                    <p class="text-lg font-bold text-green-600 dark:text-green-400">
+                        ${product.buyingPrice ? 
+                            product.buyingPrice.toLocaleString('tr-TR', { 
+                                minimumFractionDigits: product.buyingDecimalPlaces || 2, 
+                                maximumFractionDigits: product.buyingDecimalPlaces || 2 
+                            }) + ' ₺' : 
+                            '-'}
+                    </p>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Satış Fiyatı</p>
+                    <p class="text-lg font-bold text-red-600 dark:text-red-400">
+                        ${product.sellingPrice ? 
+                            product.sellingPrice.toLocaleString('tr-TR', { 
+                                minimumFractionDigits: product.sellingDecimalPlaces || 2, 
+                                maximumFractionDigits: product.sellingDecimalPlaces || 2 
+                            }) + ' ₺' : 
+                            '-'}
+                    </p>
+                </div>
+            </div>
+            
+            <div class="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded">
+                <p class="text-xs text-gray-500 dark:text-gray-400">Son Güncelleme</p>
+                <p class="text-sm text-blue-800 dark:text-blue-300">
+                    ${new Date(product.lastUpdate).toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul' })}
+                </p>
+            </div>
+            
+            ${product.error ? 
+                `<div class="mt-3 p-3 bg-red-50 dark:bg-red-900/20 rounded">
+                    <p class="text-sm text-red-800 dark:text-red-300">
+                        <i class="fas fa-exclamation-circle mr-1"></i>
+                        ${product.error}
+                    </p>
+                </div>` : ''
+            }
+        </div>
+    `;
+    
+    document.getElementById('modalContent').innerHTML = content;
+    document.getElementById('priceModal').classList.remove('hidden');
+}
+
+function closePriceModal() {
+    document.getElementById('priceModal').classList.add('hidden');
+}
+
+
+// Close modal on backdrop click
+document.getElementById('priceModal').addEventListener('click', (e) => {
+    if (e.target.id === 'priceModal') {
+        closePriceModal();
+    }
+});
+
+</script>

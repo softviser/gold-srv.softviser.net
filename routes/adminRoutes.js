@@ -2134,6 +2134,271 @@ module.exports = (db) => {
     }
   });
 
+  // === TOKEN KULLANICI YÖNETİMİ ===
+  
+  // Token için kullanıcıları listele (API endpoint)
+  router.get('/api/tokens/:tokenId/users', authenticateSession, requireAdmin, async (req, res) => {
+    try {
+      const { ObjectId } = require('mongodb');
+      const JmonUser = require('../models/JmonUser');
+      const ApiToken = require('../models/ApiToken');
+      
+      const jmonUser = new JmonUser(db);
+      const apiToken = new ApiToken(db);
+      
+      const tokenId = req.params.tokenId;
+      
+      if (!ObjectId.isValid(tokenId)) {
+        return res.status(400).json({ success: false, error: 'Geçersiz token ID' });
+      }
+      
+      // Token'ı bul
+      const token = await apiToken.collection.findOne({ _id: new ObjectId(tokenId) });
+      
+      if (!token) {
+        return res.status(404).json({ success: false, error: 'Token bulunamadı' });
+      }
+      
+      // Bu token ile ilişkili kullanıcıları bul (tokenId kullan)
+      const users = await jmonUser.findByTokenId(tokenId);
+      
+      res.json({
+        success: true,
+        data: {
+          token: {
+            _id: token._id,
+            name: token.name,
+            domain: token.domain,
+            maskedToken: token.token ? token.token.substring(0, 8) + '...' + token.token.slice(-4) : ''
+          },
+          users: users,
+          totalUsers: users.length
+        }
+      });
+      
+    } catch (error) {
+      console.error('Token kullanıcıları listesi hatası:', error);
+      res.status(500).json({ success: false, error: 'Kullanıcı listesi alınamadı' });
+    }
+  });
+  
+  // Token için yeni kullanıcı oluştur
+  router.post('/api/tokens/:tokenId/users', authenticateSession, requireAdmin, async (req, res) => {
+    try {
+      const { ObjectId } = require('mongodb');
+      const JmonUser = require('../models/JmonUser');
+      const ApiToken = require('../models/ApiToken');
+      
+      const jmonUser = new JmonUser(db);
+      const apiToken = new ApiToken(db);
+      
+      const tokenId = req.params.tokenId;
+      
+      if (!ObjectId.isValid(tokenId)) {
+        return res.status(400).json({ success: false, error: 'Geçersiz token ID' });
+      }
+      
+      // Token'ı bul
+      const token = await apiToken.collection.findOne({ _id: new ObjectId(tokenId) });
+      
+      if (!token) {
+        return res.status(404).json({ success: false, error: 'Token bulunamadı' });
+      }
+      
+      const {
+        username,
+        password,
+        email,
+        permissions,
+        allowedChannels,
+        rateLimit,
+        expiresAt,
+        dashboardPreferences
+      } = req.body;
+      
+      if (!username || !password || !email) {
+        return res.status(400).json({
+          success: false,
+          error: 'Kullanıcı adı, şifre ve email gereklidir'
+        });
+      }
+      
+      // Kullanıcı verisini hazırla
+      const userData = {
+        tokenId: new ObjectId(tokenId), // API Token ID referansı
+        token: token.token, // Gerçek token değerini kullan
+        domain: token.domain,
+        username,
+        password,
+        email,
+        permissions: permissions || token.permissions || ['read'],
+        allowedChannels: allowedChannels || token.allowedChannels || ['*'],
+        rateLimit: rateLimit || token.rateLimit || {
+          requests: 1000,
+          window: 60
+        },
+        expiresAt: expiresAt ? new Date(expiresAt) : token.expiresAt,
+        dashboardPreferences: dashboardPreferences || {
+          theme: 'light',
+          language: 'tr',
+          timezone: 'Europe/Istanbul'
+        }
+      };
+      
+      const newUser = await jmonUser.create(userData);
+      
+      LoggerHelper.logSuccess('system', `Token için yeni kullanıcı oluşturuldu: ${username} for token ${token.name} by ${req.user.username}`);
+      
+      res.json({
+        success: true,
+        data: newUser,
+        message: 'Kullanıcı başarıyla oluşturuldu'
+      });
+      
+    } catch (error) {
+      console.error('Token kullanıcısı oluşturma hatası:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: error.message || 'Kullanıcı oluşturulamadı' 
+      });
+    }
+  });
+  
+  // Token kullanıcısını güncelle
+  router.put('/api/tokens/:tokenId/users/:userId', authenticateSession, requireAdmin, async (req, res) => {
+    try {
+      const { ObjectId } = require('mongodb');
+      const JmonUser = require('../models/JmonUser');
+      const ApiToken = require('../models/ApiToken');
+      
+      const jmonUser = new JmonUser(db);
+      const apiToken = new ApiToken(db);
+      
+      const tokenId = req.params.tokenId;
+      const userId = req.params.userId;
+      
+      if (!ObjectId.isValid(tokenId) || !ObjectId.isValid(userId)) {
+        return res.status(400).json({ success: false, error: 'Geçersiz token veya kullanıcı ID' });
+      }
+      
+      // Token'ı bul
+      const token = await apiToken.collection.findOne({ _id: new ObjectId(tokenId) });
+      
+      if (!token) {
+        return res.status(404).json({ success: false, error: 'Token bulunamadı' });
+      }
+      
+      // Kullanıcıyı bul ve token kontrolü yap
+      const user = await jmonUser.findById(userId);
+      
+      if (!user) {
+        return res.status(404).json({ success: false, error: 'Kullanıcı bulunamadı' });
+      }
+      
+      if (user.tokenId?.toString() !== tokenId) {
+        return res.status(400).json({ success: false, error: 'Bu kullanıcı bu token ile ilişkili değil' });
+      }
+      
+      const {
+        username,
+        email,
+        password,
+        permissions,
+        allowedChannels,
+        rateLimit,
+        isActive,
+        expiresAt,
+        dashboardPreferences
+      } = req.body;
+      
+      const updates = {};
+      if (username !== undefined) updates.username = username;
+      if (email !== undefined) updates.email = email;
+      if (password !== undefined) updates.password = password;
+      if (permissions !== undefined) updates.permissions = permissions;
+      if (allowedChannels !== undefined) updates.allowedChannels = allowedChannels;
+      if (rateLimit !== undefined) updates.rateLimit = rateLimit;
+      if (isActive !== undefined) updates.isActive = isActive;
+      if (expiresAt !== undefined) updates.expiresAt = expiresAt ? new Date(expiresAt) : null;
+      if (dashboardPreferences !== undefined) updates.dashboardPreferences = dashboardPreferences;
+      
+      const success = await jmonUser.update(userId, updates);
+      
+      if (success) {
+        LoggerHelper.logSuccess('system', `Token kullanıcısı güncellendi: ${user.username} for token ${token.name} by ${req.user.username}`);
+        
+        res.json({
+          success: true,
+          message: 'Kullanıcı başarıyla güncellendi'
+        });
+      } else {
+        res.status(400).json({
+          success: false,
+          error: 'Kullanıcı güncellenemedi'
+        });
+      }
+      
+    } catch (error) {
+      console.error('Token kullanıcısı güncelleme hatası:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: error.message || 'Kullanıcı güncellenemedi' 
+      });
+    }
+  });
+  
+  // Token kullanıcısını sil
+  router.delete('/api/tokens/:tokenId/users/:userId', authenticateSession, requireAdmin, async (req, res) => {
+    try {
+      const { ObjectId } = require('mongodb');
+      const JmonUser = require('../models/JmonUser');
+      const ApiToken = require('../models/ApiToken');
+      
+      const jmonUser = new JmonUser(db);
+      const apiToken = new ApiToken(db);
+      
+      const tokenId = req.params.tokenId;
+      const userId = req.params.userId;
+      
+      if (!ObjectId.isValid(tokenId) || !ObjectId.isValid(userId)) {
+        return res.status(400).json({ success: false, error: 'Geçersiz token veya kullanıcı ID' });
+      }
+      
+      // Token'ı bul
+      const token = await apiToken.collection.findOne({ _id: new ObjectId(tokenId) });
+      
+      if (!token) {
+        return res.status(404).json({ success: false, error: 'Token bulunamadı' });
+      }
+      
+      // Kullanıcıyı bul ve token kontrolü yap
+      const user = await jmonUser.findById(userId);
+      
+      if (!user) {
+        return res.status(404).json({ success: false, error: 'Kullanıcı bulunamadı' });
+      }
+      
+      if (user.tokenId?.toString() !== tokenId) {
+        return res.status(400).json({ success: false, error: 'Bu kullanıcı bu token ile ilişkili değil' });
+      }
+      
+      await jmonUser.delete(userId);
+      
+      LoggerHelper.logWarning('system', `Token kullanıcısı silindi: ${user.username} from token ${token.name} by ${req.user.username}`);
+      
+      res.json({
+        success: true,
+        message: 'Kullanıcı başarıyla silindi'
+      });
+      
+    } catch (error) {
+      console.error('Token kullanıcısı silme hatası:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'Kullanıcı silinirken hata oluştu' 
+      });
+    }
+  });
 
   // === API CONNECTION LOGS ===
   

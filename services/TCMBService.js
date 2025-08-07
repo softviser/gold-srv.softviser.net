@@ -5,6 +5,7 @@ const LoggerHelper = require('../utils/logger');
 const devLogger = require('../utils/devLogger');
 const cronLogger = require('../utils/cronLogger');
 const DateHelper = require('../utils/dateHelper');
+const settingsService = require('../utils/settingsService');
 
 class TCMBService {
   constructor(db) {
@@ -169,7 +170,9 @@ class TCMBService {
 
   async start() {
     if (this.isRunning) {
-      devLogger.info('TCMBService', '🟡 TCMB servisi zaten çalışıyor');
+      if (settingsService.shouldShowConsoleDebug()) {
+        devLogger.info('TCMBService', '🟡 TCMB servisi zaten çalışıyor');
+      }
       return;
     }
 
@@ -223,7 +226,9 @@ class TCMBService {
       this.updateInterval = null;
     }
     
-    devLogger.info('TCMBService', '🛑 TCMB servisi durduruldu');
+    if (settingsService.shouldShowConsoleDebug()) {
+      devLogger.info('TCMBService', '🛑 TCMB servisi durduruldu');
+    }
   }
 
   async loadSystemCurrencies() {
@@ -233,7 +238,9 @@ class TCMBService {
       }).toArray();
       
       this.allowedSymbols = new Set(systemCurrencies.map(curr => curr.symbol));
-      devLogger.info('TCMBService', `✅ ${this.allowedSymbols.size} adet sistem currency yüklendi`);
+      if (settingsService.shouldShowConsoleDebug()) {
+        devLogger.info('TCMBService', `✅ ${this.allowedSymbols.size} adet sistem currency yüklendi`);
+      }
     } catch (error) {
       devLogger.error('TCMBService', '❌ Sistem currencies yükleme hatası:', error);
       this.allowedSymbols = new Set();
@@ -263,17 +270,23 @@ class TCMBService {
         this.currencyMapping[mapping.sourceField] = mapping.targetSymbol;
       });
 
-      devLogger.info('TCMBService', `✅ ${mappings.length} adet mapping veritabanından yüklendi:`, this.currencyMapping);
+      if (settingsService.shouldShowConsoleDebug()) {
+        devLogger.info('TCMBService', `✅ ${mappings.length} adet mapping veritabanından yüklendi:`, this.currencyMapping);
+      }
     } catch (error) {
       devLogger.error('TCMBService', '❌ Database mappings yükleme hatası:', error);
       // Hata durumunda varsayılan mapping'leri kullan
-      devLogger.info('TCMBService', '⚠️ Varsayılan mapping\'ler kullanılacak');
+      if (settingsService.shouldShowConsoleDebug()) {
+        devLogger.info('TCMBService', '⚠️ Varsayılan mapping\'ler kullanılacak');
+      }
     }
   }
 
   async updatePrices() {
     const startTime = Date.now();
-    devLogger.info('TCMBService', '🔄 TCMB veri güncellemesi başladı...');
+    if (settingsService.shouldShowConsoleDebug()) {
+      devLogger.info('TCMBService', '🔄 TCMB veri güncellemesi başladı...');
+    }
 
     try {
       // TCMB XML'i çek
@@ -301,7 +314,9 @@ class TCMBService {
       const date = result.Tarih_Date.$.Date;
       const bultenNo = result.Tarih_Date.$.Bulten_No;
       
-      devLogger.info('TCMBService', `📅 TCMB Kurları - Tarih: ${date}, Bülten: ${bultenNo}`);
+      if (settingsService.shouldShowConsoleDebug()) {
+        devLogger.info('TCMBService', `📅 TCMB Kurları - Tarih: ${date}, Bülten: ${bultenNo}`);
+      }
 
       let processedCount = 0;
       let skippedCount = 0;
@@ -317,7 +332,9 @@ class TCMBService {
 
         // Sistem currency'de tanımlı olup olmadığını kontrol et
         if (!this.allowedSymbols || !this.allowedSymbols.has(systemSymbol)) {
-          devLogger.info('TCMBService', `⚠️ ${systemSymbol} sistem currency'de tanımlı değil, atlanıyor`);
+          if (settingsService.shouldShowConsoleDebug()) {
+            devLogger.info('TCMBService', `⚠️ ${systemSymbol} sistem currency'de tanımlı değil, atlanıyor`);
+          }
           skippedCount++;
           continue;
         }
@@ -385,7 +402,9 @@ class TCMBService {
 
       // Geçersiz fiyatları kontrol et
       if (buyPrice === 0 || sellPrice === 0) {
-        devLogger.info('TCMBService', `⚠️ ${systemSymbol} için geçersiz fiyat, atlanıyor`);
+        if (settingsService.shouldShowConsoleDebug()) {
+          devLogger.info('TCMBService', `⚠️ ${systemSymbol} için geçersiz fiyat, atlanıyor`);
+        }
         return;
       }
 
@@ -555,7 +574,9 @@ class TCMBService {
         };
 
         const result = await this.db.collection('sources').insertOne(sourceDoc);
-        devLogger.info('TCMBService', `✅ TCMB kaynağı oluşturuldu: ${result.insertedId}`);
+        if (settingsService.shouldShowConsoleDebug()) {
+          devLogger.info('TCMBService', `✅ TCMB kaynağı oluşturuldu: ${result.insertedId}`);
+        }
       } else {
         // Source'u aktif et
         await this.db.collection('sources').updateOne(
@@ -567,7 +588,9 @@ class TCMBService {
             } 
           }
         );
-        devLogger.info('TCMBService', '✅ TCMB kaynağı mevcut ve aktif edildi');
+        if (settingsService.shouldShowConsoleDebug()) {
+          devLogger.info('TCMBService', '✅ TCMB kaynağı mevcut ve aktif edildi');
+        }
       }
     } catch (error) {
       devLogger.error('TCMBService', '❌ TCMB kaynağı oluşturma hatası:', error);

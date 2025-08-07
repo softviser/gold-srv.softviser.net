@@ -1,5 +1,6 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
+const settingsService = require('../utils/settingsService');
 
 class PriceDataService {
   constructor(db, dataEmitter) {
@@ -34,7 +35,9 @@ class PriceDataService {
 
   // Ana başlatma fonksiyonu
   start() {
-    console.log('[PriceDataService] Veri toplama servisi başlatılıyor...');
+    if (settingsService.shouldShowConsoleDebug()) {
+      console.log('[PriceDataService] Veri toplama servisi başlatılıyor...');
+    }
     
     // İlk veri çekimi
     this.fetchAllData();
@@ -129,7 +132,9 @@ class PriceDataService {
 
     if (rateData.length > 0) {
       const result = await this.currencyRate.bulkCreate(rateData);
-      console.log(`[PriceDataService] ExchangeRate-API: ${result.insertedCount} kur güncellendi`);
+      if (settingsService.shouldShowConsoleDebug()) {
+        console.log(`[PriceDataService] ExchangeRate-API: ${result.insertedCount} kur güncellendi`);
+      }
       
       // Socket broadcast
       this.broadcastCurrencyRates(rateData);
@@ -184,7 +189,9 @@ class PriceDataService {
 
     if (rateData.length > 0) {
       const result = await this.currencyRate.bulkCreate(rateData);
-      console.log(`[PriceDataService] Fixer: ${result.insertedCount} kur güncellendi`);
+      if (settingsService.shouldShowConsoleDebug()) {
+        console.log(`[PriceDataService] Fixer: ${result.insertedCount} kur güncellendi`);
+      }
       
       // Socket broadcast
       this.broadcastCurrencyRates(rateData);
@@ -200,7 +207,9 @@ class PriceDataService {
       const xml = response.data;
       
       // XML parsing burada yapılacak (xml2js kullanılabilir)
-      console.log('[PriceDataService] TCMB verileri alındı');
+      if (settingsService.shouldShowConsoleDebug()) {
+        console.log('[PriceDataService] TCMB verileri alındı');
+      }
       
     } catch (error) {
       console.error('[PriceDataService] TCMB hatası:', error.message);
@@ -240,7 +249,9 @@ class PriceDataService {
       const $ = cheerio.load(response.data);
       
       // HAS web sitesinden fiyat çekme logic'i burada olacak
-      console.log('[PriceDataService] HAS fiyatları kontrol edildi');
+      if (settingsService.shouldShowConsoleDebug()) {
+        console.log('[PriceDataService] HAS fiyatları kontrol edildi');
+      }
       
     } catch (error) {
       console.error('[PriceDataService] HAS web scraping hatası:', error.message);
@@ -269,7 +280,9 @@ class PriceDataService {
 
         if (priceData.length > 0) {
           const result = await this.goldPrice.bulkCreate(priceData);
-          console.log(`[PriceDataService] GoldPrice.org: ${result.insertedCount} altın fiyatı güncellendi`);
+          if (settingsService.shouldShowConsoleDebug()) {
+            console.log(`[PriceDataService] GoldPrice.org: ${result.insertedCount} altın fiyatı güncellendi`);
+          }
           
           // Socket broadcast
           this.broadcastGoldPrices(priceData);
@@ -283,7 +296,9 @@ class PriceDataService {
   // Investing.com altın (web scraping)
   async fetchInvestingGold() {
     // Web scraping logic burada olacak
-    console.log('[PriceDataService] Investing.com altın fiyatları kontrol edildi');
+    if (settingsService.shouldShowConsoleDebug()) {
+      console.log('[PriceDataService] Investing.com altın fiyatları kontrol edildi');
+    }
   }
 
   // SOCKET BROADCAST
@@ -317,7 +332,9 @@ class PriceDataService {
 
   // Servis durdur
   stop() {
-    console.log('[PriceDataService] Veri toplama servisi durduruluyor...');
+    if (settingsService.shouldShowConsoleDebug()) {
+      console.log('[PriceDataService] Veri toplama servisi durduruluyor...');
+    }
     // Interval'ları temizle
   }
 }

@@ -463,6 +463,14 @@ class DateHelper {
   }
 
   /**
+   * MongoDB için şu anki zamanı döndürür (JmonSettings için)
+   * @returns {Date}
+   */
+  static getNow() {
+    return new Date();
+  }
+
+  /**
    * MongoDB için timezone-aware tarih oluşturur
    * MongoDB UTC olarak saklasa da, local timezone saatini UTC gibi kaydeder
    * @returns {Date} - Local timezone saatini UTC olarak gösteren Date objesi

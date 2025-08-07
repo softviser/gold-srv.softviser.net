@@ -188,7 +188,13 @@ const LoggerHelper = {
   
   // Price update logu
   logPriceUpdate(source, symbol, buyPrice, sellPrice, changePercent) {
+    // Check if logging is enabled globally
     if (!settingsService.shouldLogPriceUpdates()) {
+      return;
+    }
+    
+    // If developer mode is enabled, respect the price change notification setting
+    if (settingsService.isDevModeEnabled() && !settingsService.shouldShowPriceChangeNotifications()) {
       return;
     }
     
@@ -211,6 +217,11 @@ const LoggerHelper = {
   
   // Connection logu
   logConnection(source, status, message = '') {
+    // If developer mode is enabled, respect the console debug setting
+    if (settingsService.isDevModeEnabled() && !settingsService.shouldShowConsoleDebug()) {
+      return;
+    }
+    
     const sourceLogger = this.getSourceLogger(source);
     const statusIcon = status === 'connected' ? '🟢' : status === 'disconnected' ? '🔴' : '🟡';
     const logMessage = `${statusIcon} ${status.toUpperCase()} ${message}`;
@@ -284,6 +295,11 @@ const LoggerHelper = {
   
   // Success logu
   logSuccess(source, message) {
+    // If developer mode is enabled, respect the console debug setting
+    if (settingsService.isDevModeEnabled() && !settingsService.shouldShowConsoleDebug()) {
+      return;
+    }
+    
     const sourceLogger = this.getSourceLogger(source);
     const logMessage = `✅ ${message}`;
     sourceLogger.info(logMessage);
@@ -297,6 +313,11 @@ const LoggerHelper = {
   
   // Data processing logu
   logDataProcessing(source, processedCount, errorCount, duration) {
+    // If developer mode is enabled, respect the console debug setting
+    if (settingsService.isDevModeEnabled() && !settingsService.shouldShowConsoleDebug()) {
+      return;
+    }
+    
     const sourceLogger = this.getSourceLogger(source);
     const logMessage = `📊 Veri işleme tamamlandı: ${processedCount} başarılı, ${errorCount} hata (${duration}ms)`;
     sourceLogger.info(logMessage);
@@ -401,6 +422,16 @@ const LoggerHelper = {
     
     // Son N satırı al
     return allLines.slice(-lines);
+  },
+  
+  // Basit error metodu (geriye uyumluluk için)
+  error(message, errorObj = null) {
+    if (errorObj) {
+      this.logError('system', errorObj, message);
+    } else {
+      const sourceLogger = this.getSourceLogger('system');
+      sourceLogger.error(`❌ ${message}`);
+    }
   }
 };
 

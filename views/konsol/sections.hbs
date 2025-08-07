@@ -1,0 +1,319 @@
+<!-- Page Header -->
+<div class="mb-6 flex items-center justify-between">
+    <div>
+        <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Section Yönetimi</h2>
+        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Ürün gruplarınızı yönetin</p>
+    </div>
+    <button onclick="openCreateModal()" class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
+        <i class="fas fa-plus mr-2"></i>Yeni Section
+    </button>
+</div>
+
+<!-- Sections Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    {{#each sections}}
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow" data-section-id="{{this._id}}">
+        <div class="p-6">
+            <!-- Section Header -->
+            <div class="flex items-start justify-between mb-4">
+                <div class="flex-1">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{this.name}}</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">{{this.description}}</p>
+                </div>
+                <div class="flex items-center space-x-2">
+                    {{#if this.isDefault}}
+                    <span class="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400 rounded-full">
+                        Varsayılan
+                    </span>
+                    {{/if}}
+                    {{#if this.isActive}}
+                    <span class="px-2 py-1 text-xs bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 rounded-full">
+                        Aktif
+                    </span>
+                    {{else}}
+                    <span class="px-2 py-1 text-xs bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400 rounded-full">
+                        Pasif
+                    </span>
+                    {{/if}}
+                </div>
+            </div>
+            
+            <!-- Section Info -->
+            <div class="space-y-2 text-sm">
+                <div class="flex justify-between">
+                    <span class="text-gray-500 dark:text-gray-400">Kategori:</span>
+                    <span class="text-gray-900 dark:text-white">{{this.category}}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-500 dark:text-gray-400">Sıra:</span>
+                    <span class="text-gray-900 dark:text-white">{{this.displayOrder}}</span>
+                </div>
+                {{#if this.sectionCode}}
+                <div class="flex justify-between">
+                    <span class="text-gray-500 dark:text-gray-400">Kod:</span>
+                    <span class="font-mono text-xs text-gray-900 dark:text-white">{{this.sectionCode}}</span>
+                </div>
+                {{/if}}
+            </div>
+            
+            <!-- Display Config Preview -->
+            {{#if this.displayConfig}}
+            <div class="mt-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <div class="flex items-center space-x-2">
+                    {{#if this.displayConfig.icon}}
+                    <i class="fas fa-{{this.displayConfig.icon}}" style="color: {{this.displayConfig.color}}"></i>
+                    {{/if}}
+                    <span class="text-xs text-gray-600 dark:text-gray-400">Görüntü Ayarları</span>
+                </div>
+                {{#if this.displayConfig.backgroundColor}}
+                <div class="mt-2 h-4 rounded" style="background-color: {{this.displayConfig.backgroundColor}}"></div>
+                {{/if}}
+            </div>
+            {{/if}}
+            
+            <!-- Actions -->
+            <div class="mt-4 flex space-x-2">
+                <button onclick="editSection('{{this._id}}')" class="flex-1 px-3 py-1 text-sm bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 rounded hover:bg-blue-200 dark:hover:bg-blue-900/30 transition-colors">
+                    <i class="fas fa-edit mr-1"></i>Düzenle
+                </button>
+                <button onclick="deleteSection('{{this._id}}')" class="flex-1 px-3 py-1 text-sm bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400 rounded hover:bg-red-200 dark:hover:bg-red-900/30 transition-colors">
+                    <i class="fas fa-trash mr-1"></i>Sil
+                </button>
+            </div>
+        </div>
+    </div>
+    {{/each}}
+</div>
+
+{{#unless sections.length}}
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow p-8 text-center">
+    <i class="fas fa-layer-group text-4xl text-gray-400 mb-4"></i>
+    <p class="text-gray-600 dark:text-gray-400">Henüz section eklenmemiş</p>
+    <button onclick="openCreateModal()" class="mt-4 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
+        <i class="fas fa-plus mr-2"></i>İlk Section'ı Ekle
+    </button>
+</div>
+{{/unless}}
+
+<!-- Create/Edit Modal -->
+<div id="sectionModal" class="fixed inset-0 bg-gray-600 bg-opacity-75 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                    <span id="modalTitle">Yeni Section</span>
+                </h3>
+                
+                <form id="sectionForm" class="space-y-4">
+                    <input type="hidden" id="sectionId" name="sectionId">
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                Section Adı *
+                            </label>
+                            <input type="text" id="name" name="name" required
+                                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                Section Kodu
+                            </label>
+                            <input type="text" id="sectionCode" name="sectionCode"
+                                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Açıklama
+                        </label>
+                        <textarea id="description" name="description" rows="2"
+                                  class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500"></textarea>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                Kategori
+                            </label>
+                            <select id="category" name="category"
+                                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500">
+                                <option value="general">Genel</option>
+                                <option value="gold">Altın</option>
+                                <option value="currency">Döviz</option>
+                                <option value="crypto">Kripto</option>
+                                <option value="custom">Özel</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                Görüntüleme Sırası
+                            </label>
+                            <input type="number" id="displayOrder" name="displayOrder" value="1"
+                                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500">
+                        </div>
+                    </div>
+                    
+                    <!-- Display Config -->
+                    <div class="border-t dark:border-gray-700 pt-4">
+                        <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Görüntü Ayarları</h4>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">İkon</label>
+                                <input type="text" id="icon" name="icon" placeholder="fa-icon-name"
+                                       class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Renk</label>
+                                <input type="color" id="color" name="color" value="#3B82F6"
+                                       class="w-full h-10 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Arkaplan Rengi</label>
+                                <input type="color" id="backgroundColor" name="backgroundColor" value="#EFF6FF"
+                                       class="w-full h-10 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Checkboxes -->
+                    <div class="flex space-x-4">
+                        <label class="flex items-center">
+                            <input type="checkbox" id="isActive" name="isActive" checked
+                                   class="rounded border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500">
+                            <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Aktif</span>
+                        </label>
+                        
+                        <label class="flex items-center">
+                            <input type="checkbox" id="isDefault" name="isDefault"
+                                   class="rounded border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500">
+                            <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Varsayılan</span>
+                        </label>
+                    </div>
+                    
+                    <!-- Modal Actions -->
+                    <div class="flex justify-end space-x-2 pt-4 border-t dark:border-gray-700">
+                        <button type="button" onclick="closeModal()"
+                                class="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                            İptal
+                        </button>
+                        <button type="submit"
+                                class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
+                            <i class="fas fa-save mr-2"></i>Kaydet
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function openCreateModal() {
+    document.getElementById('sectionModal').classList.remove('hidden');
+    document.getElementById('modalTitle').textContent = 'Yeni Section';
+    document.getElementById('sectionForm').reset();
+    document.getElementById('sectionId').value = '';
+}
+
+function closeModal() {
+    document.getElementById('sectionModal').classList.add('hidden');
+}
+
+async function editSection(id) {
+    try {
+        const response = await fetch(`/konsol/api/sections/${id}`);
+        const result = await response.json();
+        
+        if (result.success) {
+            const section = result.data;
+            
+            // Populate form
+            document.getElementById('sectionModal').classList.remove('hidden');
+            document.getElementById('modalTitle').textContent = 'Section Düzenle';
+            document.getElementById('sectionId').value = section._id;
+            document.getElementById('name').value = section.name || '';
+            document.getElementById('sectionCode').value = section.sectionCode || '';
+            document.getElementById('description').value = section.description || '';
+            document.getElementById('category').value = section.category || 'general';
+            document.getElementById('displayOrder').value = section.displayOrder || 1;
+            document.getElementById('isActive').checked = section.isActive;
+            document.getElementById('isDefault').checked = section.isDefault;
+            
+            // Display config
+            if (section.displayConfig) {
+                document.getElementById('icon').value = section.displayConfig.icon || '';
+                document.getElementById('color').value = section.displayConfig.color || '#3B82F6';
+                document.getElementById('backgroundColor').value = section.displayConfig.backgroundColor || '#EFF6FF';
+            }
+        }
+    } catch (error) {
+        console.error('Error fetching section:', error);
+        alert('Section bilgileri yüklenirken hata oluştu');
+    }
+}
+
+async function deleteSection(id) {
+    if (confirm('Bu section\'ı silmek istediğinize emin misiniz?')) {
+        try {
+            const response = await fetch(`/konsol/api/sections/${id}`, {
+                method: 'DELETE'
+            });
+            const result = await response.json();
+            
+            if (result.success) {
+                location.reload();
+            } else {
+                alert(result.error || 'Silme işlemi başarısız');
+            }
+        } catch (error) {
+            console.error('Error deleting section:', error);
+            alert('Silme işlemi sırasında hata oluştu');
+        }
+    }
+}
+
+// Form submit
+document.getElementById('sectionForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData);
+    data.isActive = formData.has('isActive');
+    data.isDefault = formData.has('isDefault');
+    
+    try {
+        const response = await fetch('/konsol/api/sections', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            location.reload();
+        } else {
+            alert(result.error || 'Kaydetme işlemi başarısız');
+        }
+    } catch (error) {
+        console.error('Error saving section:', error);
+        alert('Kaydetme işlemi sırasında hata oluştu');
+    }
+});
+
+// Close modal on backdrop click
+document.getElementById('sectionModal').addEventListener('click', (e) => {
+    if (e.target.id === 'sectionModal') {
+        closeModal();
+    }
+});
+</script>

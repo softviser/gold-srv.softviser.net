@@ -3,6 +3,7 @@ const { ObjectId } = require('mongodb');
 const LoggerHelper = require('../utils/logger');
 const devLogger = require('../utils/devLogger');
 const DateHelper = require('../utils/dateHelper');
+const settingsService = require('../utils/settingsService');
 
 class HaremAltinService {
   constructor(db) {
@@ -97,7 +98,9 @@ class HaremAltinService {
 
   async start() {
     if (this.isRunning) {
-      devLogger.info('HaremAltinService', '🟡 Harem Altın servisi zaten çalışıyor');
+      if (settingsService.shouldShowConsoleDebug()) {
+        devLogger.info('HaremAltinService', '🟡 Harem Altın servisi zaten çalışıyor');
+      }
       return;
     }
 
@@ -121,7 +124,9 @@ class HaremAltinService {
       }).toArray();
       
       this.allowedSymbols = new Set(systemCurrencies.map(curr => curr.symbol));
-      devLogger.info('HaremAltinService', `✅ ${this.allowedSymbols.size} adet sistem currency yüklendi`);
+      if (settingsService.shouldShowConsoleDebug()) {
+        devLogger.info('HaremAltinService', `✅ ${this.allowedSymbols.size} adet sistem currency yüklendi`);
+      }
     } catch (error) {
       devLogger.error('HaremAltinService', '❌ Sistem currencies yükleme hatası:', error);
       this.allowedSymbols = new Set();
@@ -151,11 +156,15 @@ class HaremAltinService {
         this.currencyMapping[mapping.sourceField] = mapping.targetSymbol;
       });
 
-      devLogger.info('HaremAltinService', `✅ ${mappings.length} adet mapping veritabanından yüklendi:`, this.currencyMapping);
+      if (settingsService.shouldShowConsoleDebug()) {
+        devLogger.info('HaremAltinService', `✅ ${mappings.length} adet mapping veritabanından yüklendi:`, this.currencyMapping);
+      }
     } catch (error) {
       devLogger.error('HaremAltinService', '❌ Database mappings yükleme hatası:', error);
       // Hata durumunda varsayılan mapping'leri kullan
-      devLogger.info('HaremAltinService', '⚠️ Varsayılan mapping\'ler kullanılacak');
+      if (settingsService.shouldShowConsoleDebug()) {
+        devLogger.info('HaremAltinService', '⚠️ Varsayılan mapping\'ler kullanılacak');
+      }
     }
   }
 
@@ -168,12 +177,16 @@ class HaremAltinService {
     }
     
     this.clearTimers();
-    devLogger.info('HaremAltinService', '🛑 Harem Altın servisi durduruldu');
+    if (settingsService.shouldShowConsoleDebug()) {
+      devLogger.info('HaremAltinService', '🛑 Harem Altın servisi durduruldu');
+    }
   }
 
   connect() {
     try {
-      devLogger.info('HaremAltinService', '🔌 Harem Altın Socket.io\'ya bağlanıyor...');
+      if (settingsService.shouldShowConsoleDebug()) {
+        devLogger.info('HaremAltinService', '🔌 Harem Altın Socket.io\'ya bağlanıyor...');
+      }
       
       this.socket = io('wss://socketweb.haremaltin.com', {
         transports: ['websocket'],
@@ -249,12 +262,16 @@ class HaremAltinService {
       } else if (eventData && eventData.data) {
         priceData = eventData;
       } else {
-        console.warn('⚠️ Beklenmeyen veri formatı:', eventData);
+        if (settingsService.shouldShowConsoleDebug()) {
+          console.warn('⚠️ Beklenmeyen veri formatı:', eventData);
+        }
         return;
       }
 
       if (!priceData || !priceData.data) {
-        console.warn('⚠️ Veri bulunamadı');
+        if (settingsService.shouldShowConsoleDebug()) {
+          console.warn('⚠️ Veri bulunamadı');
+        }
         return;
       }
 
@@ -266,7 +283,9 @@ class HaremAltinService {
         if (prices[haremCode]) {
           // Sistem currency'de tanımlı olup olmadığını kontrol et
           if (!this.allowedSymbols || !this.allowedSymbols.has(systemSymbol)) {
-            devLogger.info('HaremAltinService', `⚠️ ${systemSymbol} sistem currency'de tanımlı değil, atlanıyor`);
+            if (settingsService.shouldShowConsoleDebug()) {
+              devLogger.info('HaremAltinService', `⚠️ ${systemSymbol} sistem currency'de tanımlı değil, atlanıyor`);
+            }
             return;
           }
           this.processPriceData(haremCode, systemSymbol, prices[haremCode], timestamp);
@@ -291,7 +310,9 @@ class HaremAltinService {
 
       // Geçersiz fiyatları kontrol et
       if (buyPrice === 0 || sellPrice === 0) {
-        devLogger.info('HaremAltinService', `⚠️ ${systemSymbol} için geçersiz fiyat, atlanıyor`);
+        if (settingsService.shouldShowConsoleDebug()) {
+          devLogger.info('HaremAltinService', `⚠️ ${systemSymbol} için geçersiz fiyat, atlanıyor`);
+        }
         return;
       }
 
@@ -448,9 +469,13 @@ class HaremAltinService {
         };
 
         const result = await this.db.collection('sources').insertOne(sourceDoc);
-        devLogger.info('HaremAltinService', `✅ Harem Altın kaynağı oluşturuldu: ${result.insertedId}`);
+        if (settingsService.shouldShowConsoleDebug()) {
+          devLogger.info('HaremAltinService', `✅ Harem Altın kaynağı oluşturuldu: ${result.insertedId}`);
+        }
       } else {
-        devLogger.info('HaremAltinService', '✅ Harem Altın kaynağı mevcut');
+        if (settingsService.shouldShowConsoleDebug()) {
+          devLogger.info('HaremAltinService', '✅ Harem Altın kaynağı mevcut');
+        }
       }
     } catch (error) {
       devLogger.error('HaremAltinService', '❌ Harem Altın kaynağı oluşturma hatası:', error);

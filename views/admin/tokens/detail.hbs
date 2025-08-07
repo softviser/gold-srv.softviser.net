@@ -38,9 +38,32 @@
 </div>
 {{/if}}
 
-<form method="POST" action="/admin/tokens/{{token._id}}" class="needs-validation" novalidate>
-    <div class="row">
-        <div class="col-md-8">
+<!-- Navigation Tabs -->
+<ul class="nav nav-tabs mb-4" id="tokenTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="token-info-tab" data-bs-toggle="tab" data-bs-target="#token-info" 
+                type="button" role="tab" aria-controls="token-info" aria-selected="true">
+            <i class="bi bi-key"></i>
+            Token Bilgileri
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="token-users-tab" data-bs-toggle="tab" data-bs-target="#token-users" 
+                type="button" role="tab" aria-controls="token-users" aria-selected="false">
+            <i class="bi bi-people"></i>
+            Dashboard Kullanıcıları
+            <span class="badge bg-primary ms-1" id="userCountBadge">0</span>
+        </button>
+    </li>
+</ul>
+
+<!-- Tab Content -->
+<div class="tab-content" id="tokenTabContent">
+    <!-- Token Bilgileri Tab -->
+    <div class="tab-pane fade show active" id="token-info" role="tabpanel" aria-labelledby="token-info-tab">
+        <form method="POST" action="/admin/tokens/{{token._id}}" class="needs-validation" novalidate>
+            <div class="row">
+                <div class="col-md-8">
             <div class="card">
                 <div class="card-header d-flex justify-content-between">
                     <h5 class="mb-0">Token Bilgileri</h5>
@@ -236,9 +259,262 @@
                     </div>
                 </div>
             </div>
+                </div>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Dashboard Kullanıcıları Tab -->
+    <div class="tab-pane fade" id="token-users" role="tabpanel" aria-labelledby="token-users-tab">
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="bi bi-people"></i>
+                            Dashboard Kullanıcıları
+                        </h5>
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
+                            <i class="bi bi-plus-circle"></i>
+                            Yeni Kullanıcı Ekle
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div id="usersLoading" class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Yükleniyor...</span>
+                            </div>
+                            <p class="mt-2 text-muted">Kullanıcılar yükleniyor...</p>
+                        </div>
+                        
+                        <div id="usersContent" class="d-none">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Kullanıcı Adı</th>
+                                            <th>Email</th>
+                                            <th>İzinler</th>
+                                            <th>Durum</th>
+                                            <th>Son Giriş</th>
+                                            <th>Oluşturma</th>
+                                            <th>İşlemler</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="usersTableBody">
+                                        <!-- Kullanıcılar buraya yüklenecek -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <div id="noUsersMessage" class="text-center py-4 d-none">
+                                <i class="bi bi-people display-1 text-muted"></i>
+                                <h4 class="text-muted">Henüz kullanıcı yok</h4>
+                                <p class="text-muted">Bu token için henüz dashboard kullanıcısı oluşturulmamış.</p>
+                                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
+                                    <i class="bi bi-plus-circle"></i>
+                                    İlk Kullanıcıyı Ekle
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
-</form>
+</div>
+
+<!-- Yeni Kullanıcı Ekleme Modal -->
+<div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addUserModalLabel">
+                    <i class="bi bi-person-plus"></i>
+                    Yeni Dashboard Kullanıcısı Ekle
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="addUserForm">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="newUserUsername" class="form-label">Kullanıcı Adı *</label>
+                                <input type="text" class="form-control" id="newUserUsername" name="username" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="newUserEmail" class="form-label">Email *</label>
+                                <input type="email" class="form-control" id="newUserEmail" name="email" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="newUserPassword" class="form-label">Şifre *</label>
+                        <input type="password" class="form-control" id="newUserPassword" name="password" required>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">İzinler</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="newUserPermRead" name="permissions" value="read" checked>
+                                    <label class="form-check-label" for="newUserPermRead">Okuma</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="newUserPermWrite" name="permissions" value="write">
+                                    <label class="form-check-label" for="newUserPermWrite">Yazma</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="newUserPermSubscribe" name="permissions" value="subscribe">
+                                    <label class="form-check-label" for="newUserPermSubscribe">Abonelik</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="newUserAllowedChannels" class="form-label">İzinli Kanallar</label>
+                                <input type="text" class="form-control" id="newUserAllowedChannels" name="allowedChannels" value="*" placeholder="*, prices, market">
+                                <div class="form-text">Virgülle ayırarak yazın. * = tüm kanallar</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="newUserRateRequests" class="form-label">İstek Limiti</label>
+                                <input type="number" class="form-control" id="newUserRateRequests" name="rateRequests" value="1000">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="newUserRateWindow" class="form-label">Zaman Penceresi (saniye)</label>
+                                <input type="number" class="form-control" id="newUserRateWindow" name="rateWindow" value="60">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="newUserExpiresAt" class="form-label">Son Kullanma Tarihi</label>
+                        <input type="datetime-local" class="form-control" id="newUserExpiresAt" name="expiresAt">
+                        <div class="form-text">Boş bırakırsanız süresiz olur</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-person-plus"></i>
+                        Kullanıcı Oluştur
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Kullanıcı Düzenleme Modal -->
+<div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editUserModalLabel">
+                    <i class="bi bi-person-gear"></i>
+                    Kullanıcı Düzenle
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editUserForm">
+                <input type="hidden" id="editUserId" name="userId">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editUserUsername" class="form-label">Kullanıcı Adı *</label>
+                                <input type="text" class="form-control" id="editUserUsername" name="username" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editUserEmail" class="form-label">Email *</label>
+                                <input type="email" class="form-control" id="editUserEmail" name="email" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="editUserPassword" class="form-label">Yeni Şifre</label>
+                        <input type="password" class="form-control" id="editUserPassword" name="password">
+                        <div class="form-text">Boş bırakırsanız şifre değişmez</div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">İzinler</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="editUserPermRead" name="permissions" value="read">
+                                    <label class="form-check-label" for="editUserPermRead">Okuma</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="editUserPermWrite" name="permissions" value="write">
+                                    <label class="form-check-label" for="editUserPermWrite">Yazma</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="editUserPermSubscribe" name="permissions" value="subscribe">
+                                    <label class="form-check-label" for="editUserPermSubscribe">Abonelik</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editUserAllowedChannels" class="form-label">İzinli Kanallar</label>
+                                <input type="text" class="form-control" id="editUserAllowedChannels" name="allowedChannels">
+                            </div>
+                            <div class="mb-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="editUserIsActive" name="isActive">
+                                    <label class="form-check-label" for="editUserIsActive">Aktif</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editUserRateRequests" class="form-label">İstek Limiti</label>
+                                <input type="number" class="form-control" id="editUserRateRequests" name="rateRequests">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editUserRateWindow" class="form-label">Zaman Penceresi (saniye)</label>
+                                <input type="number" class="form-control" id="editUserRateWindow" name="rateWindow">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="editUserExpiresAt" class="form-label">Son Kullanma Tarihi</label>
+                        <input type="datetime-local" class="form-control" id="editUserExpiresAt" name="expiresAt">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-circle"></i>
+                        Değişiklikleri Kaydet
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
 <script>
 // Token görünürlük toggle - Event listener ile
@@ -510,5 +786,297 @@ function showToast(message, type = 'info') {
             setTimeout(() => toastEl.remove(), 300);
         }, 3000);
     }
+}
+
+// ========== KULLANICI YÖNETİMİ FONKSİYONLARI ==========
+
+let currentTokenId = '{{token._id}}';
+let currentUsers = [];
+
+// Kullanıcı tab'ı açıldığında kullanıcıları yükle
+document.getElementById('token-users-tab').addEventListener('click', function() {
+    loadTokenUsers();
+});
+
+// Kullanıcıları yükle
+async function loadTokenUsers() {
+    try {
+        document.getElementById('usersLoading').classList.remove('d-none');
+        document.getElementById('usersContent').classList.add('d-none');
+        
+        const response = await fetch(`/admin/api/tokens/${currentTokenId}/users`);
+        const result = await response.json();
+        
+        if (result.success) {
+            currentUsers = result.data.users;
+            renderUsersTable(currentUsers);
+            updateUserCountBadge(currentUsers.length);
+            
+            document.getElementById('usersLoading').classList.add('d-none');
+            document.getElementById('usersContent').classList.remove('d-none');
+            
+            if (currentUsers.length === 0) {
+                document.getElementById('noUsersMessage').classList.remove('d-none');
+            } else {
+                document.getElementById('noUsersMessage').classList.add('d-none');
+            }
+        } else {
+            throw new Error(result.error || 'Kullanıcı listesi yüklenemedi');
+        }
+    } catch (error) {
+        console.error('Kullanıcı yükleme hatası:', error);
+        showToast('Kullanıcı listesi yüklenemedi: ' + error.message, 'error');
+        document.getElementById('usersLoading').classList.add('d-none');
+    }
+}
+
+// Kullanıcı tablosunu render et
+function renderUsersTable(users) {
+    const tbody = document.getElementById('usersTableBody');
+    
+    if (users.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">Kullanıcı bulunamadı</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = users.map(user => `
+        <tr>
+            <td>
+                <strong>${escapeHtml(user.username)}</strong>
+                ${user.isActive ? '<span class="badge bg-success ms-1">Aktif</span>' : '<span class="badge bg-danger ms-1">Pasif</span>'}
+            </td>
+            <td>${escapeHtml(user.email)}</td>
+            <td>
+                ${user.permissions.map(p => `<span class="badge bg-primary me-1">${p}</span>`).join('')}
+            </td>
+            <td>
+                ${user.isActive 
+                    ? '<i class="bi bi-check-circle text-success"></i> Aktif' 
+                    : '<i class="bi bi-x-circle text-danger"></i> Pasif'
+                }
+            </td>
+            <td>
+                ${user.lastLoginAt 
+                    ? formatDateTime(user.lastLoginAt)
+                    : '<span class="text-muted">Hiç giriş yapmamış</span>'
+                }
+            </td>
+            <td>${formatDateTime(user.createdAt)}</td>
+            <td>
+                <div class="btn-group btn-group-sm">
+                    <button type="button" class="btn btn-outline-primary" 
+                            onclick="editUser('${user._id}')" title="Düzenle">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline-danger" 
+                            onclick="deleteUser('${user._id}', '${escapeHtml(user.username)}')" title="Sil">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </td>
+        </tr>
+    `).join('');
+}
+
+// Kullanıcı sayısı badge'ini güncelle
+function updateUserCountBadge(count) {
+    document.getElementById('userCountBadge').textContent = count;
+}
+
+// Yeni kullanıcı form submit
+document.getElementById('addUserForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const permissions = [];
+    const allowedChannels = formData.get('allowedChannels').split(',').map(c => c.trim()).filter(c => c);
+    
+    // İzinleri topla
+    if (document.getElementById('newUserPermRead').checked) permissions.push('read');
+    if (document.getElementById('newUserPermWrite').checked) permissions.push('write');
+    if (document.getElementById('newUserPermSubscribe').checked) permissions.push('subscribe');
+    
+    const userData = {
+        username: formData.get('username'),
+        email: formData.get('email'),
+        password: formData.get('password'),
+        permissions: permissions,
+        allowedChannels: allowedChannels.length > 0 ? allowedChannels : ['*'],
+        rateLimit: {
+            requests: parseInt(formData.get('rateRequests')) || 1000,
+            window: parseInt(formData.get('rateWindow')) || 60
+        },
+        expiresAt: formData.get('expiresAt') || null
+    };
+    
+    try {
+        const response = await fetch(`/admin/api/tokens/${currentTokenId}/users`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(userData)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showToast('Kullanıcı başarıyla oluşturuldu', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('addUserModal')).hide();
+            document.getElementById('addUserForm').reset();
+            // Okuma izni varsayılan olarak seçili
+            document.getElementById('newUserPermRead').checked = true;
+            loadTokenUsers(); // Listeyi yeniden yükle
+        } else {
+            throw new Error(result.error || 'Kullanıcı oluşturulamadı');
+        }
+    } catch (error) {
+        console.error('Kullanıcı oluşturma hatası:', error);
+        showToast('Kullanıcı oluşturulamadı: ' + error.message, 'error');
+    }
+});
+
+// Kullanıcı düzenle
+function editUser(userId) {
+    const user = currentUsers.find(u => u._id === userId);
+    if (!user) {
+        showToast('Kullanıcı bulunamadı', 'error');
+        return;
+    }
+    
+    // Form alanlarını doldur
+    document.getElementById('editUserId').value = user._id;
+    document.getElementById('editUserUsername').value = user.username;
+    document.getElementById('editUserEmail').value = user.email;
+    document.getElementById('editUserPassword').value = ''; // Şifre boş
+    
+    // İzinleri ayarla
+    document.getElementById('editUserPermRead').checked = user.permissions.includes('read');
+    document.getElementById('editUserPermWrite').checked = user.permissions.includes('write');
+    document.getElementById('editUserPermSubscribe').checked = user.permissions.includes('subscribe');
+    
+    document.getElementById('editUserAllowedChannels').value = user.allowedChannels.join(', ');
+    document.getElementById('editUserIsActive').checked = user.isActive;
+    
+    // Rate limit
+    document.getElementById('editUserRateRequests').value = user.rateLimit?.requests || 1000;
+    document.getElementById('editUserRateWindow').value = user.rateLimit?.window || 60;
+    
+    // Expires at
+    if (user.expiresAt) {
+        const date = new Date(user.expiresAt);
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        document.getElementById('editUserExpiresAt').value = `${year}-${month}-${day}T${hours}:${minutes}`;
+    } else {
+        document.getElementById('editUserExpiresAt').value = '';
+    }
+    
+    // Modal'ı aç
+    new bootstrap.Modal(document.getElementById('editUserModal')).show();
+}
+
+// Kullanıcı düzenleme form submit
+document.getElementById('editUserForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const userId = formData.get('userId');
+    const permissions = [];
+    const allowedChannels = formData.get('allowedChannels').split(',').map(c => c.trim()).filter(c => c);
+    
+    // İzinleri topla
+    if (document.getElementById('editUserPermRead').checked) permissions.push('read');
+    if (document.getElementById('editUserPermWrite').checked) permissions.push('write');
+    if (document.getElementById('editUserPermSubscribe').checked) permissions.push('subscribe');
+    
+    const userData = {
+        username: formData.get('username'),
+        email: formData.get('email'),
+        permissions: permissions,
+        allowedChannels: allowedChannels.length > 0 ? allowedChannels : ['*'],
+        isActive: document.getElementById('editUserIsActive').checked,
+        rateLimit: {
+            requests: parseInt(formData.get('rateRequests')) || 1000,
+            window: parseInt(formData.get('rateWindow')) || 60
+        },
+        expiresAt: formData.get('expiresAt') || null
+    };
+    
+    // Şifre sadece doluysa ekle
+    const password = formData.get('password');
+    if (password.trim()) {
+        userData.password = password;
+    }
+    
+    try {
+        const response = await fetch(`/admin/api/tokens/${currentTokenId}/users/${userId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(userData)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showToast('Kullanıcı başarıyla güncellendi', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('editUserModal')).hide();
+            loadTokenUsers(); // Listeyi yeniden yükle
+        } else {
+            throw new Error(result.error || 'Kullanıcı güncellenemedi');
+        }
+    } catch (error) {
+        console.error('Kullanıcı güncelleme hatası:', error);
+        showToast('Kullanıcı güncellenemedi: ' + error.message, 'error');
+    }
+});
+
+// Kullanıcı sil
+function deleteUser(userId, username) {
+    if (!confirm(`"${username}" kullanıcısını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`)) {
+        return;
+    }
+    
+    fetch(`/admin/api/tokens/${currentTokenId}/users/${userId}`, {
+        method: 'DELETE'
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            showToast('Kullanıcı başarıyla silindi', 'success');
+            loadTokenUsers(); // Listeyi yeniden yükle
+        } else {
+            throw new Error(result.error || 'Kullanıcı silinemedi');
+        }
+    })
+    .catch(error => {
+        console.error('Kullanıcı silme hatası:', error);
+        showToast('Kullanıcı silinemedi: ' + error.message, 'error');
+    });
+}
+
+// Utility fonksiyonlar
+function escapeHtml(text) {
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+}
+
+function formatDateTime(dateString) {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleString('tr-TR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
 }
 </script>

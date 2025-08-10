@@ -75,7 +75,7 @@ class FormulaCalculator {
 
     } catch (error) {
       LoggerHelper.error('Formula calculation error:', error);
-      throw new Error(`Formül hesaplama hatası: ${error.message}`);
+      throw new Error(`Formula calculation error: ${error.message}`);
     }
   }
 

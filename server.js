@@ -515,6 +515,65 @@ function setupSocketHandlers() {
     devLogger.debug('SocketServer', `[Socket] ${socket.id} ${channel} kanalından ayrıldı`);
   });
 
+  // Kullanıcı fiyat kanalına abonelik (örn: user_605c5a1234567890_prices)
+  socket.on('subscribe_user_prices', async (data) => {
+    try {
+      const { userId } = data;
+      
+      if (!userId) {
+        socket.emit('subscription_error', { error: 'Kullanıcı ID gerekli', channel: null });
+        return;
+      }
+      
+      const userChannelName = `user_${userId}_prices`;
+      
+      // Kullanıcı kanalına katıl
+      socket.join(userChannelName);
+      socket.emit('subscription_success', { 
+        channel: userChannelName,
+        userId: userId,
+        message: `Kullanıcı fiyat kanalına başarıyla abone olundu: ${userChannelName}`
+      });
+      
+      devLogger.debug('SocketServer', `[Socket] ${socket.id} ${userChannelName} kanalına abone oldu`);
+      
+      // Hemen bir kez fiyat verisi gönder
+      try {
+        const userSetting = await db.collection('jmon_settings').findOne({
+          userId: new (require('mongodb')).ObjectId(userId),
+          settingKey: 'source',
+          category: 'api',
+          isActive: true
+        });
+        
+        if (userSetting && userSetting.settingValue) {
+          const userPricesData = await global.socketChannels.calculateUserPrices(new (require('mongodb')).ObjectId(userId), userSetting.settingValue);
+          
+          if (userPricesData && userPricesData.data && userPricesData.data.products) {
+            socket.emit('user_prices_update', {
+              timestamp: DateHelper.createDate(),
+              channel: userChannelName,
+              userId: userId,
+              sourceId: userSetting.settingValue,
+              data: userPricesData.data
+            });
+            
+            devLogger.debug('SocketServer', `İlk fiyat verisi gönderildi: ${userChannelName} (${userPricesData.data.products.length} ürün)`);
+          }
+        }
+      } catch (priceError) {
+        console.error('Error sending initial price data:', priceError);
+      }
+      
+    } catch (error) {
+      console.error('Error in subscribe_user_prices:', error);
+      socket.emit('subscription_error', { 
+        error: 'Kullanıcı fiyat kanalına abone olurken hata oluştu: ' + error.message,
+        channel: null 
+      });
+    }
+  });
+
   // Client mesajlarını dinle
   socket.on('client-message', (data) => {
     devLogger.debug('SocketServer', 'Client mesajı alındı', data);
@@ -918,6 +977,17 @@ async function startServer() {
           data: data
         });
       }
+
+      // Kullanıcı bazlı fiyat güncellemesi (asenkron olarak çalıştır)
+      console.log('🔍 Price update received - checking for sourceId:', data.sourceId);
+      if (data.sourceId) {
+        console.log(`🚀 Starting user-specific price broadcast for source: ${data.sourceId}`);
+        global.socketChannels.broadcastUserSpecificPrices(data.sourceId).catch(error => {
+          console.error('❌ User-specific price broadcast error:', error);
+        });
+      } else {
+        console.log('⚠️ No sourceId found in price update data:', Object.keys(data));
+      }
     },
     broadcastToChannel: (channel, event, data) => {
       io.to(channel).emit(event, {
@@ -934,6 +1004,486 @@ async function startServer() {
     },
     getConnectedTokensCount: () => {
       return io.engine.clientsCount || 0;
+    },
+
+    // Kullanıcıya kontrol mesajı gönder
+    sendUserControlMessage: (userId, messageType, data = {}) => {
+      const userChannelName = `user_${userId}_prices`;
+      
+      io.to(userChannelName).emit('user_control_message', {
+        timestamp: DateHelper.createDate(),
+        channel: userChannelName,
+        userId: userId.toString(),
+        messageType: messageType,
+        data: data
+      });
+      
+      console.log(`✅ Control message sent to user ${userId}: ${messageType}`);
+    },
+
+    // Kullanıcı bazlı fiyat güncellemesi - aktif ve süresi geçmemiş kullanıcılara gönder
+    broadcastUserSpecificPrices: async (sourceId) => {
+      try {
+        console.log(`🔄 broadcastUserSpecificPrices called with sourceId: ${sourceId}`);
+        const currentDate = new Date();
+        
+        // sourceId'yi hem name hem de ObjectId olarak kontrol et
+        let sourceObjectId = null;
+        try {
+          // Eğer sourceId bir ObjectId string'i ise
+          if (require('mongodb').ObjectId.isValid(sourceId)) {
+            sourceObjectId = new (require('mongodb')).ObjectId(sourceId);
+          } else {
+            // sourceId bir name ise, sources tablosundan ObjectId'yi bul
+            const sourceDoc = await db.collection('sources').findOne({ name: sourceId });
+            if (sourceDoc) {
+              sourceObjectId = sourceDoc._id;
+              //console.log(`📋 Source name '${sourceId}' resolved to ObjectId: ${sourceObjectId}`);
+            }
+          }
+        } catch (e) {
+          console.log('⚠️ Error resolving sourceId:', e.message);
+        }
+        
+        // Debug: Check what source values are in the database
+        const sampleSettings = await db.collection('jmon_settings').find({
+          settingKey: 'source',
+          category: 'api',
+          isActive: true
+        }).limit(3).toArray();
+        
+        if (sampleSettings.length > 0) {
+          console.log(`🔍 Sample source settings in DB:`, sampleSettings.map(s => ({
+            userId: s.userId,
+            settingValue: s.settingValue,
+            type: typeof s.settingValue
+          })));
+          console.log(`🔍 Looking for sourceId: "${sourceId}" (${typeof sourceId}) or ObjectId: "${sourceObjectId}" (${typeof sourceObjectId})`);
+        }
+        
+        // Bu kaynağın aktif olduğu kullanıcıları bul - JOIN ile token ve user süre kontrolü
+        const activeUsersWithSource = await db.collection('jmon_settings').aggregate([
+          {
+            $match: {
+              settingKey: 'source',
+              category: 'api',
+              isActive: true
+            }
+          },
+          {
+            $addFields: {
+              // settingValue'yu kontrol et - hem string hem ObjectId olabilir
+              matchesSource: {
+                $or: [
+                  // Direct string match
+                  { $eq: ['$settingValue', sourceId] },
+                  // ObjectId string match
+                  { $eq: ['$settingValue', sourceObjectId ? sourceObjectId.toString() : null] },
+                  // If settingValue is an ObjectId stored as string, convert and compare
+                  {
+                    $cond: {
+                      if: { $ne: [sourceObjectId, null] },
+                      then: { $eq: [{ $toString: '$settingValue' }, sourceObjectId.toString()] },
+                      else: false
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          {
+            $match: {
+              matchesSource: true
+            }
+          },
+          {
+            // jmon_users ile JOIN - kullanıcının aktif ve süresi geçmemiş olduğunu kontrol et
+            $lookup: {
+              from: 'jmon_users',
+              localField: 'userId',
+              foreignField: '_id',
+              as: 'user'
+            }
+          },
+          {
+            $unwind: '$user'
+          },
+          {
+            // Aktif API token'ları ile JOIN - token'ın aktif ve süresi geçmemiş olduğunu kontrol et
+            $lookup: {
+              from: 'api_tokens',
+              localField: 'userId',
+              foreignField: 'userId',
+              as: 'tokens'
+            }
+          },
+          {
+            $match: {
+              'user.isActive': true,
+              $and: [
+                // User expiry kontrolü
+                {
+                  $or: [
+                    { 'user.expiresAt': { $exists: false } }, // Süresiz kullanıcılar
+                    { 'user.expiresAt': null },
+                    { 'user.expiresAt': { $gt: currentDate } } // Süresi geçmemiş kullanıcılar
+                  ]
+                },
+                // Token kontrolü
+                {
+                  $or: [
+                    // Token'ı olmayan kullanıcılar (konsol kullanıcıları)
+                    { 'tokens': { $size: 0 } },
+                    // Aktif token'ı olan kullanıcılar
+                    {
+                      'tokens': {
+                        $elemMatch: {
+                          isActive: true,
+                          $or: [
+                            { expiresAt: { $exists: false } }, // Süresiz token'lar
+                            { expiresAt: null },
+                            { expiresAt: { $gt: currentDate } } // Süresi geçmemiş token'lar
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            $project: {
+              userId: 1,
+              settingValue: 1,
+              'user.username': 1,
+              'user.email': 1,
+              'user.expiresAt': 1,
+              activeTokensCount: {
+                $size: {
+                  $filter: {
+                    input: '$tokens',
+                    cond: {
+                      $and: [
+                        { $eq: ['$$this.isActive', true] },
+                        {
+                          $or: [
+                            { $eq: ['$$this.expiresAt', null] },
+                            { $not: { $ifNull: ['$$this.expiresAt', false] } },
+                            { $gt: ['$$this.expiresAt', currentDate] }
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]).toArray();
+
+        console.log(`🔎 Query result: Found ${activeUsersWithSource.length} users for sourceId: ${sourceId}`);
+        console.log(`🔎 Query used: sourceId="${sourceId}", sourceObjectId="${sourceObjectId}"`);
+        
+        if (activeUsersWithSource.length === 0) {
+          console.log(`⚠️ ${sourceId} kaynağını kullanan aktif kullanıcı bulunamadı`);
+          
+          // Additional debug: check if any users exist with this source at all
+          const anyUsers = await db.collection('jmon_settings').find({
+            settingKey: 'source',
+            category: 'api',
+            $or: [
+              { settingValue: sourceId },
+              { settingValue: sourceObjectId ? sourceObjectId.toString() : null }
+            ]
+          }).toArray();
+          console.log(`🔎 Debug: Found ${anyUsers.length} users total (including inactive) for this source`);
+          
+          // Debug: Check what values are stored
+          if (anyUsers.length > 0) {
+            console.log(`🔎 Sample settingValues:`, anyUsers.slice(0, 2).map(u => ({ 
+              userId: u.userId, 
+              settingValue: u.settingValue,
+              isActive: u.isActive
+            })));
+          }
+          
+          return;
+        }
+
+        console.log(`📡 ${sourceId} kaynağı için ${activeUsersWithSource.length} aktif kullanıcıya fiyat güncelleme gönderiliyor...`);
+
+        // Her aktif kullanıcı için fiyat hesapla ve gönder
+        for (const userSetting of activeUsersWithSource) {
+          try {
+            const userId = userSetting.userId;
+            const userPricesData = await global.socketChannels.calculateUserPrices(userId, sourceId);
+            
+            if (userPricesData && userPricesData.data) {
+              if (userPricesData.data.products && userPricesData.data.products.length > 0) {
+                const userChannelName = `user_${userId}_prices`;
+                
+                // Kanaldaki socket sayısını kontrol et
+                const roomSockets = io.sockets.adapter.rooms.get(userChannelName);
+                const socketCount = roomSockets ? roomSockets.size : 0;
+                
+                if (socketCount > 0) {
+                  // Kullanıcıya özel kanala fiyat verisini gönder
+                  io.to(userChannelName).emit('user_prices_update', {
+                    timestamp: DateHelper.createDate(),
+                    channel: userChannelName,
+                    userId: userId.toString(),
+                    sourceId: sourceId,
+                    data: userPricesData.data
+                  });
+
+                  console.log(`✅ User prices sent to ${userSetting.user.username || userId} (${userChannelName}): ${userPricesData.data.products.length} products, ${socketCount} active sockets`);
+                } else {
+                  console.log(`📴 ${userSetting.user.username || userId} çevrimdışı (${userChannelName} kanalında socket yok)`);
+                }
+              } else {
+                // Ürün yok ama yine de boş array gönder (kullanıcı bağlıysa)
+                const userChannelName = `user_${userId}_prices`;
+                const roomSockets = io.sockets.adapter.rooms.get(userChannelName);
+                const socketCount = roomSockets ? roomSockets.size : 0;
+                
+                if (socketCount > 0) {
+                  io.to(userChannelName).emit('user_prices_update', {
+                    timestamp: DateHelper.createDate(),
+                    channel: userChannelName,
+                    userId: userId.toString(),
+                    sourceId: sourceId,
+                    data: userPricesData.data
+                  });
+                  console.log(`📦 Empty product list sent to ${userSetting.user.username || userId} (${userChannelName}): 0 products, ${socketCount} active sockets`);
+                } else {
+                  console.log(`⚠️ ${userSetting.user.username || userId} için ürün bulunamadı ve çevrimdışı (products: ${userPricesData.data.products ? userPricesData.data.products.length : 'null'})`);
+                }
+              }
+            } else {
+              console.log(`⚠️ ${userSetting.user.username || userId} için hesaplanmış fiyat verisi döndürülmedi`);
+            }
+          } catch (userError) {
+            console.error(`❌ ${userSetting.userId} kullanıcısı için fiyat hesaplama hatası:`, userError.message);
+          }
+        }
+
+      } catch (error) {
+        console.error('❌ broadcastUserSpecificPrices genel hatası:', error);
+      }
+    },
+
+    // Kullanıcı için fiyat hesaplama (konsolRoutes.js /api/prices mantığı)
+    calculateUserPrices: async (userId, sourceId) => {
+      try {
+        // ObjectId'ye dönüştür
+        const userObjectId = typeof userId === 'string' ? new (require('mongodb')).ObjectId(userId) : userId;
+        
+        // site_open ayarını kontrol et
+        const siteOpenSetting = await db.collection('jmon_settings').findOne({
+          userId: userObjectId,
+          settingKey: 'site_open',
+          category: 'general',
+          isActive: true
+        });
+        
+        const siteIsOpen = siteOpenSetting ? siteOpenSetting.settingValue : true;
+        
+        // Kullanıcının ürünlerini al
+        const products = await db.collection('jmon_user_products').aggregate([
+          { $match: { userId: userObjectId, isActive: true } },
+          {
+            $lookup: {
+              from: 'jmon_sections',
+              let: { sectionId: '$sectionId' },
+              pipeline: [
+                { 
+                  $match: { 
+                    $expr: { 
+                      $or: [
+                        { $eq: ['$_id', { $toObjectId: '$$sectionId' }] },
+                        { $eq: [{ $toString: '$_id' }, '$$sectionId'] }
+                      ]
+                    } 
+                  } 
+                }
+              ],
+              as: 'section'
+            }
+          },
+          {
+            $addFields: {
+              section: { $arrayElemAt: ['$section', 0] },
+              sectionDisplayOrder: { 
+                $ifNull: [
+                  { $arrayElemAt: ['$section.displayOrder', 0] },
+                  999
+                ]
+              },
+              displayOrder: { 
+                $ifNull: ['$displayOrder', 999]
+              }
+            }
+          },
+          { 
+            $sort: { 
+              sectionDisplayOrder: 1,
+              displayOrder: 1,
+              name: 1 
+            } 
+          }
+        ]).toArray();
+
+        console.log(`🔍 User ${userId} products found: ${products.length}`);
+        
+        if (products.length === 0) {
+          console.log(`⚠️ User ${userId} has no products, returning empty array`);
+          return { 
+            success: true,
+            count: 0,
+            timestamp: new Date(),
+            data: { products: [] } 
+          };
+        }
+
+        // Mevcut fiyatları al
+        const CurrentPrices = require('./models/CurrentPrices');
+        const currentPrices = new CurrentPrices(db);
+        
+        // sourceId'yi ObjectId'ye çevir
+        let priceFilters = {};
+        if (sourceId) {
+          // Önce source'u bul
+          const source = await db.collection('sources').findOne({ name: sourceId });
+          if (source) {
+            priceFilters = { sourceId: source._id };
+          } else {
+            console.log(`⚠️ Source not found for: ${sourceId}`);
+            priceFilters = { sourceId: sourceId };
+          }
+        }
+        
+        const prices = await currentPrices.getCurrentPrices(priceFilters);
+        
+        // Legacy format'a dönüştür (HAS_alis, HAS_satis format)
+        const priceData = {};
+        prices.forEach(price => {
+          const symbol = price.symbol;
+          const buyPrice = price.buyPrice;
+          const sellPrice = price.sellPrice;
+          
+          if (symbol && symbol.includes('/')) {
+            const currencyCode = symbol.split('/')[0];
+            priceData[currencyCode + '_alis'] = buyPrice;
+            priceData[currencyCode + '_satis'] = sellPrice;
+          }
+        });
+        
+        // Debug: priceData içeriğini kontrol et
+        if (Object.keys(priceData).length === 0) {
+          console.log(`⚠️ ${userId} için priceData boş! Prices count: ${prices.length}, sourceId: ${sourceId}`);
+          if (prices.length > 0) {
+            console.log('Sample prices:', prices.slice(0, 2).map(p => ({ symbol: p.symbol, buy: p.buyPrice, sell: p.sellPrice })));
+          }
+        } else if (!priceData['HAS_alis']) {
+          console.log(`⚠️ ${userId} için HAS_alis bulunamadı. Available keys:`, Object.keys(priceData).slice(0, 5));
+        }
+
+        // Formül hesaplayıcısını başlat
+        const FormulaCalculator = require('./services/FormulaCalculator');
+        const calculator = new FormulaCalculator();
+        
+        // Ürün fiyatlarını hesapla
+        const results = products.map(product => {
+          try {
+            const buyingConfig = product.buyingRoundingConfig || product.roundingConfig || { method: 'nearest', precision: 5, decimalPlaces: 2 };
+            const sellingConfig = product.sellingRoundingConfig || product.roundingConfig || { method: 'nearest', precision: 5, decimalPlaces: 2 };
+            
+            let buyingPrice = null;
+            let sellingPrice = null;
+            
+            if (siteIsOpen) {
+              // Site açık, normal fiyat hesaplama
+              try {
+                const buyingResult = calculator.calculate(product.buyingFormula, priceData);
+                buyingPrice = buyingResult.value !== null ? 
+                  parseFloat(buyingResult.value.toFixed(buyingConfig.decimalPlaces || 2)) : null;
+              } catch (buyError) {
+                const errorDetail = buyError.message.replace('Formula calculation error:', '').trim();
+                console.error(`❌ ${product.symbol || product.name} için buying fiyatı bulunamadı (${errorDetail})`);
+                buyingPrice = null;
+              }
+              
+              try {
+                const sellingResult = calculator.calculate(product.sellingFormula, priceData);
+                sellingPrice = sellingResult.value !== null ? 
+                  parseFloat(sellingResult.value.toFixed(sellingConfig.decimalPlaces || 2)) : null;
+              } catch (sellError) {
+                const errorDetail = sellError.message.replace('Formula calculation error:', '').trim();
+                console.error(`❌ ${product.symbol || product.name} için selling fiyatı bulunamadı (${errorDetail})`);
+                sellingPrice = null;
+              }
+            } else {
+              // Site kapalı, fiyatları 0 olarak göster
+              buyingPrice = 0;
+              sellingPrice = 0;
+            }
+            
+            return {
+              _id: product._id,
+              name: product.name,
+              productCode: product.productCode,
+              buyingPrice: buyingPrice,
+              sellingPrice: sellingPrice,
+              buyingDecimalPlaces: buyingConfig.decimalPlaces || 2,
+              sellingDecimalPlaces: sellingConfig.decimalPlaces || 2,
+              lastUpdate: new Date(),
+              siteIsOpen: siteIsOpen,
+              section: product.section ? {
+                name: product.section.name,
+                displayConfig: product.section.displayConfig
+              } : null
+            };
+          } catch (error) {
+            const buyingConfig = product.buyingRoundingConfig || product.roundingConfig || { method: 'nearest', precision: 5, decimalPlaces: 2 };
+            const sellingConfig = product.sellingRoundingConfig || product.roundingConfig || { method: 'nearest', precision: 5, decimalPlaces: 2 };
+            
+            return {
+              _id: product._id,
+              name: product.name,
+              productCode: product.productCode,
+              buyingPrice: siteIsOpen ? null : 0,
+              sellingPrice: siteIsOpen ? null : 0,
+              buyingDecimalPlaces: buyingConfig.decimalPlaces || 2,
+              sellingDecimalPlaces: sellingConfig.decimalPlaces || 2,
+              lastUpdate: new Date(),
+              error: siteIsOpen ? error.message : 'Site kapalı',
+              siteIsOpen: siteIsOpen,
+              section: product.section ? {
+                name: product.section.name,
+                displayConfig: product.section.displayConfig
+              } : null
+            };
+          }
+        });
+
+        return {
+          success: true,
+          count: results.length,
+          timestamp: new Date(),
+          data: {
+            products: results
+          }
+        };
+
+      } catch (error) {
+        console.error('Error calculating user prices:', error);
+        return {
+          success: false,
+          error: error.message,
+          data: { products: [] }
+        };
+      }
     }
   };
 

@@ -755,7 +755,7 @@ router.get('/api/prices', requireAuth, async (req, res) => {
     // Use same method as webApiProductRoutes.js line 399 but with sourceId filter if provided
     const priceFilters = sourceId ? { sourceId: sourceId } : {};
     const prices = await currentPrices.getCurrentPrices(priceFilters);
-    console.log('Current prices from model:', prices.length, 'with filters:', priceFilters);
+    //console.log('Current prices from model:', prices.length, 'with filters:', priceFilters);
     
     // Convert to legacy format for formula calculator (HAS_alis, HAS_satis format)
     const priceData = {};
@@ -771,7 +771,7 @@ router.get('/api/prices', requireAuth, async (req, res) => {
         priceData[currencyCode + '_alis'] = buyPrice;
         priceData[currencyCode + '_satis'] = sellPrice;
         
-        console.log(`✅ Added price data for ${currencyCode}: ${buyPrice}/${sellPrice}`);
+        //console.log(`✅ Added price data for ${currencyCode}: ${buyPrice}/${sellPrice}`);
       }
     });
     
@@ -787,7 +787,7 @@ router.get('/api/prices', requireAuth, async (req, res) => {
         const buyingConfig = product.buyingRoundingConfig || product.roundingConfig || { method: 'nearest', precision: 5, decimalPlaces: 2 };
         const sellingConfig = product.sellingRoundingConfig || product.roundingConfig || { method: 'nearest', precision: 5, decimalPlaces: 2 };
         
-        console.log(`Product ${product.name} - Buying config:`, buyingConfig, 'Selling config:', sellingConfig);
+        //  console.log(`Product ${product.name} - Buying config:`, buyingConfig, 'Selling config:', sellingConfig);
         
         // Use same format as webApiProductRoutes.js line 403-404
         const buyingResult = calculator.calculate(product.buyingFormula, priceData);
@@ -1099,8 +1099,8 @@ router.put('/api/settings/:key', requireAuth, async (req, res) => {
     const { key } = req.params;
     const { value, category, description } = req.body;
     
-    // Update or create the setting
-    const result = await db.collection('jmon_settings').updateOne(
+    // First try to update existing setting
+    let result = await db.collection('jmon_settings').updateOne(
       {
         userId: userId,
         settingKey: key,
@@ -1108,17 +1108,50 @@ router.put('/api/settings/:key', requireAuth, async (req, res) => {
       },
       {
         $set: {
+          settingValue: value,
+          description: description || '',
+          isActive: true,
+          updatedAt: new Date()
+        }
+      }
+    );
+    
+    // If no document was modified, try to insert new one
+    if (result.matchedCount === 0) {
+      try {
+        result = await db.collection('jmon_settings').insertOne({
           userId: userId,
           settingKey: key,
           category: category,
           settingValue: value,
           description: description || '',
           isActive: true,
+          createdAt: new Date(),
           updatedAt: new Date()
+        });
+      } catch (insertError) {
+        // If insert fails due to duplicate, try update again (race condition)
+        if (insertError.code === 11000) {
+          result = await db.collection('jmon_settings').updateOne(
+            {
+              userId: userId,
+              settingKey: key,
+              category: category
+            },
+            {
+              $set: {
+                settingValue: value,
+                description: description || '',
+                isActive: true,
+                updatedAt: new Date()
+              }
+            }
+          );
+        } else {
+          throw insertError;
         }
-      },
-      { upsert: true }
-    );
+      }
+    }
     
     res.json({
       success: true,
@@ -1126,6 +1159,46 @@ router.put('/api/settings/:key', requireAuth, async (req, res) => {
     });
   } catch (error) {
     console.error('Update setting error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Send control message to user WebSocket channel
+router.post('/api/send-user-message', requireAuth, async (req, res) => {
+  try {
+    const { messageType, message, userId } = req.body;
+    const targetUserId = userId || req.session.konsol.userId;
+    
+    if (!messageType) {
+      return res.status(400).json({
+        success: false,
+        error: 'messageType gerekli'
+      });
+    }
+    
+    // Send control message via WebSocket
+    if (global.socketChannels && global.socketChannels.sendUserControlMessage) {
+      global.socketChannels.sendUserControlMessage(targetUserId, messageType, {
+        message: message,
+        timestamp: new Date()
+      });
+      
+      res.json({
+        success: true,
+        message: `${messageType} mesajı kullanıcıya gönderildi`,
+        userId: targetUserId
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        error: 'WebSocket sistemi hazır değil'
+      });
+    }
+  } catch (error) {
+    console.error('Send user message error:', error);
     res.status(500).json({
       success: false,
       error: error.message

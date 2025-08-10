@@ -13,6 +13,7 @@ class HaremAltinWebService {
     this.updateInterval = null;
     this.lastUpdateTimes = {};
     this.priceData = new Map();
+    this.broadcastDebounceTimer = null;
     
     // API endpoints
     this.endpoints = {
@@ -432,6 +433,20 @@ class HaremAltinWebService {
         // HaremGoldWeb kanalına da gönder
         if (global.socketChannels.broadcastToChannel) {
           global.socketChannels.broadcastToChannel('haremgoldweb', 'price_update', socketData);
+        }
+        
+        // Kullanıcı özel fiyat güncellemelerini gönder (debounced)
+        if (global.socketChannels && global.socketChannels.broadcastUserSpecificPrices) {
+          // Önceki timer'ı iptal et
+          if (this.broadcastDebounceTimer) {
+            clearTimeout(this.broadcastDebounceTimer);
+          }
+          
+          // 500ms sonra broadcast yap (tüm güncellemeler tamamlandıktan sonra)
+          this.broadcastDebounceTimer = setTimeout(() => {
+            global.socketChannels.broadcastUserSpecificPrices(this.sourceInfo.name);
+            this.broadcastDebounceTimer = null;
+          }, 500);
         }
       }
 

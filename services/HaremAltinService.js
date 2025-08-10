@@ -13,6 +13,7 @@ class HaremAltinService {
     this.reconnectTimer = null;
     this.lastUpdateTimes = {};
     this.priceData = new Map();
+    this.broadcastDebounceTimer = null;
     
     // Harem Altın currency mapping - Bizim sistemdeki karşılıkları
     // Socket'ten gelen veriler de '/' işareti olmadan gelir
@@ -446,6 +447,20 @@ class HaremAltinService {
           timestamp: DateHelper.createDate()
         };
         global.socketChannels.broadcastPriceUpdate(socketData);
+        
+        // Kullanıcı özel fiyat güncellemelerini gönder (debounced)
+        if (global.socketChannels && global.socketChannels.broadcastUserSpecificPrices) {
+          // Önceki timer'ı iptal et
+          if (this.broadcastDebounceTimer) {
+            clearTimeout(this.broadcastDebounceTimer);
+          }
+          
+          // 500ms sonra broadcast yap (tüm güncellemeler tamamlandıktan sonra)
+          this.broadcastDebounceTimer = setTimeout(() => {
+            global.socketChannels.broadcastUserSpecificPrices(this.sourceInfo.name);
+            this.broadcastDebounceTimer = null;
+          }, 500);
+        }
       }
 
       // Price history is now handled by PriceArchiveService (scheduled every 15 minutes)

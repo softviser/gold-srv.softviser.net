@@ -14,6 +14,7 @@ class TCMBService {
     this.updateInterval = null;
     this.lastUpdateTime = null;
     this.priceData = new Map();
+    this.broadcastDebounceTimer = null;
     
     // TCMB currency mapping - Sadece TCMB XML'inde bulunan kurlar
     // TCMB günlük XML'inde genelde ana para birimleri bulunur
@@ -553,6 +554,20 @@ class TCMBService {
           timestamp: DateHelper.createDate()
         };
         global.socketChannels.broadcastPriceUpdate(socketData);
+        
+        // Kullanıcı özel fiyat güncellemelerini gönder (debounced)
+        if (global.socketChannels && global.socketChannels.broadcastUserSpecificPrices) {
+          // Önceki timer'ı iptal et
+          if (this.broadcastDebounceTimer) {
+            clearTimeout(this.broadcastDebounceTimer);
+          }
+          
+          // 500ms sonra broadcast yap (tüm güncellemeler tamamlandıktan sonra)
+          this.broadcastDebounceTimer = setTimeout(() => {
+            global.socketChannels.broadcastUserSpecificPrices(this.sourceInfo.name);
+            this.broadcastDebounceTimer = null;
+          }, 500);
+        }
       }
 
     } catch (error) {

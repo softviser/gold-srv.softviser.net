@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kullanıcı Fiyat Test - Real-time Prices</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .connection-status {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        .status-connecting {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .status-connected {
+            background: #dcfce7;
+            color: #166534;
+        }
+        
+        .status-disconnected {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+        
+        .sections-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        
+        .section-container {
+            display: flex;
+            flex-direction: column;
+            height: fit-content;
+        }
+        
+        .section-header {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 10px 10px 0 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 10px;
+        }
+        
+        .products-table {
+            background: white;
+            border-radius: 0 0 10px 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            flex: 1;
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .products-table thead th {
+            background: #f8fafc;
+            padding: 12px 15px;
+            font-size: 12px;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 500;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .products-table thead th:first-child {
+            text-align: left;
+        }
+        
+        .products-table thead th:not(:first-child) {
+            text-align: right;
+            width: 100px;
+        }
+        
+        .products-table tbody tr {
+            transition: all 0.3s ease;
+        }
+        
+        .products-table tbody tr:hover {
+            background: #f9fafb;
+        }
+        
+        .products-table tbody td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        
+        .products-table tbody td:not(:first-child) {
+            text-align: right;
+            white-space: nowrap;
+        }
+        
+        .products-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .product-name {
+            font-weight: 600;
+            color: #1f2937;
+            font-size: 16px;
+        }
+        
+        .price-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1f2937;
+        }
+        
+        .price-value.buying {
+            color: #dc2626;
+        }
+        
+        
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #6b7280;
+            background: white;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        
+        .logs {
+            background: #1f2937;
+            color: #f3f4f6;
+            padding: 15px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+        
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 5px;
+            border-radius: 3px;
+        }
+        
+        .log-info {
+            color: #60a5fa;
+        }
+        
+        .log-success {
+            color: #34d399;
+        }
+        
+        .log-error {
+            color: #f87171;
+        }
+        
+        .log-warning {
+            color: #fbbf24;
+        }
+        
+        .price-updated {
+            animation: priceFlash 0.5s ease-in-out;
+        }
+        
+        @keyframes priceFlash {
+            0% { background-color: #fef3c7; }
+            100% { background-color: transparent; }
+        }
+        
+        .user-info {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .user-info h3 {
+            color: #1f2937;
+            margin-bottom: 10px;
+        }
+        
+        .user-info p {
+            color: #6b7280;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        
+        @media (max-width: 768px) {
+            .sections-container {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .products-table thead th:not(:first-child),
+            .products-table tbody td:not(:first-child) {
+                width: 80px;
+            }
+        }
+        
+        @media (max-width: 1200px) {
+            .sections-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Kullanıcı Fiyat Test Paneli</h1>
+            <div class="user-info">
+                <h3>Test Kullanıcısı</h3>
+                <p><strong>User ID:</strong> 6893f1c8a6c9324333f0704c</p>
+                <p><strong>Token:</strong> sk_72bcac11f9e59deed1fb8dabfeac8d89c6dd856edd4c82c756e697dde2d2c879</p>
+                <p><strong>WebSocket Kanalı:</strong> <span id="channelName">user_6893f1c8a6c9324333f0704c_prices</span></p>
+            </div>
+            <div class="connection-status status-connecting" id="connectionStatus">
+                Bağlantı kuruluyor...
+            </div>
+        </div>
+        
+        <!-- Products Container -->
+        <div id="productsContainer">
+            <div class="no-data">
+                <h3>Veriler yükleniyor...</h3>
+                <p>WebSocket bağlantısı kurulup fiyat verileri alınıyor.</p>
+            </div>
+        </div>
+        
+        <!-- Logs -->
+        <div class="logs" id="logs">
+            <div class="log-entry log-info">[INFO] Sayfa yüklendi, WebSocket bağlantısı başlatılıyor...</div>
+        </div>
+    </div>
+
+    <script>
+        // Konfigürasyon
+        const CONFIG = {
+            userId: '6893f1c8a6c9324333f0704c',
+            token: 'sk_72bcac11f9e59deed1fb8dabfeac8d89c6dd856edd4c82c756e697dde2d2c879',
+            serverUrl: window.location.origin,
+            channelName: 'user_6893f1c8a6c9324333f0704c_prices'
+        };
+        
+        // Global variables
+        let socket;
+        let connectionStatus = 'connecting';
+        let lastPricesData = null;
+        let retryCount = 0;
+        const maxRetries = 5;
+        
+        // DOM elements
+        const statusElement = document.getElementById('connectionStatus');
+        const productsContainer = document.getElementById('productsContainer');
+        const logsElement = document.getElementById('logs');
+        
+        // Initialize WebSocket connection
+        function initializeSocket() {
+            addLog('info', `WebSocket bağlantısı başlatılıyor: ${CONFIG.serverUrl}`);
+            
+            socket = io(CONFIG.serverUrl, {
+                auth: {
+                    token: CONFIG.token
+                },
+                transports: ['websocket', 'polling'],
+                timeout: 10000,
+                forceNew: true
+            });
+            
+            setupSocketEvents();
+        }
+        
+        // Setup socket event handlers
+        function setupSocketEvents() {
+            socket.on('connect', () => {
+                addLog('success', `WebSocket bağlantısı başarılı! Socket ID: ${socket.id}`);
+                updateConnectionStatus('connected');
+                retryCount = 0;
+                
+                // Kullanıcı fiyat kanalına abone ol
+                subscribeToUserPrices();
+            });
+            
+            socket.on('disconnect', (reason) => {
+                addLog('error', `WebSocket bağlantısı kesildi: ${reason}`);
+                updateConnectionStatus('disconnected');
+                
+                // Otomatik yeniden bağlantı
+                if (retryCount < maxRetries) {
+                    setTimeout(() => {
+                        retryCount++;
+                        addLog('warning', `Yeniden bağlantı denemesi ${retryCount}/${maxRetries}`);
+                        initializeSocket();
+                    }, 3000);
+                }
+            });
+            
+            socket.on('connect_error', (error) => {
+                addLog('error', `Bağlantı hatası: ${error.message}`);
+                updateConnectionStatus('disconnected');
+            });
+            
+            socket.on('welcome', (data) => {
+                addLog('info', `Hoş geldiniz mesajı: ${data.message}`);
+            });
+            
+            socket.on('subscription_success', (data) => {
+                addLog('success', `Kanal aboneliği başarılı: ${data.channel}`);
+                if (data.message) {
+                    addLog('info', data.message);
+                }
+            });
+            
+            socket.on('subscription_error', (data) => {
+                addLog('error', `Kanal abonelik hatası: ${data.error}`);
+            });
+            
+            socket.on('user_prices_update', (data) => {
+                addLog('success', `Kullanıcı fiyat güncellemesi alındı: ${data.data.products ? data.data.products.length : 0} ürün`);
+                handleUserPricesUpdate(data);
+            });
+            
+            socket.on('user_control_message', (data) => {
+                addLog('warning', `Kontrol mesajı alındı: ${data.messageType}`);
+                handleControlMessage(data);
+            });
+            
+            socket.on('error', (error) => {
+                addLog('error', `Socket hatası: ${error}`);
+            });
+        }
+        
+        // Subscribe to user prices channel
+        function subscribeToUserPrices() {
+            addLog('info', `Kullanıcı fiyat kanalına abone olunuyor: ${CONFIG.channelName}`);
+            
+            socket.emit('subscribe_user_prices', {
+                userId: CONFIG.userId
+            });
+        }
+        
+        // Handle user prices update
+        function handleUserPricesUpdate(data) {
+            try {
+                if (!data.data || !data.data.products) {
+                    addLog('warning', 'Fiyat verisi boş veya geçersiz');
+                    return;
+                }
+                
+                lastPricesData = data.data;
+                renderPricesData(data.data);
+                
+                addLog('info', `Fiyatlar güncellendi: ${data.timestamp} (Kaynak: ${data.sourceId})`);
+            } catch (error) {
+                addLog('error', `Fiyat verisi işlenirken hata: ${error.message}`);
+            }
+        }
+        
+        // Handle control messages
+        function handleControlMessage(data) {
+            const { messageType, data: messageData } = data;
+            
+            switch (messageType) {
+                case 'refresh':
+                    addLog('info', '🔄 Yenileme mesajı - Sayfa yenileniyor...');
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                    break;
+                    
+                case 'hide_prices':
+                    addLog('warning', '👁️‍🗨️ Fiyat gizleme mesajı - Fiyatlar gizleniyor...');
+                    hidePrices();
+                    break;
+                    
+                case 'bell':
+                    addLog('info', '🔔 Zil mesajı');
+                    showBellNotification();
+                    break;
+                    
+                case 'site_closed':
+                    addLog('error', '🚫 Site kapatıldı - Fiyatlar gizli');
+                    showSiteClosedNotification();
+                    break;
+                    
+                case 'site_opened':
+                    addLog('success', '✅ Site açıldı - Fiyatlar görünür');
+                    showSiteOpenedNotification();
+                    break;
+                    
+                case 'custom':
+                    addLog('info', `💬 Özel mesaj: ${messageData.message}`);
+                    showCustomNotification(messageData.message);
+                    break;
+                    
+                default:
+                    addLog('warning', `❓ Bilinmeyen mesaj türü: ${messageType}`);
+            }
+        }
+        
+        // Hide prices function
+        function hidePrices() {
+            const priceValues = document.querySelectorAll('.price-value');
+            priceValues.forEach(element => {
+                element.style.visibility = 'hidden';
+            });
+            
+            setTimeout(() => {
+                priceValues.forEach(element => {
+                    element.style.visibility = 'visible';
+                });
+            }, 5000); // Show prices again after 5 seconds
+        }
+        
+        // Bell notification
+        function showBellNotification() {
+            // Visual bell
+            document.body.style.background = '#fbbf24';
+            setTimeout(() => {
+                document.body.style.background = '';
+            }, 200);
+            
+            // Audio bell (if supported)
+            try {
+                const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAL1IhAAGRAA==');
+                audio.play().catch(() => {}); // Ignore audio errors
+            } catch (e) {}
+        }
+        
+        // Site status notifications
+        function showSiteClosedNotification() {
+            showNotification('🚫 Site kapatıldı - Fiyatlar artık gizli', 'error');
+        }
+        
+        function showSiteOpenedNotification() {
+            showNotification('✅ Site açıldı - Fiyatlar artık görünür', 'success');
+        }
+        
+        function showCustomNotification(message) {
+            showNotification(`💬 ${message}`, 'info');
+        }
+        
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg text-white z-50 ${
+                type === 'success' ? 'bg-green-600' : 
+                type === 'error' ? 'bg-red-600' : 
+                type === 'warning' ? 'bg-yellow-600' : 'bg-blue-600'
+            }`;
+            notification.innerHTML = `
+                <div class="flex items-center">
+                    <span>${message}</span>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-3 text-white hover:text-gray-200">
+                        ✕
+                    </button>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                if (notification.parentElement) {
+                    notification.remove();
+                }
+            }, 8000);
+        }
+        
+        // Render prices data
+        function renderPricesData(pricesData) {
+            if (!pricesData || !pricesData.products || pricesData.products.length === 0) {
+                productsContainer.innerHTML = `
+                    <div class="no-data">
+                        <h3>Ürün bulunamadı</h3>
+                        <p>Bu kullanıcıya ait aktif ürün bulunmuyor.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Group products by section
+            const groupedProducts = {};
+            pricesData.products.forEach(product => {
+                const sectionName = product.section?.name || 'Kategorisiz';
+                if (!groupedProducts[sectionName]) {
+                    groupedProducts[sectionName] = {
+                        products: [],
+                        displayConfig: product.section?.displayConfig || {}
+                    };
+                }
+                groupedProducts[sectionName].products.push(product);
+            });
+            
+            // Render sections and products
+            let html = '<div class="sections-container">';
+            
+            Object.keys(groupedProducts).forEach(sectionName => {
+                const sectionData = groupedProducts[sectionName];
+                
+                html += `
+                    <div class="section-container">
+                        <div class="section-header">
+                            <div class="section-title">${sectionName}</div>
+                        </div>
+                        <table class="products-table">
+                            <thead>
+                                <tr>
+                                    <th>Ürün</th>
+                                    <th>Alış</th>
+                                    <th>Satış</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+                
+                sectionData.products.forEach(product => {
+                    const buyingPrice = product.buyingPrice !== null ? 
+                        product.buyingPrice.toLocaleString('tr-TR', { minimumFractionDigits: product.buyingDecimalPlaces || 2, maximumFractionDigits: product.buyingDecimalPlaces || 2 }) + ' ₺' : 
+                        'N/A';
+                        
+                    const sellingPrice = product.sellingPrice !== null ? 
+                        product.sellingPrice.toLocaleString('tr-TR', { minimumFractionDigits: product.sellingDecimalPlaces || 2, maximumFractionDigits: product.sellingDecimalPlaces || 2 }) + ' ₺' : 
+                        'N/A';
+                    
+                    html += `
+                        <tr data-product-id="${product._id}">
+                            <td>
+                                <div class="product-name">${product.name}</div>
+                            </td>
+                            <td>
+                                <div class="price-value buying">${buyingPrice}</div>
+                            </td>
+                            <td>
+                                <div class="price-value">${sellingPrice}</div>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            productsContainer.innerHTML = html;
+            
+            // Add flash animation to updated prices
+            setTimeout(() => {
+                document.querySelectorAll('.products-table tbody tr').forEach(row => {
+                    row.classList.add('price-updated');
+                    setTimeout(() => {
+                        row.classList.remove('price-updated');
+                    }, 500);
+                });
+            }, 100);
+        }
+        
+        // Update connection status
+        function updateConnectionStatus(status) {
+            connectionStatus = status;
+            const statusTexts = {
+                'connecting': 'Bağlantı kuruluyor...',
+                'connected': 'Bağlı ✓',
+                'disconnected': 'Bağlantı kesildi ✗'
+            };
+            
+            statusElement.textContent = statusTexts[status] || status;
+            statusElement.className = `connection-status status-${status}`;
+        }
+        
+        // Add log entry
+        function addLog(type, message) {
+            const timestamp = new Date().toLocaleTimeString('tr-TR');
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry log-${type}`;
+            logEntry.textContent = `[${timestamp}] [${type.toUpperCase()}] ${message}`;
+            
+            logsElement.appendChild(logEntry);
+            logsElement.scrollTop = logsElement.scrollHeight;
+            
+            // Keep only last 50 log entries
+            while (logsElement.children.length > 50) {
+                logsElement.removeChild(logsElement.firstChild);
+            }
+        }
+        
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            addLog('info', 'Sayfa yüklendi');
+            initializeSocket();
+        });
+        
+        // Handle page visibility changes
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden && connectionStatus !== 'connected') {
+                addLog('info', 'Sayfa aktif hale geldi, bağlantı kontrol ediliyor...');
+                if (socket && !socket.connected) {
+                    socket.connect();
+                }
+            }
+        });
+        
+        // Handle window unload
+        window.addEventListener('beforeunload', () => {
+            if (socket) {
+                socket.disconnect();
+            }
+        });
+    </script>
+</body>
+</html>

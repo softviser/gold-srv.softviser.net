@@ -202,7 +202,7 @@ const LoggerHelper = {
     const changeIcon = changePercent > 0 ? '↗️' : changePercent < 0 ? '↘️' : '→';
     const message = `${changeIcon} ${symbol}: Alış ₺${buyPrice} / Satış ₺${sellPrice} (${changePercent > 0 ? '+' : ''}${changePercent.toFixed(2)}%)`;
     
-    sourceLogger.info(message);
+//    sourceLogger.info(message);
     
     // Send to management channel
     this.sendToSocket('management', 'price_update_log', {
@@ -320,7 +320,7 @@ const LoggerHelper = {
     
     const sourceLogger = this.getSourceLogger(source);
     const logMessage = `📊 Veri işleme tamamlandı: ${processedCount} başarılı, ${errorCount} hata (${duration}ms)`;
-    sourceLogger.info(logMessage);
+    //sourceLogger.info(logMessage);
     
     // Send to management channel
     this.sendToSocket('management', 'data_processing_log', {
